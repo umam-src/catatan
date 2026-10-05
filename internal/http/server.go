@@ -1,83 +1,336 @@
 package http
 
 import (
-    "bytes"
-    "crypto/rand"
-    "encoding/hex"
-    "encoding/json"
-    "io/fs"
-    "net/http"
-    "path/filepath"
-    "strings"
-    "time"
+	"bytes"
+	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"io"
+	"io/fs"
+	"net/http"
+	"strings"
+	"time"
 
-    "github.com/umam-src/buku-catatan/internal/db"
-    "github.com/umam-src/buku-catatan/internal/ui"
+	"github.com/umam-src/buku-catatan/internal/db"
+	"github.com/umam-src/buku-catatan/internal/ui"
 )
 
-type Server struct { db *db.DB }
+const (
+	maxRequestBody = 1 << 20
+	maxTitle       = 200
+	maxDescription = 2000
+	maxNoteContent = 1 << 20
+)
+
+type Server struct{ db *db.DB }
 
 func New(d *db.DB) http.Handler {
-    s := &Server{db: d}
-    mux := http.NewServeMux()
-    mux.HandleFunc("GET /api/notebooks", s.listNotebooks)
-    mux.HandleFunc("POST /api/notebooks", s.createNotebook)
-    mux.HandleFunc("GET /api/notebooks/{id}/notes", s.listNotes)
-    mux.HandleFunc("POST /api/notebooks/{id}/notes", s.createNote)
-    mux.HandleFunc("PUT /api/notes/{id}", s.updateNote)
-    mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, _ *http.Request) { writeJSON(w, 200, map[string]string{"status":"ok"}) })
+	s := &Server{db: d}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/notebooks", s.listNotebooks)
+	mux.HandleFunc("POST /api/notebooks", s.createNotebook)
+	mux.HandleFunc("GET /api/notebooks/{id}/notes", s.listNotes)
+	mux.HandleFunc("POST /api/notebooks/{id}/notes", s.createNote)
+	mux.HandleFunc("PUT /api/notes/{id}", s.updateNote)
+	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	})
 
-    assets, _ := fs.Sub(ui.Assets, "dist")
-    fileServer := http.FileServer(http.FS(assets))
-    mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-        if strings.HasPrefix(r.URL.Path, "/api/") { http.NotFound(w, r); return }
-        p := strings.TrimPrefix(filepath.Clean(r.URL.Path), "/")
-        if p != "." && p != "" {
-            if f, err := assets.Open(p); err == nil { f.Close(); fileServer.ServeHTTP(w, r); return }
-        }
-        index, err := fs.ReadFile(assets, "index.html")
-        if err != nil { http.Error(w, "antarmuka belum dibangun", 500); return }
-        http.ServeContent(w, r, "index.html", time.Time{}, bytes.NewReader(index))
-    })
-    return withHeaders(mux)
+	assets, _ := fs.Sub(ui.Assets, "dist")
+	fileServer := http.FileServer(http.FS(assets))
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/api/") {
+			http.NotFound(w, r)
+			return
+		}
+		p := strings.TrimPrefix(r.URL.Path, "/")
+		if p != "" && p != "." && fs.ValidPath(p) {
+			if f, err := assets.Open(p); err == nil {
+				_ = f.Close()
+				fileServer.ServeHTTP(w, r)
+				return
+			}
+		}
+		index, err := fs.ReadFile(assets, "index.html")
+		if err != nil {
+			http.Error(w, "antarmuka belum dibangun", http.StatusInternalServerError)
+			return
+		}
+		http.ServeContent(w, r, "index.html", time.Time{}, bytes.NewReader(index))
+	})
+	return withHeaders(mux)
 }
 
 func (s *Server) listNotebooks(w http.ResponseWriter, r *http.Request) {
-    rows, err := s.db.QueryContext(r.Context(), `SELECT id,title,description,archived,created_at,updated_at FROM notebooks WHERE archived=0 ORDER BY updated_at DESC`)
-    if err != nil { serverError(w, err); return }; defer rows.Close()
-    out := []Notebook{}
-    for rows.Next() { var n Notebook; var archived int; if err := rows.Scan(&n.ID,&n.Title,&n.Description,&archived,&n.CreatedAt,&n.UpdatedAt); err != nil { serverError(w,err); return }; n.Archived=archived != 0; out=append(out,n) }
-    writeJSON(w,200,out)
+	rows, err := s.db.QueryContext(r.Context(), `SELECT id,title,description,archived,created_at,updated_at FROM notebooks WHERE archived=0 ORDER BY updated_at DESC`)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	defer rows.Close()
+
+	out := []Notebook{}
+	for rows.Next() {
+		var n Notebook
+		var archived int
+		if err := rows.Scan(&n.ID, &n.Title, &n.Description, &archived, &n.CreatedAt, &n.UpdatedAt); err != nil {
+			serverError(w, err)
+			return
+		}
+		n.Archived = archived != 0
+		out = append(out, n)
+	}
+	if err := rows.Err(); err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 func (s *Server) createNotebook(w http.ResponseWriter, r *http.Request) {
-    var in struct { Title string `json:"title"`; Description string `json:"description"` }
-    if !decode(w,r,&in) { return }; in.Title = strings.TrimSpace(in.Title); if in.Title == "" { http.Error(w,"Judul wajib diisi",400); return }
-    now:=time.Now().UTC().Format(time.RFC3339Nano); id:=newID()
-    _,err:=s.db.ExecContext(r.Context(),`INSERT INTO notebooks(id,title,description,created_at,updated_at) VALUES(?,?,?,?,?)`,id,in.Title,in.Description,now,now)
-    if err!=nil { serverError(w,err); return }
-    writeJSON(w,201,Notebook{ID:id,Title:in.Title,Description:in.Description,CreatedAt:now,UpdatedAt:now})
+	var in struct {
+		Title       string `json:"title"`
+		Description string `json:"description"`
+	}
+	if !decode(w, r, &in) {
+		return
+	}
+	in.Title = strings.TrimSpace(in.Title)
+	in.Description = strings.TrimSpace(in.Description)
+	if err := validateLength(in.Title, 1, maxTitle, "Judul"); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := validateLength(in.Description, 0, maxDescription, "Deskripsi"); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	id := newID()
+	_, err := s.db.ExecContext(r.Context(), `INSERT INTO notebooks(id,title,description,created_at,updated_at) VALUES(?,?,?,?,?)`, id, in.Title, in.Description, now, now)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, Notebook{ID: id, Title: in.Title, Description: in.Description, CreatedAt: now, UpdatedAt: now})
 }
 
-func (s *Server) listNotes(w http.ResponseWriter,r *http.Request){
-    rows,err:=s.db.QueryContext(r.Context(),`SELECT id,title,content,note_type,created_at,updated_at FROM notes WHERE notebook_id=? ORDER BY updated_at DESC`,r.PathValue("id")); if err!=nil {serverError(w,err);return}; defer rows.Close()
-    out:=[]Note{}; for rows.Next(){var n Note;if err:=rows.Scan(&n.ID,&n.Title,&n.Content,&n.NoteType,&n.CreatedAt,&n.UpdatedAt);err!=nil{serverError(w,err);return};out=append(out,n)};writeJSON(w,200,out)
+func (s *Server) listNotes(w http.ResponseWriter, r *http.Request) {
+	notebookID := r.PathValue("id")
+	if !validID(notebookID) {
+		http.Error(w, "ID buku tidak valid", http.StatusBadRequest)
+		return
+	}
+	if !s.notebookExists(r, notebookID) {
+		http.NotFound(w, r)
+		return
+	}
+
+	rows, err := s.db.QueryContext(r.Context(), `SELECT id,title,content,note_type,created_at,updated_at FROM notes WHERE notebook_id=? ORDER BY updated_at DESC`, notebookID)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	defer rows.Close()
+
+	out := []Note{}
+	for rows.Next() {
+		var n Note
+		if err := rows.Scan(&n.ID, &n.Title, &n.Content, &n.NoteType, &n.CreatedAt, &n.UpdatedAt); err != nil {
+			serverError(w, err)
+			return
+		}
+		out = append(out, n)
+	}
+	if err := rows.Err(); err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
-func (s *Server) createNote(w http.ResponseWriter,r *http.Request){
-    var in struct{Title string `json:"title"`;Content string `json:"content"`};if !decode(w,r,&in){return};id:=newID();now:=time.Now().UTC().Format(time.RFC3339Nano);nb:=r.PathValue("id")
-    _,err:=s.db.ExecContext(r.Context(),`INSERT INTO notes(id,notebook_id,title,content,created_at,updated_at) VALUES(?,?,?,?,?,?)`,id,nb,in.Title,in.Content,now,now);if err!=nil{serverError(w,err);return};writeJSON(w,201,Note{ID:id,Title:in.Title,Content:in.Content,NoteType:"human",CreatedAt:now,UpdatedAt:now})
+func (s *Server) createNote(w http.ResponseWriter, r *http.Request) {
+	notebookID := r.PathValue("id")
+	if !validID(notebookID) {
+		http.Error(w, "ID buku tidak valid", http.StatusBadRequest)
+		return
+	}
+	if !s.notebookExists(r, notebookID) {
+		http.NotFound(w, r)
+		return
+	}
+
+	var in struct {
+		Title   string `json:"title"`
+		Content string `json:"content"`
+	}
+	if !decode(w, r, &in) {
+		return
+	}
+	in.Title = strings.TrimSpace(in.Title)
+	if err := validateLength(in.Title, 1, maxTitle, "Judul"); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := validateLength(in.Content, 1, maxNoteContent, "Isi"); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	id := newID()
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	_, err := s.db.ExecContext(r.Context(), `INSERT INTO notes(id,notebook_id,title,content,created_at,updated_at) VALUES(?,?,?,?,?,?)`, id, notebookID, in.Title, in.Content, now, now)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, Note{ID: id, Title: in.Title, Content: in.Content, NoteType: "human", CreatedAt: now, UpdatedAt: now})
 }
 
-func (s *Server) updateNote(w http.ResponseWriter,r *http.Request){
-    var in struct{Title string `json:"title"`;Content string `json:"content"`};if !decode(w,r,&in){return};now:=time.Now().UTC().Format(time.RFC3339Nano);res,err:=s.db.ExecContext(r.Context(),`UPDATE notes SET title=?,content=?,updated_at=? WHERE id=?`,in.Title,in.Content,now,r.PathValue("id"));if err!=nil{serverError(w,err);return};n,_:=res.RowsAffected();if n==0{http.NotFound(w,r);return};writeJSON(w,200,map[string]string{"updated_at":now})
+func (s *Server) updateNote(w http.ResponseWriter, r *http.Request) {
+	noteID := r.PathValue("id")
+	if !validID(noteID) {
+		http.Error(w, "ID catatan tidak valid", http.StatusBadRequest)
+		return
+	}
+	if !s.noteExists(r, noteID) {
+		http.NotFound(w, r)
+		return
+	}
+
+	var in struct {
+		Title   string `json:"title"`
+		Content string `json:"content"`
+	}
+	if !decode(w, r, &in) {
+		return
+	}
+	in.Title = strings.TrimSpace(in.Title)
+	if err := validateLength(in.Title, 1, maxTitle, "Judul"); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := validateLength(in.Content, 1, maxNoteContent, "Isi"); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	_, err := s.db.ExecContext(r.Context(), `UPDATE notes SET title=?,content=?,updated_at=? WHERE id=?`, in.Title, in.Content, now, noteID)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"updated_at": now})
 }
 
-type Notebook struct{ID string `json:"id"`;Title string `json:"title"`;Description string `json:"description"`;Archived bool `json:"archived"`;CreatedAt string `json:"created_at"`;UpdatedAt string `json:"updated_at"`}
-type Note struct{ID string `json:"id"`;Title string `json:"title"`;Content string `json:"content"`;NoteType string `json:"note_type"`;CreatedAt string `json:"created_at"`;UpdatedAt string `json:"updated_at"`}
+type Notebook struct {
+	ID          string `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Archived    bool   `json:"archived"`
+	CreatedAt   string `json:"created_at"`
+	UpdatedAt   string `json:"updated_at"`
+}
 
-func newID() string{b:=make([]byte,16);_,_=rand.Read(b);return hex.EncodeToString(b)}
-func decode(w http.ResponseWriter,r *http.Request,v any)bool{if err:=json.NewDecoder(r.Body).Decode(v);err!=nil{http.Error(w,"JSON tidak valid",400);return false};return true}
-func writeJSON(w http.ResponseWriter,status int,v any){w.Header().Set("Content-Type","application/json; charset=utf-8");w.WriteHeader(status);_=json.NewEncoder(w).Encode(v)}
-func serverError(w http.ResponseWriter,_ error){http.Error(w,"kesalahan internal",500)}
-func withHeaders(next http.Handler)http.Handler{return http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){w.Header().Set("X-Content-Type-Options","nosniff");w.Header().Set("Referrer-Policy","no-referrer");next.ServeHTTP(w,r)})}
+type Note struct {
+	ID        string `json:"id"`
+	Title     string `json:"title"`
+	Content   string `json:"content"`
+	NoteType  string `json:"note_type"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+func newID() string {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		panic("sumber acak sistem tidak tersedia")
+	}
+	return hex.EncodeToString(b)
+}
+
+func validID(id string) bool {
+	if len(id) != 32 {
+		return false
+	}
+	for _, c := range id {
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
+			return false
+		}
+	}
+	return true
+}
+
+func validateLength(value string, min, max int, field string) error {
+	length := len([]rune(value))
+	if length < min {
+		if min == 1 {
+			return errors.New(field + " wajib diisi")
+		}
+		return errors.New(field + " terlalu pendek")
+	}
+	if length > max {
+		return errors.New(field + " terlalu panjang")
+	}
+	return nil
+}
+
+func (s *Server) notebookExists(r *http.Request, id string) bool {
+	var exists int
+	err := s.db.QueryRowContext(r.Context(), `SELECT 1 FROM notebooks WHERE id=? LIMIT 1`, id).Scan(&exists)
+	return err == nil && exists == 1
+}
+
+func (s *Server) noteExists(r *http.Request, id string) bool {
+	var exists int
+	err := s.db.QueryRowContext(r.Context(), `SELECT 1 FROM notes WHERE id=? LIMIT 1`, id).Scan(&exists)
+	return err == nil && exists == 1
+}
+
+func decode(w http.ResponseWriter, r *http.Request, v any) bool {
+	if r.ContentLength > maxRequestBody {
+		http.Error(w, "Badan permintaan terlalu besar", http.StatusRequestEntityTooLarge)
+		return false
+	}
+	body := http.MaxBytesReader(w, r.Body, maxRequestBody)
+	defer body.Close()
+	decoder := json.NewDecoder(body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(v); err != nil {
+		if errors.Is(err, io.EOF) {
+			http.Error(w, "Badan permintaan wajib diisi", http.StatusBadRequest)
+		} else if errors.Is(err, http.ErrBodyReadAfterClose) {
+			http.Error(w, "Badan permintaan terlalu besar", http.StatusRequestEntityTooLarge)
+		} else {
+			http.Error(w, "JSON tidak valid", http.StatusBadRequest)
+		}
+		return false
+	}
+	var extra any
+	if err := decoder.Decode(&extra); err != io.EOF {
+		http.Error(w, "Badan permintaan harus berisi satu objek JSON", http.StatusBadRequest)
+		return false
+	}
+	return true
+}
+
+func writeJSON(w http.ResponseWriter, status int, v any) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(v)
+}
+
+func serverError(w http.ResponseWriter, _ error) {
+	http.Error(w, "kesalahan internal", http.StatusInternalServerError)
+}
+
+func withHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("Referrer-Policy", "no-referrer")
+		next.ServeHTTP(w, r)
+	})
+}
