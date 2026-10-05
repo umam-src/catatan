@@ -27,3 +27,10 @@
 - [ ] Validasi jalur dan masukan API.
 - [ ] Jangan mencatat isi catatan pengguna ke log.
 - [ ] Tambahkan pemeriksaan dependensi.
+
+## Kebijakan versi
+
+- Penyelesaian satu fase menaikkan versi minor.
+- Perubahan kode yang dirilis di dalam fase berjalan menaikkan patch.
+- Perubahan dokumentasi saja tidak menaikkan patch.
+- Target fase: `0.1.0`, `0.2.0`, `0.3.0`, `0.4.0`, `0.5.0`, `0.6.0`, lalu `1.0.0`.
