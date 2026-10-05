@@ -42,6 +42,13 @@ func New(d *db.DB) http.Handler {
 	fileServer := http.FileServer(http.FS(assets))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/api/") {
+			if allow := allowedMethods(r.URL.Path); allow != "" && r.Method != methodFromAllow(allow) {
+				if !methodAllowed(allow, r.Method) {
+					w.Header().Set("Allow", allow)
+					http.Error(w, "metode tidak diizinkan", http.StatusMethodNotAllowed)
+					return
+				}
+			}
 			http.NotFound(w, r)
 			return
 		}
@@ -345,6 +352,37 @@ func decode(w http.ResponseWriter, r *http.Request, v any) bool {
 		return false
 	}
 	return true
+}
+
+func allowedMethods(path string) string {
+	switch {
+	case path == "/api/health":
+		return http.MethodGet
+	case path == "/api/notebooks":
+		return http.MethodGet + ", " + http.MethodPost
+	case strings.HasPrefix(path, "/api/notebooks/") && strings.HasSuffix(path, "/notes"):
+		return http.MethodGet + ", " + http.MethodPost
+	case strings.HasPrefix(path, "/api/notes/"):
+		return http.MethodPut
+	default:
+		return ""
+	}
+}
+
+func methodFromAllow(allow string) string {
+	if i := strings.IndexByte(allow, ','); i >= 0 {
+		return strings.TrimSpace(allow[:i])
+	}
+	return allow
+}
+
+func methodAllowed(allow, method string) bool {
+	for _, allowed := range strings.Split(allow, ",") {
+		if strings.TrimSpace(allowed) == method {
+			return true
+		}
+	}
+	return false
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
