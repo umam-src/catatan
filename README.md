@@ -11,6 +11,10 @@ Buku Catatan adalah aplikasi catatan lokal yang mengutamakan privasi, cepat dibu
 - Struktur data disiapkan agar sumber, percakapan, pencarian semantik, dan integrasi AI dapat ditambahkan tanpa merusak data lama.
 - Ukuran rilis ditargetkan di bawah 20 MB; 30 MB masih diterima; 50 MB adalah batas gagal.
 
+## Arah bahasa dan penamaan
+
+Bahasa Indonesia adalah standar utama proyek. Istilah, nama berkas, nama basis data, dan nama kode baru mengikuti [GLOSARIUM](GLOSARIUM.md) agar satu konsep tidak memiliki banyak nama. Nama resmi teknologi dan kontrak eksternal seperti Go, SQLite, SvelteKit, HTTP, JSON, serta nama berkas yang diwajibkan ekosistem tetap dipertahankan.
+
 ## Prinsip teknis
 
 Buku Catatan menggunakan satu program utama berbasis Go dengan basis data SQLite lokal dan antarmuka SvelteKit yang ditanam ke dalam program. SQLite dipilih untuk menghindari layanan basis data terpisah, sedangkan lapisan penyimpanan dipisahkan dari model domain agar format data dapat berkembang tanpa mengunci fitur masa depan.
@@ -68,6 +72,7 @@ Ukuran program tidak menghitung basis data pengguna atau model AI.
 
 ## Dokumentasi
 
+- [GLOSARIUM](GLOSARIUM.md)
 - [TODO](TODO.md)
 - [CHANGELOG](CHANGELOG.md)
 - [CONTRIBUTING](CONTRIBUTING.md)
