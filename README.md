@@ -8,14 +8,18 @@ Buku Catatan adalah aplikasi catatan lokal yang mengutamakan privasi, cepat dibu
 - Data pengguna tetap lokal dan mudah dicadangkan.
 - Antarmuka bergaya buku catatan modern, terinspirasi pengalaman awal NotebookLM tanpa menyalin identitas visualnya.
 - Tahap pertama hanya mendukung teks.
-- Struktur data disiapkan agar fitur sumber, percakapan, pencarian semantik, dan integrasi AI dapat ditambahkan tanpa merusak data lama.
+- Struktur data disiapkan agar sumber, percakapan, pencarian semantik, dan integrasi AI dapat ditambahkan tanpa merusak data lama.
 - Ukuran rilis ditargetkan di bawah 20 MB; 30 MB masih diterima; 50 MB adalah batas gagal.
+
+## Arah bahasa dan penamaan
+
+Bahasa Indonesia adalah standar utama proyek. Istilah, nama berkas, nama basis data, dan nama kode baru mengikuti [GLOSARIUM](GLOSARIUM.md) agar satu konsep tidak memiliki banyak nama. Nama resmi teknologi dan kontrak eksternal seperti Go, SQLite, SvelteKit, HTTP, JSON, serta nama berkas yang diwajibkan ekosistem tetap dipertahankan.
 
 ## Prinsip teknis
 
 Buku Catatan menggunakan satu program utama berbasis Go dengan basis data SQLite lokal dan antarmuka SvelteKit yang ditanam ke dalam program. SQLite dipilih untuk menghindari layanan basis data terpisah, sedangkan lapisan penyimpanan dipisahkan dari model domain agar format data dapat berkembang tanpa mengunci fitur masa depan.
 
-Struktur konsep mengikuti model **buku → sumber → catatan → percakapan**, yang selaras dengan konsep inti Open Notebook. Open Notebook saat ini memisahkan antarmuka, API, dan SurrealDB serta menggunakan migrasi berurutan; Buku Catatan mengambil prinsip pemisahan tersebut tanpa membawa seluruh beban dependensinya. citeturn0search0turn0search2
+Struktur konsep mengikuti model **buku → sumber → catatan → percakapan**. Prinsip ini mengambil gagasan yang baik dari Open Notebook, tetapi implementasinya dibuat lebih kecil dan mandiri.
 
 ## Status
 
@@ -23,14 +27,12 @@ Tahap saat ini: **fondasi aplikasi**.
 
 Fitur awal:
 
-- membuat, mengubah, menghapus, dan memilih buku;
+- membuat dan memilih buku;
 - membuat dan mengubah catatan teks;
-- pencarian teks lokal;
-- penyimpanan otomatis;
-- tema terang/gelap mengikuti sistem;
-- pencadangan basis data;
+- penyimpanan lokal;
 - migrasi skema berurutan;
-- API lokal yang tetap menjadi kontrak untuk pengembangan berikutnya.
+- API lokal sebagai kontrak pengembangan berikutnya;
+- antarmuka responsif.
 
 ## Menjalankan dari sumber
 
@@ -43,7 +45,7 @@ Prasyarat:
 go run ./cmd/buku-catatan
 ```
 
-Untuk pengembangan antarmuka:
+Untuk membangun antarmuka:
 
 ```bash
 cd web
@@ -53,7 +55,7 @@ npm run build
 
 ## Rilis satu berkas
 
-Program produksi akan menanam hasil build antarmuka ke dalam berkas eksekusi. Data pengguna berada di luar berkas program sehingga memperbarui program tidak menimpa catatan.
+Program produksi menanam hasil build antarmuka ke dalam berkas eksekusi. Data pengguna berada di luar berkas program sehingga pembaruan program tidak menimpa catatan.
 
 ## Ukuran
 
@@ -70,6 +72,7 @@ Ukuran program tidak menghitung basis data pengguna atau model AI.
 
 ## Dokumentasi
 
+- [GLOSARIUM](GLOSARIUM.md)
 - [TODO](TODO.md)
 - [CHANGELOG](CHANGELOG.md)
 - [CONTRIBUTING](CONTRIBUTING.md)

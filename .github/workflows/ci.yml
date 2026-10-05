@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'fondasi/**']
+  pull_request:
+
+jobs:
+  uji:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+          cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+      - name: Periksa Go
+        run: go test ./...
+      - name: Pasang dan bangun UI
+        working-directory: web
+        run: npm install --no-audit --no-fund && npm run build
+      - name: Bangun program
+        run: go build -trimpath -ldflags='-s -w' -o buku-catatan ./cmd/buku-catatan
+      - name: Periksa ukuran
+        run: |
+          gzip -9 -c buku-catatan > buku-catatan.gz
+          bytes=$(stat -c%s buku-catatan.gz)
+          echo "Ukuran gzip: $bytes bytes"
+          test "$bytes" -lt 52428800
+          if [ "$bytes" -ge 31457280 ]; then echo '::warning::Ukuran gzip melewati 30 MiB.'; fi
