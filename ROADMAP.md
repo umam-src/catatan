@@ -13,6 +13,7 @@ Roadmap ini menjadi arah pengembangan Buku Catatan sampai rilis `v1.0.0` dan set
 - Fitur kecerdasan buatan bersifat tambahan, bukan syarat agar aplikasi dasar dapat digunakan.
 - Struktur data harus cukup matang untuk menampung perkembangan fitur tanpa mengunci implementasi pada teknologi tertentu.
 - Dokumentasi diperbarui bersama perubahan penting.
+- Versi minor naik setiap fase selesai; patch hanya naik bila ada perubahan kode yang dirilis; dokumentasi saja tidak menaikkan patch.
 
 ## Tahap 0 — Fondasi `0.x`
 
@@ -130,6 +131,18 @@ Fitur media tidak boleh mengorbankan ukuran, kesederhanaan distribusi, atau peng
 - [ ] README, CONTRIBUTING, CHANGELOG, TODO, dan dokumentasi teknis selaras.
 - [ ] Lisensi dan atribusi proyek lengkap.
 - [ ] Checklist rilis `v1.0.0` selesai.
+
+## Kebijakan versi per fase
+
+| Fase selesai | Versi target |
+|---|---:|
+| Tahap 0 — Fondasi | `0.1.0` |
+| Tahap 1 — Catatan Teks | `0.2.0` |
+| Tahap 2 — Sumber | `0.3.0` |
+| Tahap 3 — Pencarian dan AI Lokal | `0.4.0` |
+| Tahap 4 — Adopsi Konsep Open Notebook | `0.5.0` |
+| Tahap 5 — Media Tambahan | `0.6.0` |
+| Tahap 6 — Menuju `v1.0.0` | `1.0.0` |
 
 ## Setelah `v1.0.0`
 
