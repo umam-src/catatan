@@ -7,9 +7,12 @@ Format mengikuti Keep a Changelog dan versi mengikuti Semantic Versioning.
 ## [Belum dirilis]
 
 ### Ditambahkan
+
 - Autosave catatan teks dengan debounce dan indikator status penyimpanan.
 - Penghapusan catatan secara lunak.
 - Catatan baru dapat dibuat tanpa isi awal.
+- Pengujian API untuk pembuatan catatan kosong dan penghapusan catatan.
+- Pengujian migrasi untuk kolom penghapusan lunak.
 
 - Fondasi aplikasi satu proses berbasis Go.
 - Penyimpanan SQLite lokal dengan migrasi berurutan.
