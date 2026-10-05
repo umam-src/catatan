@@ -244,7 +244,7 @@ func (s *Server) updateNote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := validateLength(in.Content, 1, maxNoteContent, "Isi"); err != nil {
+	if err := validateLength(in.Content, 0, maxNoteContent, "Isi"); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -324,7 +324,7 @@ func (s *Server) notebookExists(r *http.Request, id string) (bool, error) {
 
 func (s *Server) noteExists(r *http.Request, id string) (bool, error) {
 	var exists int
-	err := s.db.QueryRowContext(r.Context(), `SELECT 1 FROM notes WHERE id=? LIMIT 1`, id).Scan(&exists)
+	err := s.db.QueryRowContext(r.Context(), `SELECT 1 FROM notes WHERE id=? AND deleted_at IS NULL LIMIT 1`, id).Scan(&exists)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, nil
 	}
