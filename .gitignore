@@ -2,6 +2,7 @@
 /internal/ui/dist/*
 !/internal/ui/dist/index.html
 /web/node_modules/
+/web/.svelte-kit/
 
 # Data lokal
 *.db

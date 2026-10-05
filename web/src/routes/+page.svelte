@@ -31,7 +31,8 @@
   async function createNote() {
     if (!selected) return;
     const response = await fetch(`/api/notebooks/${selected}/notes`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:'Catatan baru', content:''}) });
-    activeNote = await response.json(); notes = [activeNote, ...notes];
+    const created: Note = await response.json();
+    activeNote = created; notes = [created, ...notes];
   }
 
   async function saveNote() {
