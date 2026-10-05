@@ -1,0 +1,57 @@
+name: Rilis
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+jobs:
+  bangun:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Ambil sumber
+        uses: actions/checkout@v4
+
+      - name: Siapkan Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+          cache: true
+
+      - name: Siapkan Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Bangun UI
+        working-directory: web
+        run: npm install --no-audit --no-fund && npm run build
+
+      - name: Bangun program
+        run: go build -trimpath -ldflags='-s -w' -o catatan ./cmd/buku-catatan
+
+      - name: Periksa ukuran
+        run: |
+          gzip -9 -c catatan > catatan.gz
+          bytes=$(stat -c%s catatan.gz)
+          echo "Ukuran gzip: $bytes bytes"
+          test "$bytes" -lt 52428800
+          if [ "$bytes" -ge 31457280 ]; then
+            echo '::warning::Ukuran gzip melewati 30 MiB.'
+          fi
+
+      - name: Buat arsip rilis
+        run: tar -czf catatan-${GITHUB_REF_NAME}.tar.gz catatan
+
+      - name: Buat GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            "catatan-${GITHUB_REF_NAME}.tar.gz" \
+            --generate-notes \
+            --title "${GITHUB_REF_NAME}"
