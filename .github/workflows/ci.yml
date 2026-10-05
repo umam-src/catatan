@@ -28,8 +28,10 @@ jobs:
         run: go vet ./...
       - name: Pasang dan bangun UI
         working-directory: web
-        run: npm ci --no-audit --no-fund --prefer-offline || npm ci --no-audit --no-fund --prefer-offline
-          npm run check && npm run build
+        run: |
+          npm ci --no-audit --no-fund --prefer-offline
+          npm run build
+          npm run check
       - name: Verifikasi UI tertanam
         run: test -f internal/ui/dist/index.html && test "$(find internal/ui/dist -type f | wc -l)" -gt 0
       - name: Bangun program
