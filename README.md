@@ -41,19 +41,49 @@ Prasyarat:
 - Go 1.23+
 - Node.js 22+
 
+Jalankan aplikasi:
+
 ```bash
 go run ./cmd/buku-catatan
 ```
 
-Untuk membangun antarmuka:
+Untuk memasang dependensi dan membangun antarmuka:
 
 ```bash
 cd web
 npm ci
 npm run build
+npm run check
 ```
 
-## Rilis satu berkas
+## Menguji
+
+Pengujian Go mencakup basis data, migrasi, API, autentikasi, session, isolasi data, dan validasi masukan.
+
+```bash
+go test ./...
+go vet ./...
+```
+
+Pemeriksaan antarmuka:
+
+```bash
+cd web
+npm ci
+npm exec -- svelte-kit sync
+npm run build
+npm run check
+```
+
+CI menjalankan pemeriksaan tersebut serta memastikan hasil antarmuka tersedia untuk disematkan ke program utama.
+
+## Membangun program produksi
+
+Dari direktori akar proyek:
+
+```bash
+go build -trimpath -ldflags='-s -w' -o buku-catatan ./cmd/buku-catatan
+```
 
 Program produksi menanam hasil antarmuka ke dalam berkas eksekusi. Data pengguna berada di luar berkas program sehingga pembaruan program tidak menimpa catatan.
 
