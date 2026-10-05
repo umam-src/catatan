@@ -26,7 +26,7 @@
 - [x] Program utama dapat dibangun menjadi satu berkas eksekusi.
 - [x] UI web tertanam dalam program Go.
 - [x] Server hanya mendengar `127.0.0.1` secara bawaan.
-- [ ] Verifikasi akhir bahwa distribusi tidak membutuhkan direktori UI terpisah.
+- [x] Verifikasi akhir bahwa distribusi tidak membutuhkan direktori UI terpisah saat runtime.
 
 ### 0.2 Basis data
 - [x] Model inti menyiapkan buku, sumber, catatan, percakapan, dan pesan untuk perkembangan fase berikutnya.
@@ -37,10 +37,10 @@
 - [x] Pengujian migrasi tersedia.
 - [x] Kebijakan perubahan skema pra-`v1.0.0` terdokumentasi.
 - [ ] Tinjau kembali indeks dan struktur tabel berdasarkan kebutuhan fase berikutnya.
-- [ ] Rancang fondasi authorization berbasis ACL: User/Group → ACL → Resource.
-- [ ] Tentukan permission terstandar dan indeks ACL sebelum migrasi implementasi.
-- [ ] Jangan menambahkan Role atau ABAC tanpa kebutuhan yang terukur.
-- [ ] Pastikan kegagalan transaksi tidak meninggalkan data setengah tersimpan.
+- [x] Rancang fondasi otorisasi berbasis ACL: User/Group → ACL → Resource.
+- [x] Tentukan izin terstandar dan indeks ACL sebelum migrasi implementasi.
+- [x] Jangan menambahkan Role atau ABAC tanpa kebutuhan yang terukur.
+- [x] Pastikan kegagalan transaksi tidak meninggalkan data setengah tersimpan.
 
 ### 0.3 API dan keamanan masukan
 **Issue:** #18
@@ -57,7 +57,7 @@
 
 ### 0.4 UI produksi dan alur dasar
 **Issue:** #19
-- [~] Bangun UI produksi dan verifikasi hasil tertanam.
+- [x] Bangun UI produksi dan verifikasi hasil tertanam melalui CI.
 - [ ] Uji buka buku.
 - [ ] Uji daftar catatan.
 - [ ] Uji buka catatan.
@@ -78,56 +78,57 @@
 - [x] Implementasikan session yang aman dan dapat dicabut.
 - [x] Implementasikan logout.
 - [x] Hubungkan data dengan pemilik pengguna.
-- [ ] Uji isolasi data antar pengguna.
-- [x] Rancang batas provider untuk LDAP/AD/Synology dan SSO.
+- [x] Uji isolasi data antar pengguna.
+- [x] Rancang batas penyedia untuk LDAP/AD/Synology dan SSO.
 - [x] Pastikan login lokal tidak bergantung pada layanan awan.
 - [x] Jangan mencatat password, token, cookie, atau kredensial.
 - [x] Uji kasus login gagal dan session kedaluwarsa.
 
 ### 0.6 Optimasi dan ukuran
-- [ ] Inventarisasi dependensi Go.
+- [x] Inventarisasi dependensi Go dan antarmuka pada manifest proyek.
 - [ ] Hapus dependensi yang tidak diperlukan.
 - [ ] Evaluasi kontribusi ukuran `modernc.org/sqlite`.
-- [ ] Optimalkan aset UI produksi.
-- [ ] Ukur ukuran program hasil build.
-- [ ] Target normal <20 MiB.
-- [ ] Beri peringatan pada >=30 MiB.
-- [ ] Gagal pada >=50 MiB.
-- [ ] Ukur ukuran gzip dan arsip rilis.
-- [ ] Catat hasil pengukuran untuk pembanding fase berikutnya.
+- [ ] Optimalkan aset UI produksi berdasarkan pengukuran.
+- [x] Ukur ukuran program hasil build.
+- [x] Target normal <20 MiB diterapkan.
+- [x] Beri peringatan pada >=30 MiB.
+- [x] Gagal pada >=50 MiB.
+- [x] Ukur ukuran gzip.
+- [x] Catat hasil pengukuran untuk pembanding fase berikutnya: biner 9.793.796 byte dan gzip 4.226.513 byte pada CI terakhir.
+- [ ] Ukur arsip rilis setelah format artefak rilis ditetapkan.
 
 ### 0.7 CI dan build
 - [x] Instalasi npm menggunakan `npm ci`.
 - [x] Verifikasi modul Go.
 - [x] `go vet ./...`.
 - [x] Build dan pemeriksaan UI tertanam.
-- [ ] Pastikan CI hijau pada commit terakhir.
+- [x] Pastikan CI hijau pada commit terakhir.
 - [ ] Pisahkan pemeriksaan CI umum dari pekerjaan rilis.
 - [ ] Jalankan build rilis hanya saat diperlukan.
 - [ ] Pastikan bump patch juga memicu build rilis.
 - [ ] Verifikasi artefak rilis.
-- [ ] Hindari langkah CI duplikat untuk menghemat menit.
+- [x] Hindari langkah CI duplikat yang tidak diperlukan untuk menghemat menit.
 
 ### 0.8 Dokumentasi dan kesiapan rilis
 **Issue:** #21
 - [x] Lisensi MIT tersedia.
 - [x] README diselaraskan dengan kondisi aktual.
-- [~] Selaraskan README, TODO, ROADMAP, CHANGELOG, dan CONTRIBUTING.
-- [ ] Pastikan GLOSARIUM menggunakan istilah Indonesia baku.
+- [x] Selaraskan README, TODO, ROADMAP, CHANGELOG, dan CONTRIBUTING pada struktur dan status yang telah diverifikasi.
+- [x] Pastikan GLOSARIUM menggunakan istilah Indonesia baku.
 - [x] Dokumentasikan kebijakan skema pra-`v1.0.0`.
-- [ ] Dokumentasikan cara menjalankan.
-- [ ] Dokumentasikan cara menguji.
-- [ ] Dokumentasikan cara membangun.
-- [ ] Pastikan dokumentasi tidak menjanjikan fitur yang belum tersedia.
-- [ ] Pemeriksaan akhir rahasia dan data sensitif.
+- [x] Dokumentasikan cara menjalankan.
+- [x] Dokumentasikan cara menguji.
+- [x] Dokumentasikan cara membangun.
+- [x] Pastikan dokumentasi tidak menjanjikan fitur yang belum tersedia.
+- [x] Pemeriksaan akhir rahasia dan data sensitif pada sumber kode dan dokumentasi yang dapat dicari.
 
 ### 0.9 Gerbang `0.1.0`
 **Issue:** #9 dan #10
 - [ ] Seluruh butir Fase 0 selesai.
-- [ ] Seluruh pengujian lulus.
-- [ ] CI hijau.
-- [ ] Ukuran artefak terukur dan memenuhi batas.
-- [ ] Pemeriksaan keamanan akhir lulus.
+- [x] Seluruh pengujian otomatis lulus pada CI terakhir.
+- [x] CI hijau.
+- [x] Ukuran artefak terukur dan memenuhi batas.
+- [ ] Pemeriksaan keamanan akhir lulus setelah seluruh perubahan Fase 0 digabung.
 - [ ] CHANGELOG mencatat `0.1.0`.
 - [ ] Nomor versi aplikasi/artefak ditetapkan bila berlaku.
 - [ ] Buat tag `v0.1.0`.
