@@ -58,35 +58,6 @@ Skema internal **bukan salinan skema Open Notebook**. Kompatibilitas dijaga pada
 
 Pola ini mengikuti praktik Open Notebook yang menggunakan migrasi berurutan dan tidak menggabungkan ulang migrasi lama setelah masuk ke cabang utama.
 
-
-## Authorization dan ACL
-
-Authorization menggunakan ACL sebagai fondasi. Pola awal adalah User/Group → ACL → Resource.
-
-### acl
-
-Tabel acl menyimpan izin yang benar-benar diberikan pada sumber daya.
-
-Kolom konseptual:
-
-- resource_id — identitas sumber daya yang dilindungi.
-- subject_type — jenis subjek, minimal user atau group.
-- subject_id — identitas pengguna atau grup.
-- permission — pengenal izin terstandar, misalnya note.read atau notebook.write.
-- effect — hasil aturan, dengan dukungan allow/deny bila kebutuhan evaluasi sudah ditetapkan.
-
-Indeks awal yang direncanakan:
-
-- (resource_id, subject_type, subject_id) untuk lookup ACL berdasarkan sumber daya dan subjek.
-- (resource_id, permission) untuk evaluasi izin pada sumber daya.
-- (subject_type, subject_id) untuk pencarian ACL milik subjek.
-
-ACL tidak disalin massal ke setiap Note hanya untuk mewariskan izin dari parent resource. Jika inheritance diperlukan, parent resource ditelusuri atau effective permission dihitung secara terukur.
-
-### Batas kompleksitas
-
-Fondasi ini tidak mewajibkan Role, inheritance recursive, Allow/Deny kompleks, ABAC, atau policy engine eksternal. Kemampuan tersebut hanya ditambahkan jika kebutuhan nyata membenarkannya.
-
 ## Authorization dan ACL
 
 Authorization menggunakan ACL sebagai fondasi. Pola awal adalah User/Group → ACL → Resource.
