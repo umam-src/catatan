@@ -3,6 +3,7 @@ package http
 import (
 	"bytes"
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -296,10 +297,10 @@ func validateLength(value string, min, max int, field string) error {
 func (s *Server) notebookExists(r *http.Request, id string) (bool, error) {
 	var exists int
 	err := s.db.QueryRowContext(r.Context(), `SELECT 1 FROM notebooks WHERE id=? LIMIT 1`, id).Scan(&exists)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
 	if err != nil {
-		if errors.Is(err, io.EOF) {
-			return false, nil
-		}
 		return false, err
 	}
 	return exists == 1, nil
@@ -308,10 +309,10 @@ func (s *Server) notebookExists(r *http.Request, id string) (bool, error) {
 func (s *Server) noteExists(r *http.Request, id string) (bool, error) {
 	var exists int
 	err := s.db.QueryRowContext(r.Context(), `SELECT 1 FROM notes WHERE id=? LIMIT 1`, id).Scan(&exists)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
 	if err != nil {
-		if errors.Is(err, io.EOF) {
-			return false, nil
-		}
 		return false, err
 	}
 	return exists == 1, nil
