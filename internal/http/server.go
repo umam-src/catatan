@@ -209,13 +209,24 @@ func (s *Server) createNote(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) deleteNote(w http.ResponseWriter, r *http.Request) {
- id := r.PathValue("id")
- if !validID(id) { http.Error(w, "ID catatan tidak valid", http.StatusBadRequest); return }
- result, err := s.db.ExecContext(r.Context(), `UPDATE notes SET deleted_at=? WHERE id=? AND deleted_at IS NULL`, time.Now().UTC().Format(time.RFC3339Nano), id)
- if err != nil { serverError(w, err); return }
- if affected, _ := result.RowsAffected(); affected == 0 { http.NotFound(w, r); return }
- w.WriteHeader(http.StatusNoContent)
+	id := r.PathValue("id")
+	if !validID(id) {
+		http.Error(w, "ID catatan tidak valid", http.StatusBadRequest)
+		return
+	}
+
+	result, err := s.db.ExecContext(r.Context(), `UPDATE notes SET deleted_at=? WHERE id=? AND deleted_at IS NULL`, time.Now().UTC().Format(time.RFC3339Nano), id)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	if affected, _ := result.RowsAffected(); affected == 0 {
+		http.NotFound(w, r)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
+
 func (s *Server) updateNote(w http.ResponseWriter, r *http.Request) {
 	noteID := r.PathValue("id")
 	if !validID(noteID) {
