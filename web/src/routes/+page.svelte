@@ -119,7 +119,7 @@
 
 
 
-<svelte:head><title>Buku Catatan</title></svelte:head>
+
 
 <div class="app">
   <aside class="sidebar">
