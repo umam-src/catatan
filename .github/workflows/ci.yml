@@ -30,6 +30,7 @@ jobs:
         working-directory: web
         run: |
           npm ci --no-audit --no-fund --prefer-offline
+          npm exec -- svelte-kit sync
           npm run build
           npm run check
       - name: Verifikasi UI tertanam
