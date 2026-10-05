@@ -15,28 +15,24 @@ Buku Catatan adalah aplikasi catatan lokal yang mengutamakan privasi, cepat dibu
 
 Bahasa Indonesia adalah standar utama proyek. Istilah, nama berkas, nama basis data, dan nama kode baru mengikuti [GLOSARIUM](GLOSARIUM.md) agar satu konsep tidak memiliki banyak nama. Nama resmi teknologi dan kontrak eksternal seperti Go, SQLite, SvelteKit, HTTP, JSON, serta nama berkas yang diwajibkan ekosistem tetap dipertahankan.
 
-## Prinsip teknis
+## Prinsip
 
-Buku Catatan menggunakan satu program utama berbasis Go dengan basis data SQLite lokal dan antarmuka SvelteKit yang ditanam ke dalam program. SQLite dipilih untuk menghindari layanan basis data terpisah, sedangkan lapisan penyimpanan dipisahkan dari model domain agar format data dapat berkembang tanpa mengunci fitur masa depan.
+Buku Catatan dirancang sebagai aplikasi lokal yang sederhana. Data disimpan pada perangkat pengguna dan antarmuka menjadi bagian dari program utama, sehingga pengguna tidak perlu menyiapkan layanan tambahan untuk penggunaan dasar.
 
 Struktur konsep mengikuti model **buku → sumber → catatan → percakapan**. Prinsip ini mengambil gagasan yang baik dari Open Notebook, tetapi implementasinya dibuat lebih kecil dan mandiri.
 
 ## Status
 
-Tahap saat ini: **Fase 1 — Catatan teks**.
+Tahap saat ini: **fondasi aplikasi**.
 
-Fitur yang sudah tersedia:
+Fitur awal:
 
 - membuat dan memilih buku;
 - membuat dan mengubah catatan teks;
-- penyimpanan otomatis dengan jeda singkat setelah perubahan berhenti;
-- indikator status penyimpanan;
-- penghapusan catatan secara lunak;
-- catatan baru dapat dibuat tanpa isi awal;
 - penyimpanan lokal;
-- migrasi skema berurutan;
-- API lokal;
-- antarmuka responsif dan tetap dapat digunakan untuk data lokal.
+- migrasi data berurutan;
+- layanan lokal untuk pengembangan berikutnya;
+- antarmuka responsif.
 
 ## Menjalankan dari sumber
 
@@ -45,21 +41,51 @@ Prasyarat:
 - Go 1.23+
 - Node.js 22+
 
+Jalankan aplikasi:
+
 ```bash
 go run ./cmd/buku-catatan
 ```
 
-Untuk membangun antarmuka:
+Untuk memasang dependensi dan membangun antarmuka:
 
 ```bash
 cd web
-npm install
+npm ci
 npm run build
+npm run check
 ```
 
-## Rilis satu berkas
+## Menguji
 
-Program produksi menanam hasil build antarmuka ke dalam berkas eksekusi. Data pengguna berada di luar berkas program sehingga pembaruan program tidak menimpa catatan.
+Pengujian Go mencakup basis data, migrasi, API, autentikasi, session, isolasi data, dan validasi masukan.
+
+```bash
+go test ./...
+go vet ./...
+```
+
+Pemeriksaan antarmuka:
+
+```bash
+cd web
+npm ci
+npm exec -- svelte-kit sync
+npm run build
+npm run check
+```
+
+CI menjalankan pemeriksaan tersebut serta memastikan hasil antarmuka tersedia untuk disematkan ke program utama.
+
+## Membangun program produksi
+
+Dari direktori akar proyek:
+
+```bash
+go build -trimpath -ldflags='-s -w' -o catatan ./cmd/buku-catatan
+```
+
+Program produksi menanam hasil antarmuka ke dalam berkas eksekusi. Data pengguna berada di luar berkas program sehingga pembaruan program tidak menimpa catatan.
 
 ## Ukuran
 
@@ -80,11 +106,11 @@ Ukuran program tidak menghitung basis data pengguna atau model AI.
 - [TODO](TODO.md)
 - [CHANGELOG](CHANGELOG.md)
 - [CONTRIBUTING](CONTRIBUTING.md)
-- [Arsitektur](docs/arsitektur.md)
-- [Skema data](docs/skema-data.md)
-- [Roadmap](docs/roadmap.md)
-- [Keputusan desain](docs/keputusan-desain.md)
+- [Arsitektur](docs/ARSITEKTUR.md)
+- [Skema data](docs/SKEMA-DATA.md)
+- [Roadmap](ROADMAP.md)
+- [Keputusan desain](docs/KEPUTUSAN-DESAIN.md)
 
 ## Lisensi
 
-Belum ditetapkan.
+Proyek ini menggunakan lisensi MIT. Lihat berkas `LICENSE` untuk teks lengkap.

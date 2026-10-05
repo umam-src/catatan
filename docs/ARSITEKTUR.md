@@ -25,12 +25,6 @@ Buku Catatan (satu proses Go)
 
 Logika bisnis berikutnya sebaiknya ditempatkan di paket domain/service, bukan di pengendali HTTP.
 
-## Alur catatan teks
-
-Pengeditan catatan berlangsung lokal di antarmuka. Setelah pengguna berhenti mengetik selama jeda singkat, antarmuka mengirim perubahan ke API. Status penyimpanan ditampilkan sebagai **tersimpan**, **menyimpan**, atau **gagal**.
-
-Penghapusan menggunakan penghapusan lunak. Catatan yang memiliki waktu penghapusan tidak ditampilkan pada daftar aktif dan tidak dapat diubah melalui API catatan aktif. Data tetap berada di basis data agar pemulihan atau pengelolaan riwayat dapat ditambahkan kemudian.
-
 ## Mengapa tidak menyalin Open Notebook
 
 Open Notebook memiliki arsitektur tiga lapis dengan antarmuka, API, dan SurrealDB serta cakupan fitur AI yang jauh lebih luas. Buku Catatan mengambil batas domain dan pola migrasi yang baik, tetapi mempertahankan satu program dan satu basis data lokal agar biaya distribusi tetap rendah.
