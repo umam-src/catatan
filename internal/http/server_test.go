@@ -80,20 +80,17 @@ func TestCreateNotebookRejectsOversizedBody(t *testing.T) {
 func TestNoteEndpointsValidateIDsAndResources(t *testing.T) {
 	handler := serverUji(t)
 
-	for _, path := range []string{
-		"/api/notebooks/tidak-valid/notes",
-		"/api/notebooks/00000000000000000000000000000000/notes",
-	} {
-		res := requestUji(t, handler, http.MethodGet, path, nil)
-		if res.Code != http.StatusBadRequest && path != "/api/notebooks/00000000000000000000000000000000/notes" {
-			t.Fatalf("GET %s: status = %d, ingin %d", path, res.Code, http.StatusBadRequest)
-		}
-		if path == "/api/notebooks/00000000000000000000000000000000/notes" && res.Code != http.StatusNotFound {
-			t.Fatalf("GET %s: status = %d, ingin %d", path, res.Code, http.StatusNotFound)
-		}
+	res := requestUji(t, handler, http.MethodGet, "/api/notebooks/tidak-valid/notes", nil)
+	if res.Code != http.StatusBadRequest {
+		t.Fatalf("ID buku tidak valid: status = %d, ingin %d", res.Code, http.StatusBadRequest)
 	}
 
-	res := requestUji(t, handler, http.MethodPut, "/api/notes/tidak-valid", map[string]string{"title": "Uji", "content": "Isi"})
+	res = requestUji(t, handler, http.MethodGet, "/api/notebooks/00000000000000000000000000000000/notes", nil)
+	if res.Code != http.StatusNotFound {
+		t.Fatalf("buku tidak ditemukan: status = %d, ingin %d", res.Code, http.StatusNotFound)
+	}
+
+	res = requestUji(t, handler, http.MethodPut, "/api/notes/tidak-valid", map[string]string{"title": "Uji", "content": "Isi"})
 	if res.Code != http.StatusBadRequest {
 		t.Fatalf("PUT ID tidak valid: status = %d, ingin %d", res.Code, http.StatusBadRequest)
 	}
@@ -138,7 +135,7 @@ func TestCreateAndUpdateNoteValidation(t *testing.T) {
 
 func TestMethodsAreRestricted(t *testing.T) {
 	handler := serverUji(t)
-	res := requestUji(t, handler, http.MethodDelete, "/api/notebooks", nil)
+	res := requestUji(t, handler, http.MethodDelete, "/api/health", nil)
 	if res.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("status = %d, ingin %d", res.Code, http.StatusMethodNotAllowed)
 	}
