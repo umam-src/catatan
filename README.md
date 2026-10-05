@@ -15,9 +15,9 @@ Buku Catatan adalah aplikasi catatan lokal yang mengutamakan privasi, cepat dibu
 
 Bahasa Indonesia adalah standar utama proyek. Istilah, nama berkas, nama basis data, dan nama kode baru mengikuti [GLOSARIUM](GLOSARIUM.md) agar satu konsep tidak memiliki banyak nama. Nama resmi teknologi dan kontrak eksternal seperti Go, SQLite, SvelteKit, HTTP, JSON, serta nama berkas yang diwajibkan ekosistem tetap dipertahankan.
 
-## Prinsip teknis
+## Prinsip
 
-Buku Catatan menggunakan satu program utama berbasis Go dengan basis data SQLite lokal dan antarmuka SvelteKit yang ditanam ke dalam program. SQLite dipilih untuk menghindari layanan basis data terpisah, sedangkan lapisan penyimpanan dipisahkan dari model domain agar format data dapat berkembang tanpa mengunci fitur masa depan.
+Buku Catatan dirancang sebagai aplikasi lokal yang sederhana. Data disimpan pada perangkat pengguna dan antarmuka menjadi bagian dari program utama, sehingga pengguna tidak perlu menyiapkan layanan tambahan untuk penggunaan dasar.
 
 Struktur konsep mengikuti model **buku → sumber → catatan → percakapan**. Prinsip ini mengambil gagasan yang baik dari Open Notebook, tetapi implementasinya dibuat lebih kecil dan mandiri.
 
@@ -30,8 +30,8 @@ Fitur awal:
 - membuat dan memilih buku;
 - membuat dan mengubah catatan teks;
 - penyimpanan lokal;
-- migrasi skema berurutan;
-- API lokal sebagai kontrak pengembangan berikutnya;
+- migrasi data berurutan;
+- layanan lokal untuk pengembangan berikutnya;
 - antarmuka responsif.
 
 ## Menjalankan dari sumber
@@ -49,13 +49,13 @@ Untuk membangun antarmuka:
 
 ```bash
 cd web
-npm install
+npm ci
 npm run build
 ```
 
 ## Rilis satu berkas
 
-Program produksi menanam hasil build antarmuka ke dalam berkas eksekusi. Data pengguna berada di luar berkas program sehingga pembaruan program tidak menimpa catatan.
+Program produksi menanam hasil antarmuka ke dalam berkas eksekusi. Data pengguna berada di luar berkas program sehingga pembaruan program tidak menimpa catatan.
 
 ## Ukuran
 
@@ -76,10 +76,10 @@ Ukuran program tidak menghitung basis data pengguna atau model AI.
 - [TODO](TODO.md)
 - [CHANGELOG](CHANGELOG.md)
 - [CONTRIBUTING](CONTRIBUTING.md)
-- [Arsitektur](docs/arsitektur.md)
-- [Skema data](docs/skema-data.md)
-- [Roadmap](docs/roadmap.md)
-- [Keputusan desain](docs/keputusan-desain.md)
+- [Arsitektur](docs/ARSITEKTUR.md)
+- [Skema data](docs/SKEMA-DATA.md)
+- [Roadmap](ROADMAP.md)
+- [Keputusan desain](docs/KEPUTUSAN-DESAIN.md)
 
 ## Lisensi
 
