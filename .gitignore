@@ -1,0 +1,19 @@
+# Hasil build
+/internal/ui/dist/*
+!/internal/ui/dist/index.html
+/web/node_modules/
+
+# Data lokal
+*.db
+*.db-shm
+*.db-wal
+/data/
+
+# Berkas sistem
+.DS_Store
+Thumbs.db
+
+# Rahasia lokal
+.env
+.env.*
+!.env.example
