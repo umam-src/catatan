@@ -123,7 +123,12 @@ func (s *Server) listNotes(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "ID buku tidak valid", http.StatusBadRequest)
 		return
 	}
-	if !s.notebookExists(r, notebookID) {
+	exists, err := s.notebookExists(r, notebookID)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	if !exists {
 		http.NotFound(w, r)
 		return
 	}
@@ -157,7 +162,12 @@ func (s *Server) createNote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "ID buku tidak valid", http.StatusBadRequest)
 		return
 	}
-	if !s.notebookExists(r, notebookID) {
+	exists, err := s.notebookExists(r, notebookID)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	if !exists {
 		http.NotFound(w, r)
 		return
 	}
@@ -181,7 +191,7 @@ func (s *Server) createNote(w http.ResponseWriter, r *http.Request) {
 
 	id := newID()
 	now := time.Now().UTC().Format(time.RFC3339Nano)
-	_, err := s.db.ExecContext(r.Context(), `INSERT INTO notes(id,notebook_id,title,content,created_at,updated_at) VALUES(?,?,?,?,?,?)`, id, notebookID, in.Title, in.Content, now, now)
+	_, err = s.db.ExecContext(r.Context(), `INSERT INTO notes(id,notebook_id,title,content,created_at,updated_at) VALUES(?,?,?,?,?,?)`, id, notebookID, in.Title, in.Content, now, now)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -195,7 +205,12 @@ func (s *Server) updateNote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "ID catatan tidak valid", http.StatusBadRequest)
 		return
 	}
-	if !s.noteExists(r, noteID) {
+	exists, err := s.noteExists(r, noteID)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	if !exists {
 		http.NotFound(w, r)
 		return
 	}
@@ -218,7 +233,7 @@ func (s *Server) updateNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	now := time.Now().UTC().Format(time.RFC3339Nano)
-	_, err := s.db.ExecContext(r.Context(), `UPDATE notes SET title=?,content=?,updated_at=? WHERE id=?`, in.Title, in.Content, now, noteID)
+	_, err = s.db.ExecContext(r.Context(), `UPDATE notes SET title=?,content=?,updated_at=? WHERE id=?`, in.Title, in.Content, now, noteID)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -278,16 +293,28 @@ func validateLength(value string, min, max int, field string) error {
 	return nil
 }
 
-func (s *Server) notebookExists(r *http.Request, id string) bool {
+func (s *Server) notebookExists(r *http.Request, id string) (bool, error) {
 	var exists int
 	err := s.db.QueryRowContext(r.Context(), `SELECT 1 FROM notebooks WHERE id=? LIMIT 1`, id).Scan(&exists)
-	return err == nil && exists == 1
+	if err != nil {
+		if errors.Is(err, io.EOF) {
+			return false, nil
+		}
+		return false, err
+	}
+	return exists == 1, nil
 }
 
-func (s *Server) noteExists(r *http.Request, id string) bool {
+func (s *Server) noteExists(r *http.Request, id string) (bool, error) {
 	var exists int
 	err := s.db.QueryRowContext(r.Context(), `SELECT 1 FROM notes WHERE id=? LIMIT 1`, id).Scan(&exists)
-	return err == nil && exists == 1
+	if err != nil {
+		if errors.Is(err, io.EOF) {
+			return false, nil
+		}
+		return false, err
+	}
+	return exists == 1, nil
 }
 
 func decode(w http.ResponseWriter, r *http.Request, v any) bool {
@@ -300,11 +327,13 @@ func decode(w http.ResponseWriter, r *http.Request, v any) bool {
 	decoder := json.NewDecoder(body)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(v); err != nil {
-		if errors.Is(err, io.EOF) {
-			http.Error(w, "Badan permintaan wajib diisi", http.StatusBadRequest)
-		} else if errors.Is(err, http.ErrBodyReadAfterClose) {
+		var maxBytesErr *http.MaxBytesError
+		switch {
+		case errors.As(err, &maxBytesErr):
 			http.Error(w, "Badan permintaan terlalu besar", http.StatusRequestEntityTooLarge)
-		} else {
+		case errors.Is(err, io.EOF):
+			http.Error(w, "Badan permintaan wajib diisi", http.StatusBadRequest)
+		default:
 			http.Error(w, "JSON tidak valid", http.StatusBadRequest)
 		}
 		return false
