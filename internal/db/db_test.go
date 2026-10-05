@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"path/filepath"
 	"testing"
 )
@@ -171,5 +170,3 @@ func hitungBaris(t *testing.T, d *DB, query string, args ...any) int {
 	}
 	return count
 }
-
-var _ *sql.DB
