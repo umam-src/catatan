@@ -7,11 +7,11 @@ Kode, nama berkas, komentar, dokumentasi, dan pesan commit menggunakan Bahasa In
 ## Prinsip
 
 - Utamakan perbaikan dan optimasi daripada menambah fitur.
-- Jangan merusak data yang sudah ada.
+- Selama sebelum `v1.0.0`, basis data pengembangan boleh dirombak total; kompatibilitas mundur bukan persyaratan.
+- Setelah `v1.0.0`, perubahan basis data harus melalui migrasi yang direncanakan.
 - Hindari dependensi besar untuk kebutuhan kecil.
 - Pisahkan logika bisnis dari HTTP dan antarmuka.
 - Jangan menyimpan rahasia, token, atau data pribadi ke repositori.
-- Setiap perubahan skema harus memiliki migrasi.
 - Setiap perubahan perilaku penting harus memiliki pengujian.
 
 ## Alur kerja
@@ -23,6 +23,21 @@ Kode, nama berkas, komentar, dokumentasi, dan pesan commit menggunakan Bahasa In
 5. Perbarui dokumentasi jika keputusan atau perilaku berubah.
 6. Periksa ukuran hasil build.
 7. Buat commit dengan pesan singkat dan jelas.
+
+## Versi
+
+Gunakan Semantic Versioning dengan kebijakan proyek berikut:
+
+- Penyelesaian satu fase menaikkan **minor**.
+- Perubahan kode yang masih berada dalam fase berjalan menaikkan **patch** jika memang menghasilkan rilis patch.
+- Perubahan dokumentasi saja tidak menaikkan patch.
+- Fase 0 selesai → `0.1.0`.
+- Fase 1 selesai → `0.2.0`.
+- Fase 2 selesai → `0.3.0`.
+- Fase 3 selesai → `0.4.0`.
+- Fase 4 selesai → `0.5.0`.
+- Fase 5 selesai → `0.6.0`.
+- Fase 6 adalah persiapan `1.0.0`, sehingga menjadi kenaikan mayor.
 
 ## Pesan commit
 
@@ -42,4 +57,6 @@ Jenis yang umum: `feat`, `fix`, `docs`, `refactor`, `test`, `build`, `ci`, `perf
 
 ## Perubahan basis data
 
-Jangan mengubah migrasi yang sudah dirilis. Tambahkan nomor migrasi berikutnya. Uji terhadap basis data kosong dan basis data yang telah memiliki data.
+Sebelum `v1.0.0`, migrasi eksperimental boleh diubah, dihapus, atau dibuat ulang jika desain baru lebih baik. Data pengembangan boleh dibangun ulang dari nol.
+
+Setelah `v1.0.0`, skema menjadi kontrak stabil: perubahan harus menggunakan migrasi yang terdokumentasi dan diuji terhadap data yang sudah ada.
