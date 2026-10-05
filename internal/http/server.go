@@ -1,6 +1,7 @@
 package http
 
 import (
+    "bytes"
     "crypto/rand"
     "encoding/hex"
     "encoding/json"
@@ -32,13 +33,11 @@ func New(d *db.DB) http.Handler {
         if strings.HasPrefix(r.URL.Path, "/api/") { http.NotFound(w, r); return }
         p := strings.TrimPrefix(filepath.Clean(r.URL.Path), "/")
         if p != "." && p != "" {
-            f, err := assets.Open(p)
-            if err == nil { f.Close(); fileServer.ServeHTTP(w, r); return }
+            if f, err := assets.Open(p); err == nil { f.Close(); fileServer.ServeHTTP(w, r); return }
         }
-        index, err := assets.Open("index.html")
+        index, err := fs.ReadFile(assets, "index.html")
         if err != nil { http.Error(w, "antarmuka belum dibangun", 500); return }
-        defer index.Close()
-        http.ServeContent(w, r, "index.html", time.Time{}, index.(interface{ Stat() (interface{ Size() int64 }, error) }))
+        http.ServeContent(w, r, "index.html", time.Time{}, bytes.NewReader(index))
     })
     return withHeaders(mux)
 }
@@ -53,11 +52,11 @@ func (s *Server) listNotebooks(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) createNotebook(w http.ResponseWriter, r *http.Request) {
     var in struct { Title string `json:"title"`; Description string `json:"description"` }
-    if !decode(w,r,&in) || strings.TrimSpace(in.Title)=="" { return }
+    if !decode(w,r,&in) { return }; in.Title = strings.TrimSpace(in.Title); if in.Title == "" { http.Error(w,"Judul wajib diisi",400); return }
     now:=time.Now().UTC().Format(time.RFC3339Nano); id:=newID()
-    _,err:=s.db.ExecContext(r.Context(),`INSERT INTO notebooks(id,title,description,created_at,updated_at) VALUES(?,?,?,?,?)`,id,strings.TrimSpace(in.Title),in.Description,now,now)
+    _,err:=s.db.ExecContext(r.Context(),`INSERT INTO notebooks(id,title,description,created_at,updated_at) VALUES(?,?,?,?,?)`,id,in.Title,in.Description,now,now)
     if err!=nil { serverError(w,err); return }
-    writeJSON(w,201,Notebook{ID:id,Title:strings.TrimSpace(in.Title),Description:in.Description,CreatedAt:now,UpdatedAt:now})
+    writeJSON(w,201,Notebook{ID:id,Title:in.Title,Description:in.Description,CreatedAt:now,UpdatedAt:now})
 }
 
 func (s *Server) listNotes(w http.ResponseWriter,r *http.Request){
@@ -80,5 +79,5 @@ type Note struct{ID string `json:"id"`;Title string `json:"title"`;Content strin
 func newID() string{b:=make([]byte,16);_,_=rand.Read(b);return hex.EncodeToString(b)}
 func decode(w http.ResponseWriter,r *http.Request,v any)bool{if err:=json.NewDecoder(r.Body).Decode(v);err!=nil{http.Error(w,"JSON tidak valid",400);return false};return true}
 func writeJSON(w http.ResponseWriter,status int,v any){w.Header().Set("Content-Type","application/json; charset=utf-8");w.WriteHeader(status);_=json.NewEncoder(w).Encode(v)}
-func serverError(w http.ResponseWriter,err error){http.Error(w,"kesalahan internal",500)}
+func serverError(w http.ResponseWriter,_ error){http.Error(w,"kesalahan internal",500)}
 func withHeaders(next http.Handler)http.Handler{return http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){w.Header().Set("X-Content-Type-Options","nosniff");w.Header().Set("Referrer-Policy","no-referrer");next.ServeHTTP(w,r)})}
