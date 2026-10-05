@@ -2,19 +2,93 @@ name: Rilis
 
 on:
   push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
+    branches: [main]
 
 permissions:
   contents: write
 
 jobs:
-  bangun:
+  siapkan:
+    name: Periksa bump versi
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      rilis: ${{ steps.versi.outputs.rilis }}
+      versi: ${{ steps.versi.outputs.versi }}
+    steps:
+      - name: Ambil sumber
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Periksa versi
+        id: versi
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          versi=$(grep -m1 -E '^## \[[0-9]+\.[0-9]+\.[0-9]+\] - ' CHANGELOG.md | sed -E 's/^## \[([^]]+)\].*/\1/')
+          if [ -z "$versi" ]; then
+            echo '::error::CHANGELOG.md tidak memiliki versi rilis yang valid.'
+            exit 1
+          fi
+
+          if git rev-parse 'refs/tags/v*' >/dev/null 2>&1; then
+            tag_terakhir=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n1)
+          else
+            tag_terakhir=''
+          fi
+
+          if [ -z "$tag_terakhir" ]; then
+            versi_terakhir='0.0.0'
+          else
+            versi_terakhir="${tag_terakhir#v}"
+          fi
+
+          if ! printf '%s\n%s\n' "$versi" "$versi_terakhir" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo '::error::Versi CHANGELOG atau tag terakhir tidak mengikuti Semantic Versioning dasar.'
+            exit 1
+          fi
+
+          IFS=. read -r major minor patch <<< "$versi"
+          IFS=. read -r major_lama minor_lama patch_lama <<< "$versi_terakhir"
+
+          if [ "$major" -lt "$major_lama" ] || { [ "$major" -eq "$major_lama" ] && [ "$minor" -lt "$minor_lama" ]; } || { [ "$major" -eq "$major_lama" ] && [ "$minor" -eq "$minor_lama" ] && [ "$patch" -lt "$patch_lama" ]; }; then
+            echo "::error::Versi $versi lebih rendah daripada rilis terakhir $versi_terakhir."
+            exit 1
+          fi
+
+          if [ "$major" -gt "$major_lama" ]; then
+            echo '::error::Rilis mayor otomatis belum diizinkan. Gunakan proses rilis mayor yang disepakati proyek.'
+            exit 1
+          fi
+
+          if [ "$versi" = "$versi_terakhir" ]; then
+            echo 'rilis=false' >> "$GITHUB_OUTPUT"
+            echo "Tidak ada bump versi: $versi"
+            exit 0
+          fi
+
+          if [ "$minor" -lt "$minor_lama" ] || { [ "$minor" -eq "$minor_lama" ] && [ "$patch" -le "$patch_lama" ]; }; then
+            echo '::error::Bump versi harus menaikkan minor atau patch.'
+            exit 1
+          fi
+
+          echo "rilis=true" >> "$GITHUB_OUTPUT"
+          echo "versi=$versi" >> "$GITHUB_OUTPUT"
+          echo "Bump versi terdeteksi: $versi_terakhir → $versi"
+
+  rilis:
+    name: Bangun dan terbitkan rilis
+    needs: siapkan
+    if: needs.siapkan.outputs.rilis == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
       - name: Ambil sumber
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Siapkan Go
         uses: actions/setup-go@v5
@@ -26,32 +100,79 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22.x'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Buat tag rilis
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSI: ${{ needs.siapkan.outputs.versi }}
+        run: |
+          set -euo pipefail
+          tag="v${VERSI}"
+          if git rev-parse "refs/tags/${tag}" >/dev/null 2>&1; then
+            echo "Tag ${tag} sudah ada."
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git tag -a "$tag" -m "Rilis $tag"
+            git push origin "$tag"
+          fi
+
+      - name: Ambil catatan rilis
+        env:
+          VERSI: ${{ needs.siapkan.outputs.versi }}
+        run: |
+          set -euo pipefail
+          awk -v versi="$VERSI" '
+            $0 == "## [" versi "]" || $0 == "## [" versi "] - " substr($0, length("## [" versi "] - ") + 1) { temukan=1; next }
+            temukan && /^## \[/ { exit }
+            temukan { print }
+          ' CHANGELOG.md | sed '/^[[:space:]]*$/N;/^\n$/D' > RELEASE_NOTES.md
+
+          if ! grep -q '[^[:space:]]' RELEASE_NOTES.md; then
+            echo "::error::CHANGELOG.md tidak memiliki catatan untuk versi ${VERSI}."
+            exit 1
+          fi
 
       - name: Bangun UI
         working-directory: web
-        run: npm install --no-audit --no-fund && npm run build
+        run: |
+          npm ci --no-audit --no-fund --prefer-offline
+          npm exec -- svelte-kit sync
+          npm run build
 
       - name: Bangun program
         run: go build -trimpath -ldflags='-s -w' -o catatan ./cmd/buku-catatan
 
       - name: Periksa ukuran
         run: |
-          gzip -9 -c catatan > catatan.gz
-          bytes=$(stat -c%s catatan.gz)
-          echo "Ukuran gzip: $bytes bytes"
-          test "$bytes" -lt 52428800
-          if [ "$bytes" -ge 31457280 ]; then
-            echo '::warning::Ukuran gzip melewati 30 MiB.'
+          set -euo pipefail
+          raw_bytes=$(stat -c%s catatan)
+          echo "Ukuran biner: $raw_bytes bytes"
+          test "$raw_bytes" -lt 52428800
+          if [ "$raw_bytes" -ge 31457280 ]; then
+            echo '::warning::Ukuran biner melewati 30 MiB.'
           fi
 
       - name: Buat arsip rilis
-        run: tar -czf catatan-${GITHUB_REF_NAME}.tar.gz catatan
+        env:
+          VERSI: ${{ needs.siapkan.outputs.versi }}
+        run: |
+          set -euo pipefail
+          arsip="catatan-v${VERSI}.tar.gz"
+          tar -czf "$arsip" catatan
+          sha256sum "$arsip" > "$arsip.sha256"
 
       - name: Buat GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSI: ${{ needs.siapkan.outputs.versi }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" \
-            "catatan-${GITHUB_REF_NAME}.tar.gz" \
-            --generate-notes \
-            --title "${GITHUB_REF_NAME}"
+          set -euo pipefail
+          tag="v${VERSI}"
+          gh release create "$tag" \
+            "catatan-v${VERSI}.tar.gz" \
+            "catatan-v${VERSI}.tar.gz.sha256" \
+            --title "$tag" \
+            --notes-file RELEASE_NOTES.md
