@@ -23,6 +23,8 @@ Bahan mentah yang nantinya dapat berupa teks, URL, dokumen, atau jenis lain. Tah
 
 Hasil catatan pengguna atau keluaran AI. `note_type` membedakan asal tanpa membuat tabel terpisah.
 
+Catatan aktif tidak memiliki nilai pada `deleted_at`. Saat dihapus, kolom tersebut diisi dengan waktu penghapusan. Daftar catatan aktif hanya membaca baris dengan `deleted_at IS NULL`.
+
 ### conversations
 
 Ruang percakapan yang terikat pada satu buku. Disiapkan sekarang agar penambahan chat tidak membutuhkan migrasi besar.
@@ -42,5 +44,7 @@ Skema internal **bukan salinan skema Open Notebook**. Kompatibilitas dijaga pada
 - Perubahan destruktif harus menyediakan jalur pemulihan atau ekspor.
 - Uji migrasi terhadap basis data yang sudah berisi data.
 - Cadangan dibuat sebelum migrasi mayor.
+
+Migrasi `002_note_deletion.sql` menambahkan kolom `deleted_at` dan indeks parsial untuk daftar catatan aktif. Migrasi ini mempertahankan data lama karena catatan yang sudah ada tetap aktif hingga pengguna menghapusnya.
 
 Pola ini mengikuti praktik Open Notebook yang menggunakan migrasi berurutan dan tidak menggabungkan ulang migrasi lama setelah masuk ke cabang utama.
