@@ -33,8 +33,8 @@ func TestOpenRunsMigrationAndCreatesDefaultNotebook(t *testing.T) {
 	if err := d.QueryRow(`SELECT MAX(version) FROM schema_migrations`).Scan(&version); err != nil {
 		t.Fatal(err)
 	}
-	if version != 2 {
-		t.Fatalf("versi migrasi = %d, ingin 2", version)
+	if version != 3 {
+		t.Fatalf("versi migrasi = %d, ingin 3", version)
 	}
 
 	if err := d.Close(); err != nil {
@@ -49,8 +49,8 @@ func TestOpenRunsMigrationAndCreatesDefaultNotebook(t *testing.T) {
 	if err := d.QueryRow(`SELECT COUNT(*) FROM schema_migrations`).Scan(&count); err != nil {
 		t.Fatal(err)
 	}
-	if count != 2 {
-		t.Fatalf("jumlah migrasi setelah buka ulang = %d, ingin 2", count)
+	if count != 3 {
+		t.Fatalf("jumlah migrasi setelah buka ulang = %d, ingin 3", count)
 	}
 }
 
@@ -176,4 +176,24 @@ func hitungBaris(t *testing.T, d *DB, query string, args ...any) int {
 		t.Fatal(err)
 	}
 	return count
+}
+
+func TestAuthSchemaAndOwnership(t *testing.T) {
+	d, _ := bukaDBUji(t)
+
+	var userCount int
+	if err := d.QueryRow(`SELECT COUNT(*) FROM users WHERE id='local'`).Scan(&userCount); err != nil {
+		t.Fatal(err)
+	}
+	if userCount != 1 {
+		t.Fatalf("pengguna lokal = %d, ingin 1", userCount)
+	}
+
+	var owner string
+	if err := d.QueryRow(`SELECT owner_id FROM notebooks WHERE id='default'`).Scan(&owner); err != nil {
+		t.Fatal(err)
+	}
+	if owner != "local" {
+		t.Fatalf("pemilik buku awal = %q, ingin local", owner)
+	}
 }

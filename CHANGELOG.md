@@ -13,6 +13,8 @@ Format mengikuti Keep a Changelog dan versi mengikuti Semantic Versioning.
 - Catatan baru dapat dibuat tanpa isi awal.
 - Pengujian API untuk pembuatan catatan kosong dan penghapusan catatan.
 - Pengujian migrasi untuk kolom penghapusan lunak.
+- Identitas pengguna internal, login lokal, session, logout, dan isolasi data pengguna.
+- Hash kata sandi dan pembatasan percobaan login.
 
 - Fondasi aplikasi satu proses berbasis Go.
 - Penyimpanan SQLite lokal dengan migrasi berurutan.

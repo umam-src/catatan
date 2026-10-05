@@ -1,168 +1,76 @@
-# Roadmap Buku Catatan
+# ROADMAP
 
-Roadmap ini menjadi arah pengembangan Buku Catatan sampai rilis `v1.0.0` dan setelahnya.
-
-> **Status proyek:** masih dalam pengembangan. Sampai `v1.0.0`, perubahan besar pada kode, struktur aplikasi, API, dan basis data diperbolehkan tanpa mempertahankan kompatibilitas mundur.
+Roadmap ini menetapkan arah pengembangan Catatan. Rincian pekerjaan berjalan ada di `TODO.md`; pekerjaan yang cukup besar dilacak melalui issue dan implementasinya melalui PR.
 
 ## Prinsip
 
-- Utamakan kestabilan, kualitas kode, dan optimasi daripada menambah fitur sebanyak mungkin.
-- Offline-first: aplikasi dasar harus tetap berguna tanpa layanan awan.
-- Satu program utama dengan antarmuka web yang disematkan.
-- Ukuran rilis normal ditargetkan di bawah 20 MB; 30 MB adalah batas peringatan dan 50 MB adalah batas gagal.
-- Fitur kecerdasan buatan bersifat tambahan, bukan syarat agar aplikasi dasar dapat digunakan.
-- Struktur data harus cukup matang untuk menampung perkembangan fitur tanpa mengunci implementasi pada teknologi tertentu.
-- Dokumentasi diperbarui bersama perubahan penting.
-- Versi minor naik setiap fase selesai; patch hanya naik bila ada perubahan kode yang dirilis; dokumentasi saja tidak menaikkan patch.
+- Stabilitas, kualitas, dan optimasi didahulukan daripada penambahan fitur.
+- Offline-first: penggunaan dasar tidak bergantung pada layanan awan.
+- Satu program utama dengan UI web tertanam.
+- Target ukuran rilis normal <20 MiB; >=30 MiB menjadi peringatan dan >=50 MiB gagal.
+- AI bersifat opsional.
+- Struktur data berkembang bertahap tanpa mengunci proyek pada satu penyedia.
+- Dokumentasi mengikuti perubahan penting.
+- Minor naik setiap fase selesai; patch untuk perubahan kode yang dirilis di dalam fase; dokumentasi saja tidak menaikkan versi.
 
-## Tahap 0 — Fondasi `0.x`
+## Tahap 0 — Fondasi
 
-**Status: berjalan**
+Menyiapkan aplikasi lokal yang stabil, aman, teruji, terdokumentasi, dan siap dirilis sebagai `0.1.0`.
 
-- [x] Struktur proyek Go.
-- [x] SQLite tanpa CGO.
-- [x] Migrasi basis data awal.
-- [x] HTTP server lokal.
-- [x] Antarmuka SvelteKit yang disematkan ke program utama.
-- [x] Buku dan catatan teks dasar.
-- [x] CI dasar untuk pengujian dan pemeriksaan ukuran biner.
-- [x] Dokumentasi dasar proyek.
-- [x] Glosarium istilah Indonesia.
-- [ ] Lisensi MIT.
-- [ ] Uji integrasi API dan basis data yang lebih lengkap.
-- [ ] Validasi masukan dan batas ukuran permintaan.
-- [ ] Penyempurnaan pengalaman pengguna dasar.
+**Status:** berjalan.
 
-### Kebijakan basis data selama `0.x`
+## Tahap 1 — Catatan Teks
 
-Selama belum mencapai `v1.0.0`, basis data **belum dianggap sebagai kontrak stabil**.
+Menyediakan pengalaman mencatat yang solid: editor, penyimpanan otomatis, pencarian lokal, pengelolaan catatan, ekspor, dan pencadangan.
 
-- Skema boleh dirombak total.
-- Tabel dan kolom boleh diganti nama, digabung, dipisah, atau dihapus.
-- Migrasi eksperimental boleh dihapus dan dibuat ulang.
-- Data pengembangan tidak wajib dipertahankan ketika desain baru lebih baik.
-- Tidak perlu membuat lapisan kompatibilitas hanya untuk mempertahankan desain yang masih terbukti kurang baik.
-- Jika diperlukan, basis data dapat dibangun ulang dari nol sebelum `v1.0.0`.
-
-Setelah `v1.0.0`, perubahan basis data harus mengikuti kebijakan migrasi yang lebih konservatif dan terdokumentasi.
-
-## Tahap 1 — Catatan Teks `0.x`
-
-**Tujuan: pengalaman mencatat yang solid sebelum menambah sumber dan AI.**
-
-- [ ] Penyimpanan otomatis dengan debounce.
-- [ ] Indikator status penyimpanan.
-- [ ] Penghapusan catatan.
-- [ ] Pengubahan judul tanpa mengganggu isi.
-- [ ] Pencarian catatan lokal.
-- [ ] Penyortiran dan pengelompokan yang sederhana.
-- [ ] Penanganan kondisi kosong dan kesalahan yang lebih baik.
-- [ ] Pintasan papan ketik dasar.
-- [ ] Dialog aplikasi menggantikan `prompt()`.
-- [ ] Uji perilaku antarmuka utama.
+**Target:** `0.2.0`.
 
 ## Tahap 2 — Sumber
 
-**Tujuan: menjadikan buku sebagai tempat mengumpulkan bahan.**
+Menjadikan buku sebagai tempat mengumpulkan bahan dengan sumber lokal, metadata, impor, kutipan, ekspor, dan pencadangan.
 
-- [ ] Model sumber yang dapat diperluas.
-- [ ] Sumber teks lokal.
-- [ ] Impor berkas yang ringan dan relevan.
-- [ ] Metadata sumber.
-- [ ] Penanda lokasi sumber untuk kutipan.
-- [ ] Cek integritas atau checksum bila diperlukan.
-- [ ] Penghapusan dan pembaruan sumber.
-- [ ] Ekspor data buku.
-- [ ] Cadangan dan pemulihan lokal.
+**Target:** `0.3.0`.
 
-## Tahap 3 — Pencarian dan Kecerdasan Buatan Lokal
+## Tahap 3 — Pencarian dan AI Lokal
 
-**Tujuan: menambah bantuan AI tanpa membuat aplikasi bergantung pada layanan awan.**
+Menambahkan pencarian yang lebih kuat serta AI lokal/eksternal secara opsional melalui kontrak penyedia yang sederhana, tanpa menghilangkan kemampuan penggunaan tanpa AI.
 
-- [ ] Kontrak penyedia model yang sederhana.
-- [ ] Dukungan model lokal melalui server yang kompatibel dengan OpenAI.
-- [ ] Integrasi opsional dengan `llama-server`.
-- [ ] Integrasi opsional dengan Ollama.
-- [ ] Percakapan per buku.
-- [ ] Pemilihan konteks sumber.
-- [ ] Kutipan sumber pada jawaban.
-- [ ] Pencarian semantik bila manfaatnya sudah jelas.
-- [ ] Konfigurasi penyedia tanpa menyimpan rahasia secara sembarangan.
-- [ ] Mode tanpa AI tetap lengkap dan nyaman digunakan.
+**Target:** `0.4.0`.
 
 ## Tahap 4 — Adopsi Konsep Open Notebook
 
-**Tujuan: mengambil fitur yang terbukti berguna tanpa menyalin seluruh arsitektur Open Notebook.**
+Mengadopsi konsep yang terbukti berguna—seperti transformasi, konteks, percakapan, dan beberapa penyedia—tanpa menyalin seluruh arsitektur atau kompleksitas Open Notebook.
 
-- [ ] Transformasi sumber menjadi keluaran terstruktur.
-- [ ] Beberapa jenis transformasi yang dapat diperluas.
-- [ ] Konteks percakapan yang lebih terkontrol.
-- [ ] Beberapa percakapan dalam satu buku.
-- [ ] Dukungan beberapa penyedia/model.
-- [ ] Import/ekspor konseptual dengan format yang terdokumentasi.
-- [ ] Evaluasi fitur berdasarkan kebutuhan nyata, bukan sekadar kesetaraan fitur.
+**Target:** `0.5.0`.
 
 ## Tahap 5 — Media Tambahan
 
-**Hanya dikerjakan jika kebutuhan dan ukuran aplikasi tetap masuk akal.**
+Menambahkan media hanya jika manfaatnya jelas dan tetap sesuai dengan ukuran, kesederhanaan distribusi, serta prinsip offline-first.
 
-- [ ] Dokumen dengan format tambahan.
-- [ ] Gambar.
-- [ ] Audio.
-- [ ] Video.
-- [ ] Ekstraksi teks atau metadata dari media.
-- [ ] Integrasi multimodal bila manfaatnya jelas.
+**Target:** `0.6.0`.
 
-Fitur media tidak boleh mengorbankan ukuran, kesederhanaan distribusi, atau pengalaman offline-first tanpa alasan yang kuat.
+## Tahap 6 — Menuju 1.0.0
 
-## Tahap 6 — Menuju `v1.0.0`
+Membekukan API, skema data, format pertukaran data, kebijakan migrasi, pengujian, keamanan, performa, dan dokumentasi yang sudah matang.
 
-**Tujuan: membekukan kontrak yang sudah matang.**
+**Target:** `1.0.0`.
 
-- [ ] API inti stabil.
-- [ ] Skema basis data stabil.
-- [ ] Kebijakan migrasi pasca-`v1.0.0` terdokumentasi.
-- [ ] Format ekspor dan impor stabil.
-- [ ] Pengujian unit, integrasi, dan alur utama mencukupi.
-- [ ] Pemeriksaan keamanan dasar.
-- [ ] Tidak ada data sensitif di repositori.
-- [ ] CI efisien dan tidak menjalankan pekerjaan yang tidak perlu.
-- [ ] Ukuran biner memenuhi batas rilis.
-- [ ] README, CONTRIBUTING, CHANGELOG, TODO, dan dokumentasi teknis selaras.
-- [ ] Lisensi dan atribusi proyek lengkap.
-- [ ] Checklist rilis `v1.0.0` selesai.
+## Setelah 1.0.0
 
-## Kebijakan versi per fase
+Prioritas beralih ke:
+1. perbaikan bug dan keamanan;
+2. optimasi kinerja dan ukuran;
+3. migrasi basis data yang terencana;
+4. fitur baru yang memberi manfaat nyata;
+5. pemeliharaan kompatibilitas data dan format publik.
 
-| Fase selesai | Versi target |
-|---|---:|
-| Tahap 0 — Fondasi | `0.1.0` |
-| Tahap 1 — Catatan Teks | `0.2.0` |
-| Tahap 2 — Sumber | `0.3.0` |
-| Tahap 3 — Pencarian dan AI Lokal | `0.4.0` |
-| Tahap 4 — Adopsi Konsep Open Notebook | `0.5.0` |
-| Tahap 5 — Media Tambahan | `0.6.0` |
-| Tahap 6 — Menuju `v1.0.0` | `1.0.0` |
+## Kebijakan kualitas
 
-## Setelah `v1.0.0`
-
-Setelah kontrak `v1.0.0` dibekukan, prioritas bergeser dari eksperimen fondasi menjadi kestabilan:
-
-1. Perbaikan bug dan keamanan.
-2. Optimasi kinerja dan ukuran.
-3. Perubahan basis data melalui migrasi terencana.
-4. Fitur baru hanya jika memberi manfaat nyata.
-5. Kompatibilitas data dan format publik dipertahankan sejauh memungkinkan.
-6. Perubahan yang mematahkan kontrak harus melalui versi mayor atau rencana migrasi yang jelas.
-
-## Kriteria kualitas setiap tahap
-
-Sebuah tahap dianggap siap dilanjutkan jika:
-
-- data tidak rusak pada alur utama;
+Setiap tahap hanya dapat dilanjutkan jika:
+- alur utama tidak merusak data;
 - kesalahan ditangani dengan jelas;
-- tidak ada rahasia atau data sensitif yang masuk ke repositori;
-- aplikasi dasar tetap dapat berjalan secara lokal;
-- perubahan tidak menambah dependensi tanpa alasan yang kuat;
-- ukuran dan waktu CI tetap terkendali;
-- dokumentasi sesuai dengan implementasi aktual.
+- tidak ada rahasia atau data sensitif di repositori;
+- aplikasi dasar tetap dapat digunakan secara lokal;
+- dependensi baru memiliki alasan yang kuat;
+- ukuran dan waktu CI terkendali;
+- dokumentasi sesuai implementasi aktual.

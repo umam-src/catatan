@@ -28,7 +28,12 @@ type Server struct{ db *db.DB }
 
 func New(d *db.DB) http.Handler {
 	s := &Server{db: d}
+	auth := newAuthServer(d)
 	mux := http.NewServeMux()
+	mux.HandleFunc("POST /api/auth/setup", auth.setup)
+	mux.HandleFunc("POST /api/auth/login", auth.login)
+	mux.HandleFunc("POST /api/auth/logout", auth.logout)
+	mux.HandleFunc("GET /api/auth/me", auth.me)
 	mux.HandleFunc("GET /api/notebooks", s.listNotebooks)
 	mux.HandleFunc("POST /api/notebooks", s.createNotebook)
 	mux.HandleFunc("GET /api/notebooks/{id}/notes", s.listNotes)
@@ -68,11 +73,11 @@ func New(d *db.DB) http.Handler {
 		}
 		http.ServeContent(w, r, "index.html", time.Time{}, bytes.NewReader(index))
 	})
-	return withHeaders(mux)
+	return withHeaders(withAuth(auth, mux))
 }
 
 func (s *Server) listNotebooks(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.db.QueryContext(r.Context(), `SELECT id,title,description,archived,created_at,updated_at FROM notebooks WHERE archived=0 ORDER BY updated_at DESC`)
+	rows, err := s.db.QueryContext(r.Context(), `SELECT id,title,description,archived,created_at,updated_at FROM notebooks WHERE archived=0 AND owner_id=? ORDER BY updated_at DESC`, userID(r))
 	if err != nil {
 		serverError(w, err)
 		return
@@ -118,7 +123,7 @@ func (s *Server) createNotebook(w http.ResponseWriter, r *http.Request) {
 
 	now := time.Now().UTC().Format(time.RFC3339Nano)
 	id := newID()
-	_, err := s.db.ExecContext(r.Context(), `INSERT INTO notebooks(id,title,description,created_at,updated_at) VALUES(?,?,?,?,?)`, id, in.Title, in.Description, now, now)
+	_, err := s.db.ExecContext(r.Context(), `INSERT INTO notebooks(id,owner_id,title,description,created_at,updated_at) VALUES(?,?,?,?,?,?)`, id, userID(r), in.Title, in.Description, now, now)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -132,7 +137,7 @@ func (s *Server) listNotes(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "ID buku tidak valid", http.StatusBadRequest)
 		return
 	}
-	exists, err := s.notebookExists(r, notebookID)
+	exists, err := s.notebookOwnedBy(r, notebookID)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -171,7 +176,7 @@ func (s *Server) createNote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "ID buku tidak valid", http.StatusBadRequest)
 		return
 	}
-	exists, err := s.notebookExists(r, notebookID)
+	exists, err := s.notebookOwnedBy(r, notebookID)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -214,8 +219,7 @@ func (s *Server) deleteNote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "ID catatan tidak valid", http.StatusBadRequest)
 		return
 	}
-
-	result, err := s.db.ExecContext(r.Context(), `UPDATE notes SET deleted_at=? WHERE id=? AND deleted_at IS NULL`, time.Now().UTC().Format(time.RFC3339Nano), id)
+	result, err := s.db.ExecContext(r.Context(), `UPDATE notes SET deleted_at=? WHERE id=? AND deleted_at IS NULL AND notebook_id IN (SELECT id FROM notebooks WHERE owner_id=?)`, time.Now().UTC().Format(time.RFC3339Nano), id, userID(r))
 	if err != nil {
 		serverError(w, err)
 		return
@@ -233,7 +237,7 @@ func (s *Server) updateNote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "ID catatan tidak valid", http.StatusBadRequest)
 		return
 	}
-	exists, err := s.noteExists(r, noteID)
+	exists, err := s.noteOwnedBy(r, noteID)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -255,13 +259,13 @@ func (s *Server) updateNote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := validateLength(in.Content, 0, maxNoteContent, "Isi"); err != nil {
+	if err := validateLength(in.Content, 1, maxNoteContent, "Isi"); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	now := time.Now().UTC().Format(time.RFC3339Nano)
-	_, err = s.db.ExecContext(r.Context(), `UPDATE notes SET title=?,content=?,updated_at=? WHERE id=? AND deleted_at IS NULL`, in.Title, in.Content, now, noteID)
+	_, err = s.db.ExecContext(r.Context(), `UPDATE notes SET title=?,content=?,updated_at=? WHERE id=?`, in.Title, in.Content, now, noteID)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -321,9 +325,9 @@ func validateLength(value string, min, max int, field string) error {
 	return nil
 }
 
-func (s *Server) notebookExists(r *http.Request, id string) (bool, error) {
+func (s *Server) notebookOwnedBy(r *http.Request, id string) (bool, error) {
 	var exists int
-	err := s.db.QueryRowContext(r.Context(), `SELECT 1 FROM notebooks WHERE id=? LIMIT 1`, id).Scan(&exists)
+	err := s.db.QueryRowContext(r.Context(), `SELECT 1 FROM notebooks WHERE id=? AND owner_id=? LIMIT 1`, id, userID(r)).Scan(&exists)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, nil
 	}
@@ -333,9 +337,9 @@ func (s *Server) notebookExists(r *http.Request, id string) (bool, error) {
 	return exists == 1, nil
 }
 
-func (s *Server) noteExists(r *http.Request, id string) (bool, error) {
+func (s *Server) noteOwnedBy(r *http.Request, id string) (bool, error) {
 	var exists int
-	err := s.db.QueryRowContext(r.Context(), `SELECT 1 FROM notes WHERE id=? AND deleted_at IS NULL LIMIT 1`, id).Scan(&exists)
+	err := s.db.QueryRowContext(r.Context(), `SELECT 1 FROM notes WHERE id=? AND deleted_at IS NULL AND notebook_id IN (SELECT id FROM notebooks WHERE owner_id=?) LIMIT 1`, id, userID(r)).Scan(&exists)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, nil
 	}
@@ -376,6 +380,10 @@ func decode(w http.ResponseWriter, r *http.Request, v any) bool {
 
 func allowedMethods(path string) string {
 	switch {
+	case path == "/api/auth/setup" || path == "/api/auth/login" || path == "/api/auth/logout":
+		return http.MethodPost
+	case path == "/api/auth/me":
+		return http.MethodGet
 	case path == "/api/health":
 		return http.MethodGet
 	case path == "/api/notebooks":
@@ -383,7 +391,7 @@ func allowedMethods(path string) string {
 	case strings.HasPrefix(path, "/api/notebooks/") && strings.HasSuffix(path, "/notes"):
 		return http.MethodGet + ", " + http.MethodPost
 	case strings.HasPrefix(path, "/api/notes/"):
-		return http.MethodPut + ", " + http.MethodDelete
+		return http.MethodPut
 	default:
 		return ""
 	}

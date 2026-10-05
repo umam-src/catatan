@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"path/filepath"
 	"strings"
+	"time"
 	"testing"
 
 	"github.com/umam-src/buku-catatan/internal/db"
@@ -18,11 +19,26 @@ func serverUji(t *testing.T) http.Handler {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "catatan.db")
 	d, err := db.Open(context.Background(), path)
-	if err != nil {
-		t.Fatal(err)
-	}
+	if err != nil { t.Fatal(err) }
 	t.Cleanup(func() { _ = d.Close() })
-	return New(d)
+
+	handler := New(d)
+	setup := requestUji(t, handler, http.MethodPost, "/api/auth/setup", map[string]string{
+		"username": "pengguna",
+		"email": "pengguna@lokal.invalid",
+		"display_name": "Pengguna Uji",
+		"password": "kata-sandi-uji-aman",
+	})
+	if setup.Code != http.StatusCreated { t.Fatalf("setup pengguna: status = %d, ingin %d", setup.Code, http.StatusCreated) }
+	cookies := setup.Result().Cookies()
+	if len(cookies) != 1 { t.Fatalf("cookie session = %d, ingin 1", len(cookies)) }
+	sessionCookie := cookies[0]
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r = r.Clone(r.Context())
+		r.AddCookie(sessionCookie)
+		handler.ServeHTTP(w, r)
+	})
 }
 
 func requestUji(t *testing.T, handler http.Handler, method, path string, body any) *httptest.ResponseRecorder {
@@ -161,5 +177,127 @@ func TestMethodsAreRestricted(t *testing.T) {
 	res := requestUji(t, handler, http.MethodPatch, "/api/health", nil)
 	if res.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("status = %d, ingin %d", res.Code, http.StatusMethodNotAllowed)
+	}
+}
+
+func TestAuthRequiresSession(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "catatan.db")
+	d, err := db.Open(context.Background(), path)
+	if err != nil { t.Fatal(err) }
+	t.Cleanup(func() { _ = d.Close() })
+	handler := New(d)
+
+	res := requestUji(t, handler, http.MethodGet, "/api/notebooks", nil)
+	if res.Code != http.StatusUnauthorized {
+		t.Fatalf("tanpa session: status = %d, ingin %d", res.Code, http.StatusUnauthorized)
+	}
+}
+
+func TestAuthLoginLogoutAndSessionCookie(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "catatan.db")
+	d, err := db.Open(context.Background(), path)
+	if err != nil { t.Fatal(err) }
+	t.Cleanup(func() { _ = d.Close() })
+	handler := New(d)
+
+	setup := requestUji(t, handler, http.MethodPost, "/api/auth/setup", map[string]string{
+		"username": "pengguna",
+		"password": "kata-sandi-uji-aman",
+	})
+	if setup.Code != http.StatusCreated { t.Fatalf("setup: status = %d", setup.Code) }
+
+	cookies := setup.Result().Cookies()
+	if len(cookies) != 1 || cookies[0].HttpOnly == false || cookies[0].SameSite != http.SameSiteStrictMode {
+		t.Fatal("cookie session tidak memiliki atribut keamanan yang diharapkan")
+	}
+
+	logout := requestDenganCookie(t, handler, http.MethodPost, "/api/auth/logout", nil, cookies[0])
+	if logout.Code != http.StatusNoContent { t.Fatalf("logout: status = %d", logout.Code) }
+
+	login := requestUji(t, handler, http.MethodPost, "/api/auth/login", map[string]string{
+		"username": "pengguna",
+		"password": "kata-sandi-uji-aman",
+	})
+	if login.Code != http.StatusOK { t.Fatalf("login: status = %d", login.Code) }
+	if len(login.Result().Cookies()) != 1 { t.Fatal("login tidak menerbitkan session baru") }
+
+	bad := requestUji(t, handler, http.MethodPost, "/api/auth/login", map[string]string{
+		"username": "pengguna",
+		"password": "salah",
+	})
+	if bad.Code != http.StatusUnauthorized { t.Fatalf("login gagal: status = %d", bad.Code) }
+}
+
+func requestDenganCookie(t *testing.T, handler http.Handler, method, path string, body any, cookie *http.Cookie) *httptest.ResponseRecorder {
+	t.Helper()
+	var reader io.Reader
+	if body != nil {
+		data, err := json.Marshal(body)
+		if err != nil { t.Fatal(err) }
+		reader = bytes.NewReader(data)
+	}
+	req := httptest.NewRequest(method, path, reader)
+	if body != nil { req.Header.Set("Content-Type", "application/json") }
+	req.AddCookie(cookie)
+	res := httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+	return res
+}
+
+func TestSessionExpirationAndUserIsolation(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "catatan.db")
+	d, err := db.Open(context.Background(), path)
+	if err != nil { t.Fatal(err) }
+	t.Cleanup(func() { _ = d.Close() })
+	handler := New(d)
+
+	setup := requestUji(t, handler, http.MethodPost, "/api/auth/setup", map[string]string{
+		"username": "pengguna1",
+		"password": "kata-sandi-uji-aman",
+	})
+	if setup.Code != http.StatusCreated { t.Fatalf("setup: status = %d", setup.Code) }
+	cookie1 := setup.Result().Cookies()[0]
+
+	res := requestDenganCookie(t, handler, http.MethodPost, "/api/notebooks", map[string]string{"title": "Buku pengguna 1"}, cookie1)
+	if res.Code != http.StatusCreated { t.Fatalf("buat buku: status = %d", res.Code) }
+
+	hash, err := hashPassword("kata-sandi-pengguna-2")
+	if err != nil { t.Fatal(err) }
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	if _, err := d.Exec(`INSERT INTO users(id,username,email,display_name,created_at,updated_at) VALUES('user2','pengguna2','','Pengguna 2',?,?)`, now, now); err != nil { t.Fatal(err) }
+	if _, err := d.Exec(`INSERT INTO auth_credentials(user_id,password_hash,updated_at) VALUES('user2',?,?)`, hash, now); err != nil { t.Fatal(err) }
+
+	login := requestUji(t, handler, http.MethodPost, "/api/auth/login", map[string]string{
+		"username": "pengguna2",
+		"password": "kata-sandi-pengguna-2",
+	})
+	if login.Code != http.StatusOK { t.Fatalf("login pengguna 2: status = %d", login.Code) }
+	cookie2 := login.Result().Cookies()[0]
+
+	list := requestDenganCookie(t, handler, http.MethodGet, "/api/notebooks", nil, cookie2)
+	if list.Code != http.StatusOK { t.Fatalf("daftar pengguna 2: status = %d", list.Code) }
+	var notebooks []Notebook
+	if err := json.NewDecoder(list.Body).Decode(&notebooks); err != nil { t.Fatal(err) }
+	if len(notebooks) != 0 { t.Fatalf("isolasi data gagal: pengguna 2 melihat %d buku", len(notebooks)) }
+
+	if _, err := d.Exec(`UPDATE sessions SET expires_at=? WHERE token_hash=?`, time.Now().UTC().Add(-time.Minute).Format(time.RFC3339Nano), tokenHash(cookie1.Value)); err != nil { t.Fatal(err) }
+	expired := requestDenganCookie(t, handler, http.MethodGet, "/api/notebooks", nil, cookie1)
+	if expired.Code != http.StatusUnauthorized { t.Fatalf("session kedaluwarsa: status = %d, ingin %d", expired.Code, http.StatusUnauthorized) }
+}
+
+func TestAuthRejectsCrossOriginSetup(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "catatan.db")
+	d, err := db.Open(context.Background(), path)
+	if err != nil { t.Fatal(err) }
+	t.Cleanup(func() { _ = d.Close() })
+	handler := New(d)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/setup", strings.NewReader(`{"username":"pengguna","password":"kata-sandi-uji-aman"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", "http://situs-lain.invalid")
+	res := httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+	if res.Code != http.StatusForbidden {
+		t.Fatalf("asal lintas situs: status = %d, ingin %d", res.Code, http.StatusForbidden)
 	}
 }

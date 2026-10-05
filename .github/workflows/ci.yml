@@ -18,11 +18,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22.x'
-      - name: Periksa Go
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Periksa dependensi Go
+        run: go mod verify
+      - name: Uji Go
         run: go test ./...
+      - name: Periksa Go
+        run: go vet ./...
       - name: Pasang dan bangun UI
         working-directory: web
-        run: npm install --no-audit --no-fund && npm run build
+        run: npm ci --no-audit --no-fund --prefer-offline || npm ci --no-audit --no-fund --prefer-offline
+          npm run check && npm run build
+      - name: Verifikasi UI tertanam
+        run: test -f internal/ui/dist/index.html && test "$(find internal/ui/dist -type f | wc -l)" -gt 0
       - name: Bangun program
         run: go build -trimpath -ldflags='-s -w' -o buku-catatan ./cmd/buku-catatan
       - name: Periksa ukuran

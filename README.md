@@ -23,20 +23,16 @@ Struktur konsep mengikuti model **buku → sumber → catatan → percakapan**. 
 
 ## Status
 
-Tahap saat ini: **Fase 1 — Catatan teks**.
+Tahap saat ini: **fondasi aplikasi**.
 
-Fitur yang sudah tersedia:
+Fitur awal:
 
 - membuat dan memilih buku;
 - membuat dan mengubah catatan teks;
-- penyimpanan otomatis dengan jeda singkat setelah perubahan berhenti;
-- indikator status penyimpanan;
-- penghapusan catatan secara lunak;
-- catatan baru dapat dibuat tanpa isi awal;
 - penyimpanan lokal;
 - migrasi skema berurutan;
-- API lokal;
-- antarmuka responsif dan tetap dapat digunakan untuk data lokal.
+- API lokal sebagai kontrak pengembangan berikutnya;
+- antarmuka responsif.
 
 ## Menjalankan dari sumber
 
@@ -87,4 +83,4 @@ Ukuran program tidak menghitung basis data pengguna atau model AI.
 
 ## Lisensi
 
-Belum ditetapkan.
+Proyek ini menggunakan lisensi MIT. Lihat berkas `LICENSE` untuk teks lengkap.
