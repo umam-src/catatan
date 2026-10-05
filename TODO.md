@@ -32,6 +32,20 @@
 - [ ] Jangan mencatat isi catatan pengguna ke log.
 - [ ] Tambahkan pemeriksaan dependensi.
 
+## Gerbang rilis minor — blocker fase berikutnya
+
+Setiap perpindahan fase **wajib melewati rilis minor**. Penyelesaian issue fase saja tidak cukup.
+
+- [ ] Tutup seluruh pekerjaan fase saat ini dan verifikasi kriterianya.
+- [ ] Pastikan CI hijau pada perubahan terakhir.
+- [ ] Verifikasi ukuran rilis dan pemeriksaan wajib fase.
+- [ ] Naikkan versi minor untuk hasil fase, misalnya `0.1.0 → 0.2.0`.
+- [ ] Perbarui `CHANGELOG.md` dengan entri versi tersebut.
+- [ ] Buat tag rilis yang sesuai, misalnya `v0.2.0`.
+- [ ] Verifikasi rilis/tag sebelum fase berikutnya dianggap resmi dimulai.
+
+> **Blocker:** jika rilis minor belum ditetapkan dan diverifikasi, fase berikutnya belum boleh dinyatakan selesai atau diterima.
+
 ## Kebijakan versi
 
 - Penyelesaian satu fase menaikkan versi minor.
