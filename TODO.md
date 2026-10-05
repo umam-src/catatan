@@ -1,15 +1,19 @@
 # TODO
 
-## Wajib sebelum rilis awal
+## Fase 1 — Catatan teks
 
 - [ ] Perbaiki alur UI agar tidak memuat ulang daftar catatan berlebihan.
-- [ ] Tambahkan debounce penyimpanan otomatis.
-- [ ] Tambahkan pengujian API dan migrasi.
-- [ ] Tambahkan pencarian lokal.
-- [ ] Tambahkan ekspor dan pencadangan dari UI.
+- [ ] Tambahkan pintasan papan ketik untuk pengeditan.
+- [ ] Tambahkan pencarian lokal cepat.
+- [ ] Tambahkan riwayat perubahan sederhana.
+- [ ] Tambahkan ekspor Markdown dan JSON.
+
+## Wajib sebelum rilis awal
+
 - [ ] Bangun UI produksi dan verifikasi satu berkas.
 - [ ] Ukur ukuran gzip dan ukuran arsip rilis.
 - [ ] Tambahkan pemeriksaan bahwa data lama dapat dibuka setelah pembaruan.
+- [ ] Tambahkan pencadangan dan ekspor dari UI.
 - [ ] Tetapkan lisensi.
 
 ## Optimasi
