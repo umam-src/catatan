@@ -23,16 +23,20 @@ Struktur konsep mengikuti model **buku → sumber → catatan → percakapan**. 
 
 ## Status
 
-Tahap saat ini: **fondasi aplikasi**.
+Tahap saat ini: **Fase 1 — Catatan teks**.
 
-Fitur awal:
+Fitur yang sudah tersedia:
 
 - membuat dan memilih buku;
 - membuat dan mengubah catatan teks;
+- penyimpanan otomatis dengan jeda singkat setelah perubahan berhenti;
+- indikator status penyimpanan;
+- penghapusan catatan secara lunak;
+- catatan baru dapat dibuat tanpa isi awal;
 - penyimpanan lokal;
 - migrasi skema berurutan;
-- API lokal sebagai kontrak pengembangan berikutnya;
-- antarmuka responsif.
+- API lokal;
+- antarmuka responsif dan tetap dapat digunakan untuk data lokal.
 
 ## Menjalankan dari sumber
 
