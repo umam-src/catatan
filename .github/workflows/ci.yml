@@ -36,16 +36,16 @@ jobs:
       - name: Verifikasi UI tertanam
         run: test -f internal/ui/dist/index.html && test "$(find internal/ui/dist -type f | wc -l)" -gt 0
       - name: Bangun program
-        run: go build -trimpath -ldflags='-s -w' -o buku-catatan ./cmd/buku-catatan
+        run: go build -trimpath -ldflags='-s -w' -o catatan ./cmd/buku-catatan
       - name: Periksa ukuran
         run: |
-          raw_bytes=$(stat -c%s buku-catatan)
+          raw_bytes=$(stat -c%s catatan)
           echo "Ukuran biner: $raw_bytes bytes"
           test "$raw_bytes" -lt 52428800
           if [ "$raw_bytes" -ge 31457280 ]; then echo '::warning::Ukuran biner melewati 30 MiB.'; fi
 
-          gzip -9 -c buku-catatan > buku-catatan.gz
-          gzip_bytes=$(stat -c%s buku-catatan.gz)
+          gzip -9 -c catatan > catatan.gz
+          gzip_bytes=$(stat -c%s catatan.gz)
           echo "Ukuran gzip: $gzip_bytes bytes"
           test "$gzip_bytes" -lt 52428800
           if [ "$gzip_bytes" -ge 31457280 ]; then echo '::warning::Ukuran gzip melewati 30 MiB.'; fi
