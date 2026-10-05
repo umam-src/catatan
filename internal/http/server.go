@@ -34,6 +34,7 @@ func New(d *db.DB) http.Handler {
 	mux.HandleFunc("GET /api/notebooks/{id}/notes", s.listNotes)
 	mux.HandleFunc("POST /api/notebooks/{id}/notes", s.createNote)
 	mux.HandleFunc("PUT /api/notes/{id}", s.updateNote)
+	mux.HandleFunc("DELETE /api/notes/{id}", s.deleteNote)
 	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
@@ -141,7 +142,7 @@ func (s *Server) listNotes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := s.db.QueryContext(r.Context(), `SELECT id,title,content,note_type,created_at,updated_at FROM notes WHERE notebook_id=? ORDER BY updated_at DESC`, notebookID)
+	rows, err := s.db.QueryContext(r.Context(), `SELECT id,title,content,note_type,created_at,updated_at FROM notes WHERE notebook_id=? AND deleted_at IS NULL ORDER BY updated_at DESC`, notebookID)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -192,7 +193,7 @@ func (s *Server) createNote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := validateLength(in.Content, 1, maxNoteContent, "Isi"); err != nil {
+	if err := validateLength(in.Content, 0, maxNoteContent, "Isi"); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -207,6 +208,14 @@ func (s *Server) createNote(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, Note{ID: id, Title: in.Title, Content: in.Content, NoteType: "human", CreatedAt: now, UpdatedAt: now})
 }
 
+func (s *Server) deleteNote(w http.ResponseWriter, r *http.Request) {
+ id := r.PathValue("id")
+ if !validID(id) { http.Error(w, "ID catatan tidak valid", http.StatusBadRequest); return }
+ result, err := s.db.ExecContext(r.Context(), `UPDATE notes SET deleted_at=? WHERE id=? AND deleted_at IS NULL`, time.Now().UTC().Format(time.RFC3339Nano), id)
+ if err != nil { serverError(w, err); return }
+ if affected, _ := result.RowsAffected(); affected == 0 { http.NotFound(w, r); return }
+ w.WriteHeader(http.StatusNoContent)
+}
 func (s *Server) updateNote(w http.ResponseWriter, r *http.Request) {
 	noteID := r.PathValue("id")
 	if !validID(noteID) {
@@ -241,7 +250,7 @@ func (s *Server) updateNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	now := time.Now().UTC().Format(time.RFC3339Nano)
-	_, err = s.db.ExecContext(r.Context(), `UPDATE notes SET title=?,content=?,updated_at=? WHERE id=?`, in.Title, in.Content, now, noteID)
+	_, err = s.db.ExecContext(r.Context(), `UPDATE notes SET title=?,content=?,updated_at=? WHERE id=? AND deleted_at IS NULL`, in.Title, in.Content, now, noteID)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -363,7 +372,7 @@ func allowedMethods(path string) string {
 	case strings.HasPrefix(path, "/api/notebooks/") && strings.HasSuffix(path, "/notes"):
 		return http.MethodGet + ", " + http.MethodPost
 	case strings.HasPrefix(path, "/api/notes/"):
-		return http.MethodPut
+		return http.MethodPut + ", " + http.MethodDelete
 	default:
 		return ""
 	}
