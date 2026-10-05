@@ -62,3 +62,4 @@ CREATE INDEX IF NOT EXISTS idx_conversations_notebook_updated ON conversations(n
 CREATE INDEX IF NOT EXISTS idx_messages_conversation_created ON messages(conversation_id, created_at ASC);
 
 INSERT OR IGNORE INTO metadata(key, value) VALUES ('format', 'buku-catatan/v1');
+INSERT OR IGNORE INTO notebooks(id,title,description,created_at,updated_at) VALUES ('default','Buku pertama','',datetime('now'),datetime('now'));
