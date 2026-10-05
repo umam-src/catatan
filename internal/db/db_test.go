@@ -33,8 +33,8 @@ func TestOpenRunsMigrationAndCreatesDefaultNotebook(t *testing.T) {
 	if err := d.QueryRow(`SELECT MAX(version) FROM schema_migrations`).Scan(&version); err != nil {
 		t.Fatal(err)
 	}
-	if version != 1 {
-		t.Fatalf("versi migrasi = %d, ingin 1", version)
+	if version != 2 {
+		t.Fatalf("versi migrasi = %d, ingin 2", version)
 	}
 
 	if err := d.Close(); err != nil {
@@ -49,8 +49,8 @@ func TestOpenRunsMigrationAndCreatesDefaultNotebook(t *testing.T) {
 	if err := d.QueryRow(`SELECT COUNT(*) FROM schema_migrations`).Scan(&count); err != nil {
 		t.Fatal(err)
 	}
-	if count != 1 {
-		t.Fatalf("jumlah migrasi setelah buka ulang = %d, ingin 1", count)
+	if count != 2 {
+		t.Fatalf("jumlah migrasi setelah buka ulang = %d, ingin 2", count)
 	}
 }
 
@@ -95,6 +95,14 @@ func TestMigrationCreatesRequiredSchema(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNoteSupportsSoftDeletion(t *testing.T) {
+	d, _ := bukaDBUji(t)
+
+	var count int
+	if err := d.QueryRow(`SELECT COUNT(*) FROM pragma_table_info('notes') WHERE name='deleted_at'`).Scan(&count); err != nil { t.Fatal(err) }
+	if count != 1 { t.Fatalf("kolom deleted_at = %d, ingin 1", count) }
 }
 
 func TestDatabasePragmas(t *testing.T) {
