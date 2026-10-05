@@ -7,15 +7,17 @@
 - [x] Migrasi berurutan.
 - [x] UI SvelteKit tertanam.
 - [x] Model buku, sumber, catatan, percakapan, pesan.
-- [ ] Uji otomatis dan pengukuran ukuran rilis.
+- [x] Uji otomatis dasar dan pemeriksaan ukuran melalui CI.
 
 ## Fase 1 — Catatan teks
 
 - [x] Buku.
 - [x] Catatan teks.
+- [x] Penyimpanan otomatis dengan indikator status.
+- [x] Penghapusan catatan secara lunak.
+- [x] Catatan baru tanpa isi awal.
 - [ ] Pengeditan nyaman dengan pintasan papan ketik.
 - [ ] Pencarian lokal cepat.
-- [ ] Penyimpanan otomatis dengan indikator status.
 - [ ] Riwayat perubahan sederhana.
 - [ ] Ekspor Markdown dan JSON.
 
