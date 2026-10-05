@@ -7,40 +7,88 @@
   let selected = '';
   let activeNote: Note | null = null;
   let loading = true;
+  let error = '';
+  let notesRequest = 0;
 
   async function loadNotebooks() {
-    notebooks = await (await fetch('/api/notebooks')).json();
-    if (!selected && notebooks.length) selected = notebooks[0].id;
-    if (selected) await loadNotes();
-    loading = false;
+    loading = true;
+    error = '';
+    try {
+      const response = await fetch('/api/notebooks');
+      if (!response.ok) throw new Error('Gagal memuat buku.');
+      notebooks = await response.json();
+      if (!selected && notebooks.length) selected = notebooks[0].id;
+      if (selected) await loadNotes(selected);
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Gagal memuat data.';
+    } finally {
+      loading = false;
+    }
   }
 
-  async function loadNotes() {
-    notes = await (await fetch(`/api/notebooks/${selected}/notes`)).json();
-    activeNote = notes[0] ?? null;
+  async function loadNotes(notebookID = selected) {
+    if (!notebookID) {
+      notes = [];
+      activeNote = null;
+      return;
+    }
+
+    const request = ++notesRequest;
+    error = '';
+    try {
+      const response = await fetch(`/api/notebooks/${notebookID}/notes`);
+      if (!response.ok) throw new Error('Gagal memuat catatan.');
+      const loaded: Note[] = await response.json();
+      if (request !== notesRequest || notebookID !== selected) return;
+      notes = loaded;
+      activeNote = loaded[0] ?? null;
+    } catch (err) {
+      if (request !== notesRequest) return;
+      notes = [];
+      activeNote = null;
+      error = err instanceof Error ? err.message : 'Gagal memuat catatan.';
+    }
+  }
+
+  async function selectNotebook(id: string) {
+    if (id === selected) return;
+    selected = id;
+    await loadNotes(id);
   }
 
   async function createNotebook() {
     const title = prompt('Nama buku');
     if (!title?.trim()) return;
     const response = await fetch('/api/notebooks', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({title, description:''}) });
+    if (!response.ok) {
+      error = 'Gagal membuat buku.';
+      return;
+    }
     const notebook = await response.json();
-    notebooks = [notebook, ...notebooks]; selected = notebook.id; await loadNotes();
+    notebooks = [notebook, ...notebooks];
+    selected = notebook.id;
+    await loadNotes(notebook.id);
   }
 
   async function createNote() {
     if (!selected) return;
     const response = await fetch(`/api/notebooks/${selected}/notes`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:'Catatan baru', content:''}) });
+    if (!response.ok) {
+      error = 'Gagal membuat catatan.';
+      return;
+    }
     const created: Note = await response.json();
-    activeNote = created; notes = [created, ...notes];
+    activeNote = created;
+    notes = [created, ...notes];
   }
 
   async function saveNote() {
     if (!activeNote) return;
-    await fetch(`/api/notes/${activeNote.id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(activeNote) });
+    const note = activeNote;
+    const response = await fetch(`/api/notes/${note.id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(note) });
+    if (!response.ok) error = 'Gagal menyimpan catatan.';
   }
 
-  $: if (selected && !loading) loadNotes();
   loadNotebooks();
 </script>
 
@@ -52,20 +100,29 @@
     <button class="new" onclick={createNotebook}>＋ Buku baru</button>
     <div class="section-label">BUKU</div>
     {#each notebooks as notebook}
-      <button class:active={selected === notebook.id} class="book" onclick={() => selected = notebook.id}>{notebook.title}</button>
+      <button class:active={selected === notebook.id} class="book" onclick={() => selectNotebook(notebook.id)}>{notebook.title}</button>
     {/each}
   </aside>
 
   <main class="workspace">
     <header><div><div class="eyebrow">RUANG CATATAN</div><h1>{notebooks.find(n => n.id === selected)?.title ?? 'Buku Catatan'}</h1></div><button class="icon" onclick={createNote} title="Catatan baru">＋</button></header>
     <div class="body">
-      <nav class="notes">
-        <div class="notes-title"><span>Catatan</span><button onclick={createNote}>＋</button></div>
-        {#each notes as note}
-          <button class:chosen={activeNote?.id === note.id} class="note" onclick={() => activeNote = note}><strong>{note.title || 'Tanpa judul'}</strong><small>{note.content.slice(0, 72) || 'Belum ada isi'}</small></button>
-        {/each}
+      <nav class="notes" aria-label="Daftar catatan">
+        <div class="notes-title"><span>Catatan</span><button onclick={createNote} title="Catatan baru">＋</button></div>
+        {#if loading}
+          <div class="state">Memuat…</div>
+        {:else if !notes.length}
+          <div class="state">Belum ada catatan.</div>
+        {:else}
+          {#each notes as note}
+            <button class:chosen={activeNote?.id === note.id} class="note" onclick={() => activeNote = note}><strong>{note.title || 'Tanpa judul'}</strong><small>{note.content.slice(0, 72) || 'Belum ada isi'}</small></button>
+          {/each}
+        {/if}
       </nav>
-      <section class="editor">
+      <section class="editor" aria-live="polite">
+        {#if error}
+          <div class="error" role="alert">{error}</div>
+        {/if}
         {#if activeNote}
           <input class="title" bind:value={activeNote.title} onblur={saveNote} aria-label="Judul catatan" />
           <textarea bind:value={activeNote.content} onblur={saveNote} placeholder="Mulai menulis…" aria-label="Isi catatan"></textarea>
@@ -81,6 +138,7 @@
   :global(*) { box-sizing: border-box; }
   :global(body) { margin:0; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background:#f7f8fa; color:#202124; }
   button,input,textarea { font:inherit; }
+  button:focus-visible,input:focus-visible,textarea:focus-visible { outline:2px solid #202124; outline-offset:2px; }
   .app { min-height:100vh; display:grid; grid-template-columns:250px 1fr; }
   .sidebar { padding:24px 16px; background:#f1f3f4; border-right:1px solid #e2e5e8; }
   .brand { display:flex; align-items:center; gap:10px; font-weight:700; margin:0 8px 24px; }
@@ -103,7 +161,9 @@
   .note.chosen { background:#e8eaed; }
   .note strong,.note small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .note small { color:#777; margin-top:4px; }
+  .state { padding:12px 10px; color:#777; font-size:14px; }
   .editor { padding:52px clamp(24px,8vw,120px); background:#fff; overflow:auto; }
+  .error { margin-bottom:20px; padding:10px 12px; border-radius:8px; background:#fce8e6; color:#8a1c13; font-size:14px; }
   .title { width:100%; border:0; outline:0; font-size:32px; font-weight:700; margin-bottom:20px; background:transparent; }
   textarea { width:100%; min-height:65vh; resize:none; border:0; outline:0; line-height:1.8; font-size:16px; background:transparent; }
   .empty { max-width:460px; margin:14vh auto; text-align:center; color:#686c72; }
