@@ -82,7 +82,7 @@ CI menjalankan pemeriksaan tersebut serta memastikan hasil antarmuka tersedia un
 Dari direktori akar proyek:
 
 ```bash
-go build -trimpath -ldflags='-s -w' -o buku-catatan ./cmd/buku-catatan
+go build -trimpath -ldflags='-s -w' -o catatan ./cmd/buku-catatan
 ```
 
 Program produksi menanam hasil antarmuka ke dalam berkas eksekusi. Data pengguna berada di luar berkas program sehingga pembaruan program tidak menimpa catatan.
