@@ -14,3 +14,10 @@ Format mengikuti Keep a Changelog dan versi mengikuti Semantic Versioning.
 - Antarmuka SvelteKit yang disiapkan untuk ditanam ke program.
 - Editor catatan teks dan pengelolaan buku dasar.
 - Dokumentasi arsitektur, skema data, keputusan desain, dan roadmap.
+
+### Kebijakan versi
+
+- Penyelesaian satu fase menaikkan versi minor.
+- Perubahan kode di dalam fase dapat menaikkan versi patch.
+- Perubahan dokumentasi saja tidak menaikkan versi patch.
+- Fase 6 menjadi `v1.0.0` sebagai rilis mayor.
