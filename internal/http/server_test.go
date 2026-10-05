@@ -135,7 +135,7 @@ func TestCreateAndUpdateNoteValidation(t *testing.T) {
 
 func TestMethodsAreRestricted(t *testing.T) {
 	handler := serverUji(t)
-	res := requestUji(t, handler, http.MethodDelete, "/api/health", nil)
+	res := requestUji(t, handler, http.MethodPatch, "/api/health", nil)
 	if res.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("status = %d, ingin %d", res.Code, http.StatusMethodNotAllowed)
 	}
