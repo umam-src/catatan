@@ -133,6 +133,29 @@ func TestCreateAndUpdateNoteValidation(t *testing.T) {
 	}
 }
 
+func TestDeleteNote(t *testing.T) {
+	handler := serverUji(t)
+
+	res := requestUji(t, handler, http.MethodPost, "/api/notebooks", map[string]string{"title": "Buku Uji"})
+	if res.Code != http.StatusCreated { t.Fatalf("buat buku: status = %d", res.Code) }
+	var notebook Notebook
+	if err := json.NewDecoder(res.Body).Decode(&notebook); err != nil { t.Fatal(err) }
+
+	res = requestUji(t, handler, http.MethodPost, "/api/notebooks/"+notebook.ID+"/notes", map[string]string{"title": "Catatan", "content": ""})
+	if res.Code != http.StatusCreated { t.Fatalf("buat catatan kosong: status = %d", res.Code) }
+	var note Note
+	if err := json.NewDecoder(res.Body).Decode(&note); err != nil { t.Fatal(err) }
+
+	res = requestUji(t, handler, http.MethodDelete, "/api/notes/"+note.ID, nil)
+	if res.Code != http.StatusNoContent { t.Fatalf("hapus: status = %d", res.Code) }
+
+	res = requestUji(t, handler, http.MethodGet, "/api/notebooks/"+notebook.ID+"/notes", nil)
+	if res.Code != http.StatusOK { t.Fatalf("daftar setelah hapus: status = %d", res.Code) }
+	var notes []Note
+	if err := json.NewDecoder(res.Body).Decode(&notes); err != nil { t.Fatal(err) }
+	if len(notes) != 0 { t.Fatalf("catatan terhapus masih muncul: %d", len(notes)) }
+}
+
 func TestMethodsAreRestricted(t *testing.T) {
 	handler := serverUji(t)
 	res := requestUji(t, handler, http.MethodPatch, "/api/health", nil)
