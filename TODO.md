@@ -102,7 +102,7 @@
 - [x] Verifikasi modul Go.
 - [x] `go vet ./...`.
 - [x] Build dan pemeriksaan UI tertanam.
-- [x] Pastikan CI hijau pada commit terakhir.
+- [x] CI terakhir pada head sebelum komit dokumentasi ini hijau.
 - [ ] Pisahkan pemeriksaan CI umum dari pekerjaan rilis.
 - [ ] Jalankan build rilis hanya saat diperlukan.
 - [ ] Pastikan bump patch juga memicu build rilis.
