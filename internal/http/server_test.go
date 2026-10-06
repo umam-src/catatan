@@ -224,6 +224,7 @@ func TestSessionExpirationAndUserIsolation(t *testing.T) {
 	if len(notebooks) != 0 { t.Fatalf("buku pengguna 1 bocor ke pengguna 2: %#v", notebooks) }
 	res = requestDenganCookie(t, handler, http.MethodGet, "/api/notebooks", nil, cookie1)
 	if res.Code != http.StatusOK { t.Fatalf("daftar pengguna 1: status = %d", res.Code) }
+	notebooks = nil
 	if err := json.NewDecoder(res.Body).Decode(&notebooks); err != nil { t.Fatal(err) }
 	if len(notebooks) != 1 { t.Fatalf("buku pengguna 1 hilang: %#v", notebooks) }
 	if _, err := d.Exec(`UPDATE sessions SET expires_at=?`, time.Now().UTC().Add(-time.Hour).Format(time.RFC3339Nano)); err != nil { t.Fatal(err) }
