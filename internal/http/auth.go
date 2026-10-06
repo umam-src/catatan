@@ -128,7 +128,7 @@ func (a *authServer) me(w http.ResponseWriter, r *http.Request) {
 
 func withAuth(a *authServer, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/api/health" || r.URL.Path == "/api/auth/setup" || r.URL.Path == "/api/auth/login" || r.URL.Path == "/api/auth/logout" {
+		if !strings.HasPrefix(r.URL.Path, "/api/") || r.URL.Path == "/api/health" || r.URL.Path == "/api/auth/setup" || r.URL.Path == "/api/auth/login" || r.URL.Path == "/api/auth/logout" {
 			next.ServeHTTP(w, r)
 			return
 		}
