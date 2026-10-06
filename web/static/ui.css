@@ -264,7 +264,7 @@ input:focus { border-color: #aaa9a2; }
 }
 .ikon-tombol:hover { background: #eeeeea; color: var(--teks); }
 .versi-navigasi { margin: 8px 5px 0; color: var(--teks-3); font-size: 9px; }
-.tombol-pengaturan-samping { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.tombol-pengaturan-samping { margin-left: auto; }
 .menu-pengguna { position: relative; }
 .pemicu-pengguna {
   min-height: 40px;

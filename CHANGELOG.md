@@ -7,6 +7,7 @@
 - Konfirmasi kata sandi pada formulir pembuatan akun.
 - Menu pengguna di kanan atas yang menampilkan nama pengguna dan menyediakan aksi keluar serta tempat profil.
 - Tombol Pengaturan di bagian bawah kolom buku.
+- Tampilan tombol Pengaturan menggunakan ikon yang serasi dengan tombol Keluar sebelumnya.
 - Dialog pengaturan dengan ukuran yang menyesuaikan layar dan tidak mengikuti panjang isi.
 - Sakelar untuk menampilkan atau menyembunyikan opsi pembuatan akun di halaman masuk, tersimpan pada perangkat.
 

@@ -564,8 +564,8 @@
       </nav>
 
       <div class="akun">
-        <button class="tombol sekunder lebar tombol-pengaturan-samping" type="button" onclick={bukaPengaturan}>
-          <span aria-hidden="true">⚙</span> Pengaturan
+        <button class="ikon-tombol tombol-pengaturan-samping" type="button" title="Pengaturan" aria-label="Pengaturan" onclick={bukaPengaturan}>
+          ⚙
         </button>
       </div>
       {#if versi}<div class="versi-navigasi">v{versi}</div>{/if}
