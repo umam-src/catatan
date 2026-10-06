@@ -175,57 +175,68 @@ func (s *Server) encodeSources(w http.ResponseWriter, encoder *json.Encoder, r *
 	if _, err := w.Write([]byte("[")); err != nil {
 		return err
 	}
-	rows, err := s.db.QueryContext(r.Context(), `SELECT id,title,kind,content,locator,checksum,metadata_json,created_at,updated_at FROM sources WHERE notebook_id=? ORDER BY id ASC`, notebookID)
+	rows, err := s.db.QueryContext(r.Context(), `
+		SELECT s.id,s.title,s.kind,s.content,s.locator,s.checksum,s.metadata_json,s.created_at,s.updated_at,
+		       l.id,l.start_line,l.end_line,l.source_checksum,l.created_at
+		FROM sources s
+		LEFT JOIN source_locations l ON l.source_id=s.id
+		WHERE s.notebook_id=?
+		ORDER BY s.id ASC,l.start_line ASC,l.end_line ASC,l.id ASC`, notebookID)
 	if err != nil {
 		return err
 	}
 	defer rows.Close()
 
 	first := true
+	var current *ExportSource
 	for rows.Next() {
 		var source ExportSource
-		if err := rows.Scan(&source.ID, &source.Title, &source.Kind, &source.Content, &source.Locator, &source.Checksum, &source.Metadata, &source.CreatedAt, &source.UpdatedAt); err != nil {
+		var locationID sql.NullString
+		var startLine, endLine sql.NullInt64
+		var locationChecksum, locationCreatedAt sql.NullString
+		if err := rows.Scan(&source.ID, &source.Title, &source.Kind, &source.Content, &source.Locator, &source.Checksum, &source.Metadata, &source.CreatedAt, &source.UpdatedAt,
+			&locationID, &startLine, &endLine, &locationChecksum, &locationCreatedAt); err != nil {
 			return err
 		}
-		locations, err := s.exportSourceLocations(r, source.ID)
-		if err != nil {
-			return err
+
+		if current == nil || current.ID != source.ID {
+			if current != nil {
+				if !first {
+					if _, err := w.Write([]byte(",")); err != nil {
+						return err
+					}
+				}
+				if err := encoder.Encode(*current); err != nil {
+					return err
+				}
+				first = false
+			}
+			current = &source
 		}
-		source.Locations = locations
+
+		if locationID.Valid {
+			current.Locations = append(current.Locations, ExportLocation{
+				ID:             locationID.String,
+				StartLine:      int(startLine.Int64),
+				EndLine:        int(endLine.Int64),
+				SourceChecksum: locationChecksum.String,
+				CreatedAt:      locationCreatedAt.String,
+			})
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	if current != nil {
 		if !first {
 			if _, err := w.Write([]byte(",")); err != nil {
 				return err
 			}
 		}
-		if err := encoder.Encode(source); err != nil {
+		if err := encoder.Encode(*current); err != nil {
 			return err
 		}
-		first = false
-	}
-	if err := rows.Err(); err != nil {
-		return err
 	}
 	_, err = w.Write([]byte("]"))
 	return err
-}
-
-func (s *Server) exportSourceLocations(r *http.Request, sourceID string) ([]ExportLocation, error) {
-	rows, err := s.db.QueryContext(r.Context(), `SELECT id,start_line,end_line,source_checksum,created_at FROM source_locations WHERE source_id=? ORDER BY start_line ASC,end_line ASC,id ASC`, sourceID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	locations := make([]ExportLocation, 0)
-	for rows.Next() {
-		var location ExportLocation
-		if err := rows.Scan(&location.ID, &location.StartLine, &location.EndLine, &location.SourceChecksum, &location.CreatedAt); err != nil {
-			return nil, err
-		}
-		locations = append(locations, location)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return locations, nil
 }
