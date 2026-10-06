@@ -8,7 +8,6 @@ on:
 
 permissions:
   contents: write
-  workflows: write
 
 jobs:
   siapkan:
@@ -150,21 +149,6 @@ jobs:
           arsip="catatan-v${VERSI}.tar.gz"
           tar -czf "$arsip" catatan
           sha256sum "$arsip" > "$arsip.sha256"
-
-      - name: Buat tag rilis
-        env:
-          VERSI: ${{ needs.siapkan.outputs.versi }}
-        run: |
-          set -euo pipefail
-          tag="v${VERSI}"
-          if git rev-parse "refs/tags/${tag}" >/dev/null 2>&1; then
-            echo "Tag ${tag} sudah ada."
-          else
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git tag -a "$tag" -m "Rilis $tag"
-            git push origin "$tag"
-          fi
 
       - name: Buat GitHub Release
         env:
