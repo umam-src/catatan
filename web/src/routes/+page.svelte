@@ -55,7 +55,32 @@
 
   function sinkronkanMenuKonteks(id: string, event: Event) {
     const details = event.currentTarget;
-    if (details instanceof HTMLDetailsElement) menuKonteksAktif = details.open ? id : '';
+    if (!(details instanceof HTMLDetailsElement)) return;
+    const popup = details.querySelector<HTMLDivElement>('.menu-konteks-daftar');
+    if (details.open) {
+      menuKonteksAktif = id;
+      if (popup && !popup.matches(':popover-open')) {
+        document.querySelectorAll<HTMLDivElement>('.menu-konteks-daftar:popover-open').forEach((menu) => menu.hidePopover());
+        popup.showPopover();
+        const summary = details.querySelector('summary');
+        if (!summary) return;
+        const rect = summary.getBoundingClientRect();
+        const margin = 8;
+        const width = popup.offsetWidth;
+        const height = popup.offsetHeight;
+        const left = Math.max(margin, Math.min(rect.right - width, window.innerWidth - width - margin));
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const preferredTop = spaceBelow >= height + margin
+          ? rect.bottom + 4
+          : rect.top - height - 4;
+        const top = Math.max(margin, Math.min(preferredTop, window.innerHeight - height - margin));
+        popup.style.left = `${left}px`;
+        popup.style.top = `${top}px`;
+      }
+      return;
+    }
+    if (popup?.matches(':popover-open')) popup.hidePopover();
+    if (menuKonteksAktif === id) menuKonteksAktif = '';
   }
 
   function tutupMenuKonteksDiLuar(event: MouseEvent) {
@@ -132,6 +157,7 @@
         try {
           const nilaiDrawer = window.localStorage.getItem(kunciStatusDrawer);
           if (nilaiDrawer === 'true' || nilaiDrawer === 'false') bukuTerbuka = nilaiDrawer === 'true';
+          else if (nilaiDrawer === null && window.matchMedia('(max-width: 760px)').matches) bukuTerbuka = false;
         } catch {
           galat = 'Status daftar buku tidak dapat dibaca pada perangkat ini.';
         }
@@ -139,6 +165,8 @@
           const nilaiDrawerKonteks = window.localStorage.getItem(kunciStatusDrawerKonteks);
           if (nilaiDrawerKonteks === 'true' || nilaiDrawerKonteks === 'false') {
             konteksTerbuka = nilaiDrawerKonteks === 'true';
+          } else if (nilaiDrawerKonteks === null && window.matchMedia('(max-width: 760px)').matches) {
+            konteksTerbuka = false;
           }
         } catch {
           galat = 'Status drawer Artefak tidak dapat dibaca pada perangkat ini.';
@@ -464,14 +492,22 @@
 {#if memuat}
   <main class="layar-status">
     <div class="status-muat">
-      <span class="logo-mark">C</span>
+      <span class="logo-mark">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 6.3C9.8 5 7.2 4.7 4.5 5.4v13c2.7-.7 5.3-.4 7.5.9m0-13c2.2-1.3 4.8-1.6 7.5-.9v13c-2.7-.7-5.3-.4-7.5.9m0-13v13" />
+        </svg>
+      </span>
       <span>Memuat…</span>
     </div>
   </main>
 {:else if !siap}
   <main class="layar-autentikasi">
     <section class="autentikasi">
-      <div class="autentikasi-mark">C</div>
+      <div class="autentikasi-mark">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 6.3C9.8 5 7.2 4.7 4.5 5.4v13c2.7-.7 5.3-.4 7.5.9m0-13c2.2-1.3 4.8-1.6 7.5-.9v13c-2.7-.7-5.3-.4-7.5.9m0-13v13" />
+        </svg>
+      </div>
       <p class="eyebrow">CATATAN</p>
       <h1>{modeMasuk === 'masuk' ? 'Selamat datang kembali.' : 'Mulai di perangkat ini.'}</h1>
       <p class="pengantar">
@@ -562,7 +598,11 @@
         onclick={() => ubahStatusDrawer(false)}
       >‹</button>
       <div class="merek">
-        <span class="logo-mark kecil">C</span>
+        <span class="logo-mark kecil">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 6.3C9.8 5 7.2 4.7 4.5 5.4v13c2.7-.7 5.3-.4 7.5.9m0-13c2.2-1.3 4.8-1.6 7.5-.9v13c-2.7-.7-5.3-.4-7.5.9m0-13v13" />
+          </svg>
+        </span>
         <div>
           <strong>Catatan</strong>
           <span>Ruang kerja pribadi</span>
@@ -574,7 +614,11 @@
       <div class="judul-panel">BUKU</div>
       <nav id="daftar-buku" class="daftar-buku" aria-label="Buku">
         {#each notebooks as notebook}
-          <div class:aktif={notebook.id === notebookID} class="item-buku-bar">
+          <div
+            class:aktif={notebook.id === notebookID}
+            class:menu-terbuka={menuKonteksAktif === `buku:${notebook.id}`}
+            class="item-buku-bar"
+          >
             <button class="item-buku" type="button" onclick={() => pilihBuku(notebook.id)}>
               {notebook.title}
             </button>
@@ -585,7 +629,7 @@
               onclick={(event) => event.stopPropagation()}
             >
               <summary aria-label={"Menu " + notebook.title} title="Menu buku">⋯</summary>
-              <div class="menu-konteks-daftar">
+              <div class="menu-konteks-daftar" popover="manual">
                 <button type="button" onclick={() => ubahBuku(notebook)}>Ubah nama</button>
                 <button type="button" disabled title="Akan tersedia pada pengaturan izin">Izin akses</button>
                 <button class="berbahaya" type="button" onclick={() => hapusBuku(notebook)}>Hapus buku</button>
@@ -612,6 +656,14 @@
       </div>
       {#if versi}<div class="versi-navigasi">v{versi}</div>{/if}
     </aside>
+    {#if bukuTerbuka}
+      <button
+        class="lapisan-drawer-mobile"
+        type="button"
+        aria-label="Tutup daftar buku"
+        onclick={() => ubahStatusDrawer(false)}
+      ></button>
+    {/if}
 
     <main class="ruang-kerja">
       <header class:drawer-tertutup={!bukuTerbuka} class="bar-atas">
@@ -630,6 +682,19 @@
           <p class="eyebrow">BUKU</p>
           <h1>{bukuAktif?.title || 'Belum ada buku'}</h1>
         </div>
+        <button
+          class="tombol-konteks-mobile"
+          type="button"
+          aria-expanded={konteksTerbuka}
+          aria-label={konteksTerbuka ? 'Tutup panel sumber dan artefak' : 'Buka panel sumber dan artefak'}
+          onclick={() => ubahStatusDrawerKonteks(!konteksTerbuka)}
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="16" rx="2" />
+            <path d="M14 4v16" />
+          </svg>
+          <span>{panel === 'artefak' ? 'Artefak' : 'Sumber'}</span>
+        </button>
         <div class="aksi-atas">
           <div class="menu-pengguna">
             <button
@@ -680,7 +745,11 @@
 
             <div class="daftar-catatan">
               {#each notes as note}
-                <div class:aktif={catatanAktif?.id === note.id} class="item-catatan-bar">
+                <div
+                  class:aktif={catatanAktif?.id === note.id}
+                  class:menu-terbuka={menuKonteksAktif === `catatan:${note.id}`}
+                  class="item-catatan-bar"
+                >
                   <button class="item-catatan" type="button" onclick={() => pilihCatatan(note)}>
                     <strong>{note.title || 'Tanpa judul'}</strong>
                     <span>{note.content.trim().slice(0, 76) || 'Belum ada isi'}</span>
@@ -692,7 +761,7 @@
                     onclick={(event) => event.stopPropagation()}
                   >
                     <summary aria-label={"Menu " + (note.title || 'catatan')} title="Menu catatan">⋯</summary>
-                    <div class="menu-konteks-daftar">
+                    <div class="menu-konteks-daftar" popover="manual">
                       <button type="button" onclick={() => ubahCatatan(note)}>Ubah nama</button>
                       <button type="button" disabled title="Akan tersedia pada pengaturan izin">Izin akses</button>
                       <button class="berbahaya" type="button" onclick={() => hapusCatatan(note)}>Hapus catatan</button>
@@ -795,6 +864,14 @@
             {/if}
           </aside>
         </div>
+        {#if konteksTerbuka}
+          <button
+            class="lapisan-konteks-mobile"
+            type="button"
+            aria-label="Tutup panel sumber dan artefak"
+            onclick={() => ubahStatusDrawerKonteks(false)}
+          ></button>
+        {/if}
         {#if !konteksTerbuka}
           <button
             class="tombol-buka-konteks"
@@ -844,6 +921,8 @@
   .identitas-buku { min-width: 0; }
   .item-buku-bar,
   .item-catatan-bar { position: relative; display: flex; align-items: stretch; min-width: 0; }
+  .item-buku-bar.menu-terbuka,
+  .item-catatan-bar.menu-terbuka { z-index: 20; }
   .item-buku-bar .item-buku,
   .item-catatan-bar .item-catatan { flex: 1 1 auto; min-width: 0; }
   .item-buku-bar.aktif .item-buku,
@@ -856,6 +935,7 @@
   .menu-konteks summary:hover,
   .menu-konteks[open] summary { background: var(--permukaan-lembut); color: var(--teks); }
   .menu-konteks-daftar { position: absolute; top: 34px; right: 0; min-width: 155px; padding: 5px; border: 1px solid var(--garis); border-radius: 9px; background: var(--permukaan); box-shadow: 0 8px 24px rgba(24,25,22,.12); z-index: 10; }
+  .menu-konteks-daftar:popover-open { position: fixed; inset: auto; max-width: calc(100vw - 16px); max-height: calc(100dvh - 16px); margin: 0; overflow: auto; z-index: 1000; }
   .menu-konteks-daftar button { display: block; width: 100%; padding: 8px 10px; border: 0; border-radius: 6px; background: transparent; color: var(--teks); text-align: left; cursor: pointer; font: inherit; }
   .menu-konteks-daftar button:hover:not(:disabled) { background: var(--permukaan-lembut); }
   .menu-konteks-daftar button:disabled { color: var(--teks-2); cursor: not-allowed; opacity: .65; }

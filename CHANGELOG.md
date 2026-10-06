@@ -14,10 +14,13 @@
 
 ### Diperbaiki
 
+- Ikon huruf pada merek diganti dengan ikon buku catatan.
 - Judul buku tetap rata kiri saat drawer buku disembunyikan.
 - Versi aplikasi ditampilkan di tengah kolom navigasi.
 - Status drawer buku dipertahankan setelah halaman dimuat ulang.
 - Status drawer Sumber dan Artefak dipertahankan setelah halaman dimuat ulang.
+- Navigasi dan ruang kerja mobile ditata ulang dengan drawer, lembar bawah Sumber/Artefak, dan daftar catatan horizontal.
+- Menu konteks buku dan catatan tampil di atas panel lain, dan ikon merek dipusatkan di dalam latarnya.
 
 ## [0.2.7] - 2026-10-06
 
