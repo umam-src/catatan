@@ -60,6 +60,56 @@ func requestUji(t *testing.T, handler http.Handler, method, path string, body an
 	return res
 }
 
+func TestNoteFlowWorksWithoutNetwork(t *testing.T) {
+	handler := serverUji(t)
+
+	createdBook := requestUji(t, handler, http.MethodPost, "/api/notebooks", map[string]string{"title": "Buku Luring"})
+	if createdBook.Code != http.StatusCreated {
+		t.Fatalf("buat buku: status = %d", createdBook.Code)
+	}
+	var notebook Notebook
+	if err := json.NewDecoder(createdBook.Body).Decode(&notebook); err != nil {
+		t.Fatal(err)
+	}
+
+	createdNote := requestUji(t, handler, http.MethodPost, "/api/notebooks/"+notebook.ID+"/notes", map[string]string{
+		"title": "Catatan Luring",
+		"content": "Isi sebelum luring",
+	})
+	if createdNote.Code != http.StatusCreated {
+		t.Fatalf("buat catatan: status = %d", createdNote.Code)
+	}
+	var note Note
+	if err := json.NewDecoder(createdNote.Body).Decode(&note); err != nil {
+		t.Fatal(err)
+	}
+
+	updated := requestUji(t, handler, http.MethodPut, "/api/notes/"+note.ID, map[string]string{
+		"title": "Catatan Luring Diperbarui",
+		"content": "Isi tetap tersimpan tanpa jaringan",
+	})
+	if updated.Code != http.StatusOK {
+		t.Fatalf("ubah catatan: status = %d", updated.Code)
+	}
+
+	listed := requestUji(t, handler, http.MethodGet, "/api/notebooks/"+notebook.ID+"/notes", nil)
+	if listed.Code != http.StatusOK {
+		t.Fatalf("buka ulang daftar: status = %d", listed.Code)
+	}
+	var notes []Note
+	if err := json.NewDecoder(listed.Body).Decode(&notes); err != nil {
+		t.Fatal(err)
+	}
+	if len(notes) != 1 || notes[0].Content != "Isi tetap tersimpan tanpa jaringan" {
+		t.Fatalf("isi catatan setelah buka ulang = %#v", notes)
+	}
+
+	deleted := requestUji(t, handler, http.MethodDelete, "/api/notes/"+note.ID, nil)
+	if deleted.Code != http.StatusNoContent {
+		t.Fatalf("hapus catatan: status = %d", deleted.Code)
+	}
+}
+
 func TestCreateNotebookRejectsInvalidInput(t *testing.T) {
 	handler := serverUji(t)
 
