@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/umam-src/buku-catatan/internal/db"
-	"github.com/umam-src/buku-catatan/internal/ui"
+	"github.com/umam-src/catatan/internal/db"
+	"github.com/umam-src/catatan/internal/ui"
 )
 
 const (
