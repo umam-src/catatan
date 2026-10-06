@@ -4,6 +4,12 @@ Semua perubahan penting pada proyek ini dicatat di sini.
 
 Format mengikuti Keep a Changelog dan versi mengikuti Semantic Versioning.
 
+## [0.2.2] - 2026-10-06
+
+### Diperbaiki
+
+- Daftar buku kini dapat dilipat dan ditampilkan kembali agar ruang kerja dapat diperluas.
+
 ## [0.2.1] - 2026-10-06
 
 ### Diperbaiki
