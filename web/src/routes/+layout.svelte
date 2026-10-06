@@ -68,7 +68,7 @@
     const label = document.createElement('label');
     label.dataset.konfirmasiKataSandi = 'true';
     label.hidden = true;
-    label.innerHTML = 'Konfirmasi kata sandi';
+    label.textContent = 'Konfirmasi kata sandi';
 
     const input = document.createElement('input');
     input.type = 'password';
@@ -217,7 +217,7 @@
   :global(.tombol-pengaturan) { position: fixed; left: 18px; bottom: 18px; z-index: 30; width: 38px; height: 38px; border: 1px solid var(--garis); border-radius: 10px; background: var(--permukaan); color: var(--teks-2); cursor: pointer; font-size: 18px; box-shadow: 0 3px 14px rgba(24,25,22,.06); }
   :global(.tombol-pengaturan:hover) { background: var(--permukaan-lembut); color: var(--teks); }
   :global(.akun) { padding-bottom: 62px; }
-  :global(.ikon-tombol) { display: none; }
+  :global(.akun .ikon-tombol) { display: none; }
   :global(.aksi-atas .avatar) { visibility: hidden; pointer-events: none; }
   :global(.lapisan-dialog) { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: clamp(14px, 4vw, 40px); background: rgba(20, 21, 18, .34); }
   :global(.dialog-pengaturan) { width: min(560px, 100%); height: min(520px, calc(100vh - 28px)); max-height: calc(100vh - 28px); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--garis); border-radius: 16px; background: var(--permukaan); box-shadow: 0 20px 60px rgba(24,25,22,.2); }
