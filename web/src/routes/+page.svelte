@@ -159,17 +159,17 @@
   }
 
   async function simpanCatatan(nomor: number) {
-    if (!activeNote) return;
+    if (!activeNote || nomor !== nomorSimpan) return;
     const catatan = { ...activeNote };
     try {
       const response = await api('/api/notes/' + catatan.id, { method: 'PUT', body: JSON.stringify({ title: catatan.title, content: catatan.content }) });
-      if (nomor !== nomorSimpan) return;
+      if (nomor !== nomorSimpan || activeNote?.id !== catatan.id) return;
       statusSimpan = 'tersimpan';
       const data = await response.json();
       notes = notes.map((item) => item.id === catatan.id ? { ...item, ...catatan, updated_at: data.updated_at } : item);
       error = '';
     } catch (err) {
-      if (nomor !== nomorSimpan) return;
+      if (nomor !== nomorSimpan || activeNote?.id !== catatan.id) return;
       statusSimpan = 'gagal';
       error = err instanceof Error ? err.message : 'Gagal menyimpan catatan.';
     }
@@ -177,6 +177,7 @@
 
   async function hapusCatatan() {
     if (!activeNote || !window.confirm('Hapus catatan ini?')) return;
+    nomorSimpan++;
     if (timerSimpan) clearTimeout(timerSimpan);
     try {
       await api('/api/notes/' + activeNote.id, { method: 'DELETE' });
