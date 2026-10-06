@@ -24,7 +24,7 @@
   async function api(path: string, init: RequestInit = {}) {
     const headers = new Headers(init.headers);
     if (init.body) headers.set('Content-Type', 'application/json');
-    const response = await fetch(path, { ...init, headers });
+    const response = await fetch(path, { ...init, credentials: 'same-origin', headers });
     if (!response.ok) throw new Error(await response.text() || 'Permintaan gagal.');
     return response;
   }
@@ -32,7 +32,7 @@
   async function mulai() {
     loading = true;
     try {
-      const response = await fetch('/api/auth/me');
+      const response = await fetch('/api/auth/me', { credentials: 'same-origin', cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
         user = data.user;
