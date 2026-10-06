@@ -71,8 +71,9 @@
           const workspace = panel?.closest('.workspace');
           if (!panel || !workspace) return;
 
-          if (!workspace.querySelector('.tombol-buka-konteks')) {
-            const buka = document.createElement('button');
+          let buka = workspace.nextElementSibling;
+          if (!buka?.classList.contains('tombol-buka-konteks')) {
+            buka = document.createElement('button');
             buka.className = 'tombol-buka-konteks';
             buka.type = 'button';
             buka.textContent = '‹';
