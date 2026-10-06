@@ -1,35 +1,75 @@
-# Fondasi antarmuka
+# Desain antarmuka
 
-Dokumen ini mencatat aturan dasar antarmuka yang dipakai selama Fase 2. Tujuannya menjaga tampilan tetap konsisten tanpa memperluas fitur.
+Dokumen ini menjadi acuan dasar untuk antarmuka Catatan yang dibangun ulang dari nol.
 
-## Prinsip
+## Arah visual
 
-- Antarmuka mengikuti rancangan yang telah disetujui; perubahan di luar rancangan harus memiliki alasan yang dapat ditinjau.
-- Alur utama tetap dapat digunakan tanpa jaringan.
-- Pola yang sama menggunakan ukuran, jarak, dan keadaan visual yang sama.
-- Fokus keyboard terlihat jelas.
-- Keadaan kosong, galat, dan penyimpanan ditampilkan dengan bahasa yang singkat dan mudah dipahami.
-- Tampilan kecil tidak menghilangkan alur utama.
-- Tidak menambahkan pustaka antarmuka berat hanya untuk kebutuhan visual.
+Antarmuka dibuat tenang, terang, ringkas, dan berfokus pada pekerjaan. Tidak ada hiasan yang tidak membantu pengguna memahami keadaan atau mengambil tindakan.
 
-## Dasar visual
+Prinsip utama:
+- satu dasar visual untuk seluruh halaman;
+- hierarki teks jelas;
+- tombol utama mudah ditemukan;
+- keadaan kosong dan galat selalu memiliki penjelasan singkat;
+- formulir masuk terpisah dari ruang kerja;
+- tidak ada pustaka antarmuka tambahan;
+- tetap nyaman digunakan tanpa jaringan.
 
-Variabel warna, radius, batas, dan bayangan berada di `web/static/ui.css`. Aset tersebut dimuat sekali dari `web/src/app.html` agar halaman memakai dasar yang sama.
+## Halaman masuk
 
-Komponen halaman yang sudah ada menggunakan dasar ini untuk kartu masuk, tombol utama, bidang masukan, navigasi buku, daftar catatan, editor, keadaan galat, dan tampilan kosong.
+Halaman masuk dan penyiapan akun memakai kartu sederhana di tengah layar. Keduanya berbagi struktur visual yang sama tetapi tidak mencampur fungsi.
+
+Alur:
+1. pengguna masuk jika akun sudah tersedia;
+2. pengguna dapat beralih ke penyiapan akun pada perangkat baru;
+3. setelah berhasil, pengguna langsung masuk ke ruang kerja.
+
+## Ruang kerja
+
+Pada layar lebar, susunan utama adalah:
+
+`N — Catatan | C — Ruang kerja | S/A — Konteks`
+
+### N — Catatan
+
+N berisi buku dan daftar catatan. N adalah daftar pekerjaan utama, bukan sekadar menu.
+
+### C — Ruang kerja
+
+C adalah tempat kerja utama:
+- menulis dan mengedit catatan;
+- membaca sumber yang dipilih;
+- kelak menjadi tempat Chat;
+- kelak menjadi tempat editor artefak.
+
+Tidak dibuat halaman editor terpisah untuk setiap jenis hasil kerja.
+
+### S/A — Konteks
+
+S/A adalah panel konteks yang berganti antara:
+- **Sumber**, untuk memilih, menambah, menghapus, dan membuka sumber;
+- **Artefak**, untuk menampilkan hasil kerja.
+
+Sumber tetap merupakan sumber asli. Isi sumber tidak disalin ke catatan hanya karena dibuka sebagai referensi.
 
 ## Responsif
 
-Pada layar kecil, navigasi buku tetap terlihat di bagian atas dan daftar catatan tetap dapat dibuka. Editor menjadi bagian utama halaman dan tidak memerlukan jaringan tambahan.
+- desktop: N | C | S/A;
+- layar menengah: S/A menjadi panel dari sisi kanan;
+- ponsel: N dan C menjadi alur utama, S/A tetap tersedia sebagai panel.
 
-## Aksesibilitas dasar
+## Keadaan
 
-- Elemen interaktif menggunakan kontrol HTML yang sesuai.
-- Label formulir tetap tersedia.
-- Fokus keyboard tidak disembunyikan.
-- Keadaan galat memakai `role="alert"` pada alur yang sudah memilikinya.
-- Kontras warna dasar dipertahankan untuk teks dan tindakan utama.
+Semua halaman harus memiliki pola yang jelas untuk:
+- memuat;
+- kosong;
+- berhasil;
+- menyimpan;
+- gagal;
+- tindakan yang tidak tersedia.
 
-## Batasan Fase 2
+Pesan menggunakan Bahasa Indonesia yang singkat dan tidak menyalahkan pengguna.
 
-Dokumen ini bukan spesifikasi redesign menyeluruh. Audit pengalaman pengguna, penyederhanaan alur besar, dan penyempurnaan visual lanjutan tetap menjadi pekerjaan Fase 3.
+## Batasan
+
+Pekerjaan ini hanya membangun ulang antarmuka. API dan penyimpanan yang sudah benar dipertahankan. Chat dan Artefak belum menambahkan mesin backend baru.
