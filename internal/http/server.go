@@ -122,7 +122,7 @@ func (s *Server) createNotebook(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) listNotes(w http.ResponseWriter, r *http.Request) {
 	notebookID := r.PathValue("id")
-	if !validID(notebookID) { http.Error(w, "ID buku tidak valid", http.StatusBadRequest); return }
+	if !validNotebookID(notebookID) { http.Error(w, "ID buku tidak valid", http.StatusBadRequest); return }
 	exists, err := s.notebookOwnedBy(r, notebookID)
 	if err != nil { serverError(w, err); return }
 	if !exists { http.NotFound(w, r); return }
@@ -141,7 +141,7 @@ func (s *Server) listNotes(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) createNote(w http.ResponseWriter, r *http.Request) {
 	notebookID := r.PathValue("id")
-	if !validID(notebookID) { http.Error(w, "ID buku tidak valid", http.StatusBadRequest); return }
+	if !validNotebookID(notebookID) { http.Error(w, "ID buku tidak valid", http.StatusBadRequest); return }
 	exists, err := s.notebookOwnedBy(r, notebookID)
 	if err != nil { serverError(w, err); return }
 	if !exists { http.NotFound(w, r); return }
@@ -188,6 +188,7 @@ type Note struct { ID string `json:"id"`; Title string `json:"title"`; Content s
 
 func newID() string { b := make([]byte, 16); if _, err := rand.Read(b); err != nil { panic("sumber acak sistem tidak tersedia") }; return hex.EncodeToString(b) }
 func validID(id string) bool { if len(id) != 32 { return false }; for _, c := range id { if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) { return false } }; return true }
+func validNotebookID(id string) bool { return id == "default" || validID(id) }
 func validateLength(value string, min, max int, field string) error { length := len([]rune(value)); if length < min { if min == 1 { return errors.New(field + " wajib diisi") }; return errors.New(field + " terlalu pendek") }; if length > max { return errors.New(field + " terlalu panjang") }; return nil }
 
 func (s *Server) notebookOwnedBy(r *http.Request, id string) (bool, error) { var exists int; err := s.db.QueryRowContext(r.Context(), `SELECT 1 FROM notebooks WHERE id=? AND owner_id=? LIMIT 1`, id, userID(r)).Scan(&exists); if errors.Is(err, sql.ErrNoRows) { return false, nil }; if err != nil { return false, err }; return exists == 1, nil }
