@@ -47,6 +47,15 @@ func imporSumberUji(t *testing.T, handler http.Handler, notebookID string) Sourc
 	return source
 }
 
+func detailSumberUji(t *testing.T, handler http.Handler, sourceID string) Source {
+	t.Helper()
+	res := requestUji(t, handler, http.MethodGet, "/api/sources/"+sourceID, nil)
+	if res.Code != http.StatusOK { t.Fatalf("detail sumber: status = %d, body = %q", res.Code, res.Body.String()) }
+	var source Source
+	if err := json.NewDecoder(res.Body).Decode(&source); err != nil { t.Fatal(err) }
+	return source
+}
+
 func TestImportSourceStoresContentAndChecksum(t *testing.T) {
 	handler := serverUji(t)
 	notebook := buatBukuUjiSumber(t, handler)
@@ -62,10 +71,7 @@ func TestImportSourceStoresContentAndChecksum(t *testing.T) {
 	var sources []Source
 	if err := json.NewDecoder(listed.Body).Decode(&sources); err != nil { t.Fatal(err) }
 	if len(sources) != 1 || sources[0].ID != source.ID { t.Fatalf("daftar sumber = %#v", sources) }
-	detail := requestUji(t, handler, http.MethodGet, "/api/sources/"+source.ID, nil)
-	if detail.Code != http.StatusOK { t.Fatalf("detail sumber: status = %d", detail.Code) }
-	var loaded Source
-	if err := json.NewDecoder(detail.Body).Decode(&loaded); err != nil { t.Fatal(err) }
+	loaded := detailSumberUji(t, handler, source.ID)
 	if loaded.Content != content || loaded.Checksum != source.Checksum { t.Fatalf("detail sumber = %#v", loaded) }
 }
 
@@ -73,12 +79,13 @@ func TestUpdateSourceChangesOnlyMetadata(t *testing.T) {
 	handler := serverUji(t)
 	notebook := buatBukuUjiSumber(t, handler)
 	source := imporSumberUji(t, handler, notebook.ID)
+	before := detailSumberUji(t, handler, source.ID)
 	res := requestUji(t, handler, http.MethodPut, "/api/sources/"+source.ID, map[string]string{"title": "Judul baru"})
 	if res.Code != http.StatusOK { t.Fatalf("ubah sumber: status = %d, body = %q", res.Code, res.Body.String()) }
 	var updated Source
 	if err := json.NewDecoder(res.Body).Decode(&updated); err != nil { t.Fatal(err) }
-	if updated.Title != "Judul baru" || updated.Content != source.Content || updated.Checksum != source.Checksum || updated.CreatedAt != source.CreatedAt { t.Fatalf("sumber berubah tidak semestinya: %#v", updated) }
-	if updated.UpdatedAt == source.UpdatedAt { t.Fatalf("updated_at tidak berubah: %q", updated.UpdatedAt) }
+	if updated.Title != "Judul baru" || updated.Content != before.Content || updated.Checksum != before.Checksum || updated.Kind != before.Kind || updated.Locator != before.Locator || updated.Metadata != before.Metadata || updated.CreatedAt != before.CreatedAt { t.Fatalf("sumber berubah tidak semestinya: sebelum=%#v sesudah=%#v", before, updated) }
+	if updated.UpdatedAt == before.UpdatedAt { t.Fatalf("updated_at tidak berubah: %q", updated.UpdatedAt) }
 }
 
 func TestUpdateSourceValidatesTitleAndMissingSource(t *testing.T) {
