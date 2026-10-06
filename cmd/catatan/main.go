@@ -12,13 +12,19 @@ import (
 	"syscall"
 
 	"github.com/umam-src/catatan/internal/db"
+	"github.com/umam-src/catatan/internal/version"
 	apphttp "github.com/umam-src/catatan/internal/http"
 )
 
 func main() {
+	versi := flag.Bool("version", false, "tampilkan versi aplikasi")
 	dataDir := flag.String("data", "", "direktori data lokal")
 	addr := flag.String("alamat", "127.0.0.1:8787", "alamat layanan lokal")
 	flag.Parse()
+	if *versi {
+		fmt.Printf("catatan %s\\n", version.Value)
+		return
+	}
 
 	dir := *dataDir
 	if dir == "" {
