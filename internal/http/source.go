@@ -89,6 +89,66 @@ func (s *Server) getSource(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, source)
 }
 
+func (s *Server) updateSource(w http.ResponseWriter, r *http.Request) {
+	sourceID := r.PathValue("id")
+	if !validID(sourceID) {
+		http.Error(w, "ID sumber tidak valid", http.StatusBadRequest)
+		return
+	}
+
+	var in struct {
+		Title string `json:"title"`
+	}
+	if !decode(w, r, &in) {
+		return
+	}
+	in.Title = strings.TrimSpace(in.Title)
+	if err := validateLength(in.Title, 1, maxTitle, "Judul sumber"); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	result, err := s.db.ExecContext(r.Context(), `UPDATE sources SET title=?,updated_at=? WHERE id=? AND notebook_id IN (SELECT id FROM notebooks WHERE owner_id=?)`, in.Title, now, sourceID, userID(r))
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	if affected, _ := result.RowsAffected(); affected == 0 {
+		http.NotFound(w, r)
+		return
+	}
+
+	var source Source
+	err = s.db.QueryRowContext(r.Context(), `SELECT id,title,kind,content,locator,checksum,metadata_json,created_at,updated_at FROM sources WHERE id=? AND notebook_id IN (SELECT id FROM notebooks WHERE owner_id=?)`, sourceID, userID(r)).Scan(
+		&source.ID, &source.Title, &source.Kind, &source.Content, &source.Locator, &source.Checksum, &source.Metadata, &source.CreatedAt, &source.UpdatedAt,
+	)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, source)
+}
+
+func (s *Server) deleteSource(w http.ResponseWriter, r *http.Request) {
+	sourceID := r.PathValue("id")
+	if !validID(sourceID) {
+		http.Error(w, "ID sumber tidak valid", http.StatusBadRequest)
+		return
+	}
+
+	result, err := s.db.ExecContext(r.Context(), `DELETE FROM sources WHERE id=? AND notebook_id IN (SELECT id FROM notebooks WHERE owner_id=?)`, sourceID, userID(r))
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	if affected, _ := result.RowsAffected(); affected == 0 {
+		http.NotFound(w, r)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (s *Server) importSource(w http.ResponseWriter, r *http.Request) {
 	notebookID := r.PathValue("id")
 	if !validID(notebookID) {
