@@ -158,6 +158,7 @@ input:focus { border-color: #aaa9a2; }
   grid-template-columns: 238px minmax(0, 1fr);
 }
 .panel-navigasi {
+  position: relative;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -165,6 +166,28 @@ input:focus { border-color: #aaa9a2; }
   background: var(--permukaan-lembut);
   border-right: 1px solid var(--garis);
 }
+.tombol-lipat-buku,
+.tombol-buka-buku {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--garis);
+  border-radius: 7px;
+  background: var(--permukaan);
+  color: var(--teks-2);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+.tombol-lipat-buku {
+  position: absolute;
+  top: 18px;
+  right: -14px;
+  z-index: 2;
+}
+.tombol-lipat-buku:hover,
+.tombol-buka-buku:hover { background: #eeeeea; color: var(--teks); }
+
 .merek {
   display: flex;
   align-items: center;
@@ -243,6 +266,9 @@ input:focus { border-color: #aaa9a2; }
 .versi-navigasi { margin: 8px 5px 0; color: var(--teks-3); font-size: 9px; }
 
 .ruang-kerja { min-width: 0; background: var(--permukaan); }
+.aplikasi.tanpa-buku { grid-template-columns: minmax(0, 1fr); }
+.panel-navigasi.tersembunyi { display: none; }
+.tombol-buka-buku { flex: 0 0 auto; }
 .bar-atas {
   min-height: 72px;
   padding: 13px 24px;
