@@ -6,6 +6,10 @@ Format mengikuti Keep a Changelog dan versi mengikuti Semantic Versioning.
 
 ## [0.2.0] - 2026-10-06
 
+### Diubah
+
+- Otomasi rilis menerbitkan tag melalui GitHub Release setelah pemeriksaan berhasil.
+
 ### Ditambahkan
 
 - Alur catatan teks lengkap untuk membuat, membuka, mengubah, memilih, menyimpan otomatis, dan menghapus catatan.
