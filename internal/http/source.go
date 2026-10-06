@@ -2,29 +2,30 @@ package http
 
 import (
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
-	"strings"
-	"unicode/utf8"
 	"path/filepath"
+	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 const maxSourceContent = 10 << 20
 
 type Source struct {
-	ID         string `json:"id"`
-	Title      string `json:"title"`
-	Kind       string `json:"kind"`
-	Content    string `json:"content,omitempty"`
-	Locator    string `json:"locator"`
-	Checksum   string `json:"checksum"`
-	Metadata   string `json:"metadata_json"`
-	CreatedAt  string `json:"created_at"`
-	UpdatedAt  string `json:"updated_at"`
+	ID        string `json:"id"`
+	Title     string `json:"title"`
+	Kind      string `json:"kind"`
+	Content   string `json:"content,omitempty"`
+	Locator   string `json:"locator"`
+	Checksum  string `json:"checksum"`
+	Metadata  string `json:"metadata_json"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
 }
 
 func (s *Server) listSources(w http.ResponseWriter, r *http.Request) {
@@ -77,7 +78,7 @@ func (s *Server) getSource(w http.ResponseWriter, r *http.Request) {
 	err := s.db.QueryRowContext(r.Context(), `SELECT id,title,kind,content,locator,checksum,metadata_json,created_at,updated_at FROM sources WHERE id=? AND notebook_id IN (SELECT id FROM notebooks WHERE owner_id=?)`, sourceID, userID(r)).Scan(
 		&source.ID, &source.Title, &source.Kind, &source.Content, &source.Locator, &source.Checksum, &source.Metadata, &source.CreatedAt, &source.UpdatedAt,
 	)
-	if errors.Is(err, sqlErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) {
 		http.NotFound(w, r)
 		return
 	}
@@ -179,5 +180,3 @@ func (s *Server) importSource(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusCreated, source)
 }
-
-var sqlErrNoRows = errors.New("sql: no rows in result set")
