@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"time"
 )
 
 const exportFormatVersion = 1
@@ -28,14 +27,14 @@ type ExportNotebook struct {
 }
 
 type ExportNote struct {
-	ID         string `json:"id"`
-	Title      string `json:"title"`
-	Content    string `json:"content"`
-	NoteType   string `json:"note_type"`
-	Metadata   string `json:"metadata_json"`
-	CreatedAt  string `json:"created_at"`
-	UpdatedAt  string `json:"updated_at"`
-	DeletedAt  string `json:"deleted_at,omitempty"`
+	ID        string `json:"id"`
+	Title     string `json:"title"`
+	Content   string `json:"content"`
+	NoteType  string `json:"note_type"`
+	Metadata  string `json:"metadata_json"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+	DeletedAt string `json:"deleted_at,omitempty"`
 }
 
 type ExportSource struct {
@@ -59,6 +58,8 @@ type ExportLocation struct {
 	CreatedAt      string `json:"created_at"`
 }
 
+var errInvalidSourceIntegrity = errors.New("integritas sumber tidak valid")
+
 func (s *Server) exportNotebook(w http.ResponseWriter, r *http.Request) {
 	notebookID := r.PathValue("id")
 	if !validID(notebookID) {
@@ -81,13 +82,7 @@ func (s *Server) exportNotebook(w http.ResponseWriter, r *http.Request) {
 	}
 	notebook.Archived = archived != 0
 
-	notes, err := s.exportNotes(r, notebookID)
-	if err != nil {
-		serverError(w, err)
-		return
-	}
-	sources, err := s.exportSources(r, notebookID)
-	if err != nil {
+	if err := s.validateExportSources(r, notebookID); err != nil {
 		if errors.Is(err, errInvalidSourceIntegrity) {
 			http.Error(w, "Integritas sumber tidak dapat diverifikasi", http.StatusUnprocessableEntity)
 			return
@@ -99,69 +94,119 @@ func (s *Server) exportNotebook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Content-Disposition", `attachment; filename="catatan-`+notebook.ID+`.json"`)
 	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(ExportDocument{
-		Format:   "catatan-export",
-		Version:  exportFormatVersion,
-		Notebook: notebook,
-		Notes:    notes,
-		Sources:  sources,
-	})
+	encoder := json.NewEncoder(w)
+	if _, err := w.Write([]byte(`{"format":"catatan-export","version":1,"notebook":`)); err != nil {
+		return
+	}
+	if err := encoder.Encode(notebook); err != nil {
+		return
+	}
+	if _, err := w.Write([]byte(`,"notes":`)); err != nil {
+		return
+	}
+	if err := s.encodeNotes(w, encoder, r, notebookID); err != nil {
+		return
+	}
+	if _, err := w.Write([]byte(`,"sources":`)); err != nil {
+		return
+	}
+	if err := s.encodeSources(w, encoder, r, notebookID); err != nil {
+		return
+	}
+	_, _ = w.Write([]byte("}\n"))
 }
 
-var errInvalidSourceIntegrity = errors.New("integritas sumber tidak valid")
+func (s *Server) validateExportSources(r *http.Request, notebookID string) error {
+	rows, err := s.db.QueryContext(r.Context(), `SELECT content,checksum FROM sources WHERE notebook_id=? ORDER BY id ASC`, notebookID)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var content, checksum string
+		if err := rows.Scan(&content, &checksum); err != nil {
+			return err
+		}
+		if !verifySourceIntegrity(Source{Content: content, Checksum: checksum}) {
+			return errInvalidSourceIntegrity
+		}
+	}
+	return rows.Err()
+}
 
-func (s *Server) exportNotes(r *http.Request, notebookID string) ([]ExportNote, error) {
+func (s *Server) encodeNotes(w http.ResponseWriter, encoder *json.Encoder, r *http.Request, notebookID string) error {
+	if _, err := w.Write([]byte("[")); err != nil {
+		return err
+	}
 	rows, err := s.db.QueryContext(r.Context(), `SELECT id,title,content,note_type,metadata_json,created_at,updated_at,deleted_at FROM notes WHERE notebook_id=? ORDER BY id ASC`, notebookID)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer rows.Close()
 
-	notes := make([]ExportNote, 0)
+	first := true
 	for rows.Next() {
 		var note ExportNote
 		var deletedAt sql.NullString
 		if err := rows.Scan(&note.ID, &note.Title, &note.Content, &note.NoteType, &note.Metadata, &note.CreatedAt, &note.UpdatedAt, &deletedAt); err != nil {
-			return nil, err
+			return err
 		}
 		if deletedAt.Valid {
 			note.DeletedAt = deletedAt.String
 		}
-		notes = append(notes, note)
+		if !first {
+			if _, err := w.Write([]byte(",")); err != nil {
+				return err
+			}
+		}
+		if err := encoder.Encode(note); err != nil {
+			return err
+		}
+		first = false
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return err
 	}
-	return notes, nil
+	_, err = w.Write([]byte("]"))
+	return err
 }
 
-func (s *Server) exportSources(r *http.Request, notebookID string) ([]ExportSource, error) {
+func (s *Server) encodeSources(w http.ResponseWriter, encoder *json.Encoder, r *http.Request, notebookID string) error {
+	if _, err := w.Write([]byte("[")); err != nil {
+		return err
+	}
 	rows, err := s.db.QueryContext(r.Context(), `SELECT id,title,kind,content,locator,checksum,metadata_json,created_at,updated_at FROM sources WHERE notebook_id=? ORDER BY id ASC`, notebookID)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer rows.Close()
 
-	sources := make([]ExportSource, 0)
+	first := true
 	for rows.Next() {
 		var source ExportSource
 		if err := rows.Scan(&source.ID, &source.Title, &source.Kind, &source.Content, &source.Locator, &source.Checksum, &source.Metadata, &source.CreatedAt, &source.UpdatedAt); err != nil {
-			return nil, err
-		}
-		if !verifySourceIntegrity(Source{Content: source.Content, Checksum: source.Checksum}) {
-			return nil, errInvalidSourceIntegrity
+			return err
 		}
 		locations, err := s.exportSourceLocations(r, source.ID)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		source.Locations = locations
-		sources = append(sources, source)
+		if !first {
+			if _, err := w.Write([]byte(",")); err != nil {
+				return err
+			}
+		}
+		if err := encoder.Encode(source); err != nil {
+			return err
+		}
+		first = false
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return err
 	}
-	return sources, nil
+	_, err = w.Write([]byte("]"))
+	return err
 }
 
 func (s *Server) exportSourceLocations(r *http.Request, sourceID string) ([]ExportLocation, error) {
@@ -183,8 +228,4 @@ func (s *Server) exportSourceLocations(r *http.Request, sourceID string) ([]Expo
 		return nil, err
 	}
 	return locations, nil
-}
-
-func exportTimestamp(now time.Time) string {
-	return now.UTC().Format(time.RFC3339Nano)
 }
