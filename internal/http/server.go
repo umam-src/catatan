@@ -18,10 +18,10 @@ import (
 )
 
 const (
-	maxRequestBody = 1 << 20
+	maxNoteContent = 1 << 20
+	maxRequestBody = maxNoteContent + 4096
 	maxTitle       = 200
 	maxDescription = 2000
-	maxNoteContent = 1 << 20
 )
 
 type Server struct{ db *db.DB }
