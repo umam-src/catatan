@@ -4,6 +4,13 @@ Semua perubahan penting pada proyek ini dicatat di sini.
 
 Format mengikuti Keep a Changelog dan versi mengikuti Semantic Versioning.
 
+## [0.2.1] - 2026-10-06
+
+### Diperbaiki
+
+- Buku bawaan dengan ID `default` kini diterima oleh endpoint catatan, sumber, ekspor, dan cadangan.
+- Pengujian memastikan buku bawaan dapat diakses tanpa galat `ID buku tidak valid`.
+
 ## [0.2.0] - 2026-10-06
 
 ### Diubah
