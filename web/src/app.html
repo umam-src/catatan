@@ -16,34 +16,6 @@
       }
       .tombol-buka-buku { margin-right: 10px; }
 
-      .workspace.konteks-terlipat { grid-template-columns: 248px minmax(0, 1fr); }
-      .workspace.konteks-terlipat .panel-konteks { display: none; }
-      .tombol-lipat-konteks,
-      .tombol-buka-konteks {
-        width: 30px;
-        height: 30px;
-        padding: 0;
-        border: 0;
-        border-radius: 7px;
-        background: transparent;
-        color: var(--teks-2);
-        cursor: pointer;
-        font-size: 17px;
-      }
-      .tombol-lipat-konteks:hover,
-      .tombol-buka-konteks:hover { background: #eeeeea; color: var(--teks); }
-      .tombol-buka-konteks {
-        position: fixed;
-        top: 84px;
-        right: 13px;
-        z-index: 6;
-        display: none;
-        background: var(--permukaan-lembut);
-        box-shadow: 0 3px 14px rgba(24,25,22,.08);
-      }
-      .workspace.konteks-terlipat + .tombol-buka-konteks { display: block; }
-      .konteks-header { gap: 8px; }
-
       @media (max-width: 1120px) and (min-width: 761px) {
         .tombol-lipat-buku { left: 186px; }
       }
@@ -55,56 +27,11 @@
           right: 13px;
           left: auto;
         }
-        .workspace.konteks-terlipat { grid-template-columns: minmax(0, 1fr); }
-        .tombol-buka-konteks { top: 76px; right: 10px; }
       }
     </style>
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover">
     <div style="display: contents">%sveltekit.body%</div>
-    <script>
-      (() => {
-        const selector = '.panel-konteks';
-        const tambahKontrol = () => {
-          const panel = document.querySelector(selector);
-          const workspace = panel?.closest('.workspace');
-          if (!panel || !workspace) return;
-
-          let buka = workspace.nextElementSibling;
-          if (!buka?.classList.contains('tombol-buka-konteks')) {
-            buka = document.createElement('button');
-            buka.className = 'tombol-buka-konteks';
-            buka.type = 'button';
-            buka.textContent = '‹';
-            buka.setAttribute('aria-label', 'Tampilkan panel sumber dan artefak');
-            buka.title = 'Tampilkan panel sumber dan artefak';
-            buka.addEventListener('click', () => {
-              workspace.classList.remove('konteks-terlipat');
-            });
-            workspace.after(buka);
-          }
-
-          if (!panel.querySelector('.tombol-lipat-konteks')) {
-            const header = panel.querySelector('.konteks-header');
-            if (!header) return;
-            const lipat = document.createElement('button');
-            lipat.className = 'tombol-lipat-konteks';
-            lipat.type = 'button';
-            lipat.textContent = '›';
-            lipat.setAttribute('aria-label', 'Sembunyikan panel sumber dan artefak');
-            lipat.title = 'Sembunyikan panel sumber dan artefak';
-            lipat.addEventListener('click', () => {
-              workspace.classList.add('konteks-terlipat');
-            });
-            header.append(lipat);
-          }
-        };
-
-        const pengamat = new MutationObserver(tambahKontrol);
-        pengamat.observe(document.body, { childList: true, subtree: true });
-        tambahKontrol();
-      })();
-    </script>
   </body>
 </html>
