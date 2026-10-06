@@ -28,6 +28,7 @@
   let sumberAktif: Source | null = null;
   let panel: Panel = 'sumber';
   let view: View = 'catatan';
+  let bukuTerbuka = true;
 
   let statusSimpan: 'tersimpan' | 'menyimpan' | 'gagal' = 'tersimpan';
   let timerSimpan: ReturnType<typeof setTimeout> | undefined;
@@ -357,7 +358,7 @@
     </section>
   </main>
 {:else}
-  <div class="aplikasi">
+  <div class:tanpa-buku={!bukuTerbuka} class="aplikasi">
     <aside class="panel-navigasi">
       <div class="merek">
         <span class="logo-mark kecil">C</span>
@@ -370,7 +371,7 @@
       <button class="tombol sekunder lebar" type="button" onclick={buatBuku}>+ Buku baru</button>
 
       <div class="judul-panel">BUKU</div>
-      <nav class="daftar-buku" aria-label="Buku">
+      <nav id="daftar-buku" class="daftar-buku" aria-label="Buku">
         {#each notebooks as notebook}
           <button
             class:aktif={notebook.id === notebookID}
@@ -398,6 +399,17 @@
 
     <main class="ruang-kerja">
       <header class="bar-atas">
+        {#if !bukuTerbuka}
+          <button
+            class="tombol-buka-buku"
+            type="button"
+            aria-label="Tampilkan daftar buku"
+            title="Tampilkan daftar buku"
+            aria-expanded={bukuTerbuka}
+            aria-controls="daftar-buku"
+            onclick={() => bukuTerbuka = true}
+          >›</button>
+        {/if}
         <div>
           <p class="eyebrow">BUKU</p>
           <h1>{bukuAktif?.title || 'Belum ada buku'}</h1>
