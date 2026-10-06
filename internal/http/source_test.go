@@ -75,6 +75,34 @@ func TestImportSourceStoresContentAndChecksum(t *testing.T) {
 	if loaded.Content != content || loaded.Checksum != source.Checksum { t.Fatalf("detail sumber = %#v", loaded) }
 }
 
+func TestSourceIntegrityAcceptsValidContent(t *testing.T) {
+	content := "isi sumber"
+	digest := sha256.Sum256([]byte(content))
+	source := Source{Content: content, Checksum: hex.EncodeToString(digest[:])}
+	if !verifySourceIntegrity(source) { t.Fatal("sumber valid ditolak") }
+}
+
+func TestSourceIntegrityRejectsChangedContent(t *testing.T) {
+	digest := sha256.Sum256([]byte("isi asli"))
+	source := Source{Content: "isi berubah", Checksum: hex.EncodeToString(digest[:])}
+	if verifySourceIntegrity(source) { t.Fatal("isi berubah dianggap valid") }
+}
+
+func TestSourceIntegrityRejectsInvalidUTF8(t *testing.T) {
+	source := Source{Content: string([]byte{0xff, 0xfe}), Checksum: "bebas"}
+	if verifySourceIntegrity(source) { t.Fatal("isi UTF-8 tidak valid dianggap valid") }
+}
+
+func TestGetSourceRejectsCorruptContent(t *testing.T) {
+	handler := serverUji(t)
+	notebook := buatBukuUjiSumber(t, handler)
+	source := imporSumberUji(t, handler, notebook.ID)
+	server := handler.(*Server)
+	if _, err := server.db.Exec(`UPDATE sources SET content=? WHERE id=?`, "isi rusak", source.ID); err != nil { t.Fatal(err) }
+	res := requestUji(t, handler, http.MethodGet, "/api/sources/"+source.ID, nil)
+	if res.Code != http.StatusUnprocessableEntity { t.Fatalf("sumber rusak: status = %d, body = %q", res.Code, res.Body.String()) }
+}
+
 func TestUpdateSourceChangesOnlyMetadata(t *testing.T) {
 	handler := serverUji(t)
 	notebook := buatBukuUjiSumber(t, handler)
