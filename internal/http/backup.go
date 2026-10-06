@@ -29,7 +29,7 @@ var errInvalidBackup = errors.New("cadangan tidak valid")
 
 func (s *Server) backupNotebook(w http.ResponseWriter, r *http.Request) {
 	notebookID := r.PathValue("id")
-	if !validID(notebookID) {
+	if !validNotebookID(notebookID) {
 		http.Error(w, "ID buku tidak valid", http.StatusBadRequest)
 		return
 	}
@@ -58,7 +58,7 @@ func (s *Server) backupNotebook(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) restoreNotebook(w http.ResponseWriter, r *http.Request) {
 	notebookID := r.PathValue("id")
-	if !validID(notebookID) {
+	if !validNotebookID(notebookID) {
 		http.Error(w, "ID buku tidak valid", http.StatusBadRequest)
 		return
 	}

@@ -62,7 +62,7 @@ var errInvalidSourceIntegrity = errors.New("integritas sumber tidak valid")
 
 func (s *Server) exportNotebook(w http.ResponseWriter, r *http.Request) {
 	notebookID := r.PathValue("id")
-	if !validID(notebookID) {
+	if !validNotebookID(notebookID) {
 		http.Error(w, "ID buku tidak valid", http.StatusBadRequest)
 		return
 	}

@@ -38,7 +38,7 @@ func verifySourceIntegrity(source Source) bool {
 
 func (s *Server) listSources(w http.ResponseWriter, r *http.Request) {
 	notebookID := r.PathValue("id")
-	if !validID(notebookID) {
+	if !validNotebookID(notebookID) {
 		http.Error(w, "ID buku tidak valid", http.StatusBadRequest)
 		return
 	}
@@ -167,7 +167,7 @@ func (s *Server) deleteSource(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) importSource(w http.ResponseWriter, r *http.Request) {
 	notebookID := r.PathValue("id")
-	if !validID(notebookID) {
+	if !validNotebookID(notebookID) {
 		http.Error(w, "ID buku tidak valid", http.StatusBadRequest)
 		return
 	}
