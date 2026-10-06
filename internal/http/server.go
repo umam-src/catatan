@@ -15,6 +15,7 @@ import (
 
 	"github.com/umam-src/catatan/internal/db"
 	"github.com/umam-src/catatan/internal/ui"
+	"github.com/umam-src/catatan/internal/version"
 )
 
 const (
@@ -50,6 +51,9 @@ func New(d *db.DB) http.Handler {
 	mux.HandleFunc("DELETE /api/sources/{id}", s.deleteSource)
 	mux.HandleFunc("PUT /api/notes/{id}", s.updateNote)
 	mux.HandleFunc("DELETE /api/notes/{id}", s.deleteNote)
+	mux.HandleFunc("GET /api/version", func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(w, http.StatusOK, map[string]string{"version": version.Value})
+	})
 	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})

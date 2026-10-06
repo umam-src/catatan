@@ -255,3 +255,24 @@ func TestWebInterfaceIsPublicWithoutSession(t *testing.T) {
 		t.Fatal("halaman awal tidak mengembalikan dokumen HTML")
 	}
 }
+
+func TestVersionIsPublic(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "catatan.db")
+	d, err := db.Open(context.Background(), path)
+	if err != nil { t.Fatal(err) }
+	t.Cleanup(func() { _ = d.Close() })
+
+	res := requestUji(t, New(d), http.MethodGet, "/api/version", nil)
+	if res.Code != http.StatusOK {
+		t.Fatalf("versi tanpa session: status = %d, ingin %d", res.Code, http.StatusOK)
+	}
+	var payload struct {
+		Version string `json:"version"`
+	}
+	if err := json.NewDecoder(res.Body).Decode(&payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.Version == "" {
+		t.Fatal("versi aplikasi kosong")
+	}
+}
