@@ -34,8 +34,8 @@ func TestOpenRunsMigrationAndCreatesDefaultNotebook(t *testing.T) {
 	if err := d.QueryRow(`SELECT MAX(version) FROM schema_migrations`).Scan(&version); err != nil {
 		t.Fatal(err)
 	}
-	if version != 4 {
-		t.Fatalf("versi migrasi = %d, ingin 4", version)
+	if version != 5 {
+		t.Fatalf("versi migrasi = %d, ingin 5", version)
 	}
 
 	if err := d.Close(); err != nil {
@@ -50,8 +50,8 @@ func TestOpenRunsMigrationAndCreatesDefaultNotebook(t *testing.T) {
 	if err := d.QueryRow(`SELECT COUNT(*) FROM schema_migrations`).Scan(&count); err != nil {
 		t.Fatal(err)
 	}
-	if count != 4 {
-		t.Fatalf("jumlah migrasi setelah buka ulang = %d, ingin 4", count)
+	if count != 5 {
+		t.Fatalf("jumlah migrasi setelah buka ulang = %d, ingin 5", count)
 	}
 }
 
@@ -62,6 +62,7 @@ func TestMigrationCreatesRequiredSchema(t *testing.T) {
 		"metadata",
 		"notebooks",
 		"sources",
+		"source_locations",
 		"notes",
 		"conversations",
 		"messages",
@@ -81,6 +82,7 @@ func TestMigrationCreatesRequiredSchema(t *testing.T) {
 	indexes := []string{
 		"idx_notebooks_updated",
 		"idx_sources_notebook_updated",
+		"idx_source_locations_source",
 		"idx_notes_notebook_updated",
 		"idx_notes_notebook_deleted_updated",
 		"idx_conversations_notebook_updated",
