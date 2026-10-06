@@ -564,8 +564,16 @@
       </nav>
 
       <div class="akun">
-        <button class="ikon-tombol tombol-pengaturan-samping" type="button" title="Pengaturan" aria-label="Pengaturan" onclick={bukaPengaturan}>
-          ⚙
+        <button class="tombol-pengaturan-samping" type="button" onclick={bukaPengaturan}>
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="6" x2="20" y2="6" />
+            <circle cx="9" cy="6" r="2" fill="var(--permukaan)" />
+            <line x1="4" y1="12" x2="20" y2="12" />
+            <circle cx="15" cy="12" r="2" fill="var(--permukaan)" />
+            <line x1="4" y1="18" x2="20" y2="18" />
+            <circle cx="11" cy="18" r="2" fill="var(--permukaan)" />
+          </svg>
+          <span>Pengaturan</span>
         </button>
       </div>
       {#if versi}<div class="versi-navigasi">v{versi}</div>{/if}
@@ -600,7 +608,6 @@
             >
               <span class="avatar">{inisial}</span>
             </button>
-            <span class="nama-pengguna-atas">{user?.display_name || user?.username}</span>
             {#if menuPenggunaTerbuka}
               <div class="daftar-menu-pengguna" role="menu" aria-label="Menu pengguna">
                 <div class="identitas-menu-pengguna">

@@ -264,7 +264,24 @@ input:focus { border-color: #aaa9a2; }
 }
 .ikon-tombol:hover { background: #eeeeea; color: var(--teks); }
 .versi-navigasi { margin: 8px 5px 0; color: var(--teks-3); font-size: 9px; }
-.tombol-pengaturan-samping { margin-left: auto; }
+.tombol-pengaturan-samping {
+  width: 100%;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--teks-2);
+  text-align: left;
+  cursor: pointer;
+  font-size: 12px;
+}
+.tombol-pengaturan-samping:hover { background: #eeeeea; color: var(--teks); }
+.tombol-pengaturan-samping svg { width: 16px; height: 16px; flex: 0 0 auto; }
+.tombol-pengaturan-samping span { line-height: 1; }
 .menu-pengguna { position: relative; display: flex; align-items: center; gap: 9px; }
 .pemicu-pengguna {
   width: 38px;
@@ -280,7 +297,6 @@ input:focus { border-color: #aaa9a2; }
 }
 .pemicu-pengguna:hover { background: var(--permukaan-lembut); }
 .pemicu-pengguna .avatar { width: 29px; height: 29px; }
-.nama-pengguna-atas { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--teks-2); font-size: 12px; font-weight: 600; }
 .daftar-menu-pengguna {
   position: absolute;
   top: calc(100% + 8px);
@@ -591,7 +607,6 @@ textarea {
   .versi-navigasi { display: none; }
   .bar-atas { min-height: 65px; padding: 11px 16px; }
   .bar-atas h1 { font-size: 16px; }
-  .nama-pengguna-atas { max-width: 120px; }
   .workspace {
     height: auto;
     min-height: calc(100vh - 65px);
