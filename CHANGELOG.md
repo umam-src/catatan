@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.8] - 2026-10-06
+
+### Ditambahkan
+
+- Menu pengguna di kanan atas dengan identitas pengguna dan aksi Keluar; ruang Profil disiapkan untuk tahap berikutnya.
+- Tombol Pengaturan pada kolom Buku dengan dialog yang mengikuti ruang layar dan tidak bergantung pada panjang isi.
+- Pengaturan awal Pengguna boleh mendaftar aktif dan disimpan pada perangkat.
+- Konfirmasi kata sandi pada alur pembuatan akun.
+
 ## [0.2.7] - 2026-10-06
 
 ### Diperbaiki
