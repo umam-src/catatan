@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.7] - 2026-10-06
+
+### Diperbaiki
+
+- Menu konteks buku dan catatan tetap tersedia dan kini ditutup saat pengguna mengklik di luar menu.
+- Tombol `+` untuk membuat catatan baru tersedia satu kali di header daftar catatan, tanpa menambah tombol berulang pada setiap catatan.
+
 ## [0.2.6] - 2026-10-06
 
 ### Ditambahkan

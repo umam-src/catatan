@@ -30,6 +30,7 @@
   let view: View = 'catatan';
   let bukuTerbuka = true;
   let konteksTerbuka = true;
+  let menuKonteksAktif = '';
 
   let statusSimpan: 'tersimpan' | 'menyimpan' | 'gagal' = 'tersimpan';
   let timerSimpan: ReturnType<typeof setTimeout> | undefined;
@@ -42,6 +43,17 @@
     const response = await fetch(path, { ...init, headers });
     if (!response.ok) throw new Error((await response.text()) || 'Permintaan gagal.');
     return response;
+  }
+
+  function sinkronkanMenuKonteks(id: string, event: Event) {
+    const details = event.currentTarget;
+    if (details instanceof HTMLDetailsElement) menuKonteksAktif = details.open ? id : '';
+  }
+
+  function tutupMenuKonteksDiLuar(event: MouseEvent) {
+    const target = event.target;
+    if (target instanceof Element && target.closest('.menu-konteks')) return;
+    menuKonteksAktif = '';
   }
 
   async function mulai() {
@@ -93,6 +105,7 @@
       catatanAktif = null;
       sumberAktif = null;
       notebookID = '';
+      menuKonteksAktif = '';
     }
   }
 
@@ -106,6 +119,7 @@
   }
 
   async function muatIsiBuku() {
+    menuKonteksAktif = '';
     if (!notebookID) {
       notes = [];
       sources = [];
@@ -132,6 +146,7 @@
     if (id === notebookID) return;
     if (timerSimpan) clearTimeout(timerSimpan);
     nomorSimpan++;
+    menuKonteksAktif = '';
     notebookID = id;
     galat = '';
     try {
@@ -159,6 +174,7 @@
   }
 
   async function ubahBuku(notebook: Notebook) {
+    menuKonteksAktif = '';
     const title = window.prompt('Nama buku', notebook.title);
     if (!title?.trim() || title.trim() === notebook.title) return;
     try {
@@ -175,6 +191,7 @@
   }
 
   async function hapusBuku(notebook: Notebook) {
+    menuKonteksAktif = '';
     if (!window.confirm(`Hapus buku “${notebook.title}”?\n\nSemua catatan, sumber, dan isi terkait di dalamnya juga akan dihapus.`)) return;
     if (timerSimpan) clearTimeout(timerSimpan);
     nomorSimpan++;
@@ -192,6 +209,7 @@
 
   async function buatCatatan() {
     if (!notebookID) return;
+    menuKonteksAktif = '';
     try {
       const response = await permintaan('/api/notebooks/' + notebookID + '/notes', {
         method: 'POST',
@@ -210,6 +228,7 @@
   function pilihCatatan(note: Note) {
     if (timerSimpan) clearTimeout(timerSimpan);
     nomorSimpan++;
+    menuKonteksAktif = '';
     catatanAktif = { ...note };
     view = 'catatan';
     statusSimpan = 'tersimpan';
@@ -217,6 +236,7 @@
   }
 
   async function ubahCatatan(note: Note) {
+    menuKonteksAktif = '';
     const title = window.prompt('Judul catatan', note.title);
     if (!title?.trim() || title.trim() === note.title) return;
     try {
@@ -263,6 +283,7 @@
   }
 
   async function hapusCatatan(note: Note) {
+    menuKonteksAktif = '';
     if (!window.confirm(`Hapus catatan “${note.title || 'Tanpa judul'}”?`)) return;
     const id = note.id;
     nomorSimpan++;
@@ -409,7 +430,7 @@
     </section>
   </main>
 {:else}
-  <div class:tanpa-buku={!bukuTerbuka} class="aplikasi">
+  <div class:tanpa-buku={!bukuTerbuka} class="aplikasi" onclick={tutupMenuKonteksDiLuar}>
     <aside class="panel-navigasi">
       <button
         class="tombol-lipat-buku"
@@ -437,7 +458,12 @@
             <button class="item-buku" type="button" onclick={() => pilihBuku(notebook.id)}>
               {notebook.title}
             </button>
-            <details class="menu-konteks">
+            <details
+              class="menu-konteks"
+              open={menuKonteksAktif === `buku:${notebook.id}`}
+              ontoggle={(event) => sinkronkanMenuKonteks(`buku:${notebook.id}`, event)}
+              onclick={(event) => event.stopPropagation()}
+            >
               <summary aria-label={"Menu " + notebook.title} title="Menu buku">⋯</summary>
               <div class="menu-konteks-daftar">
                 <button type="button" onclick={() => ubahBuku(notebook)}>Ubah nama</button>
@@ -503,6 +529,7 @@
                 <strong>Catatan</strong>
                 <span>{notes.length} catatan</span>
               </div>
+              <button class="ikon-tombol" type="button" onclick={buatCatatan} disabled={!notebookID} title="Catatan baru" aria-label="Catatan baru">+</button>
             </div>
 
             <div class="daftar-catatan">
@@ -512,7 +539,12 @@
                     <strong>{note.title || 'Tanpa judul'}</strong>
                     <span>{note.content.trim().slice(0, 76) || 'Belum ada isi'}</span>
                   </button>
-                  <details class="menu-konteks">
+                  <details
+                    class="menu-konteks"
+                    open={menuKonteksAktif === `catatan:${note.id}`}
+                    ontoggle={(event) => sinkronkanMenuKonteks(`catatan:${note.id}`, event)}
+                    onclick={(event) => event.stopPropagation()}
+                  >
                     <summary aria-label={"Menu " + (note.title || 'catatan')} title="Menu catatan">⋯</summary>
                     <div class="menu-konteks-daftar">
                       <button type="button" onclick={() => ubahCatatan(note)}>Ubah nama</button>
