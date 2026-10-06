@@ -4,10 +4,20 @@
 
 ### Ditambahkan
 
-- Menu pengguna di kanan atas dengan identitas pengguna dan aksi Keluar; ruang Profil disiapkan untuk tahap berikutnya.
-- Tombol Pengaturan pada kolom Buku dengan dialog yang mengikuti ruang layar dan tidak bergantung pada panjang isi.
-- Pengaturan awal Pengguna boleh mendaftar aktif dan disimpan pada perangkat.
-- Konfirmasi kata sandi pada alur pembuatan akun.
+- Konfirmasi kata sandi pada formulir pembuatan akun.
+- Menu pengguna di kanan atas yang menampilkan nama pengguna dan menyediakan aksi keluar serta tempat profil.
+- Tombol Pengaturan di bagian bawah kolom buku.
+- Tampilan tombol Pengaturan menggunakan ikon yang serasi dengan tombol Keluar sebelumnya.
+- Menu pengguna dibuka dari ikon saja; nama pengguna tampil terpisah di sampingnya.
+- Dialog pengaturan dengan ukuran yang menyesuaikan layar dan tidak mengikuti panjang isi.
+- Sakelar untuk menampilkan atau menyembunyikan opsi pembuatan akun di halaman masuk, tersimpan pada perangkat.
+
+### Diperbaiki
+
+- Judul buku tetap rata kiri saat drawer buku disembunyikan.
+- Versi aplikasi ditampilkan di tengah kolom navigasi.
+- Status drawer buku dipertahankan setelah halaman dimuat ulang.
+- Status drawer Sumber dan Artefak dipertahankan setelah halaman dimuat ulang.
 
 ## [0.2.7] - 2026-10-06
 
