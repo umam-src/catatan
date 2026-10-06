@@ -22,7 +22,7 @@ func main() {
 	addr := flag.String("alamat", "127.0.0.1:8787", "alamat layanan lokal")
 	flag.Parse()
 	if *versi {
-		fmt.Printf("catatan %s\\n", version.Value)
+		fmt.Printf("catatan %s\n", version.Value)
 		return
 	}
 
@@ -33,7 +33,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		dir = filepath.Join(dir, "BukuCatatan")
+		dir = filepath.Join(dir, "catatan")
 	}
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		log.Fatal(err)
@@ -42,7 +42,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	database, err := db.Open(ctx, filepath.Join(dir, "buku-catatan.db"))
+	database, err := db.Open(ctx, filepath.Join(dir, "catatan.db"))
 	if err != nil {
 		log.Fatal(err)
 	}
