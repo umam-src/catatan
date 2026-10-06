@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -33,8 +34,8 @@ func TestOpenRunsMigrationAndCreatesDefaultNotebook(t *testing.T) {
 	if err := d.QueryRow(`SELECT MAX(version) FROM schema_migrations`).Scan(&version); err != nil {
 		t.Fatal(err)
 	}
-	if version != 3 {
-		t.Fatalf("versi migrasi = %d, ingin 3", version)
+	if version != 4 {
+		t.Fatalf("versi migrasi = %d, ingin 4", version)
 	}
 
 	if err := d.Close(); err != nil {
@@ -49,8 +50,8 @@ func TestOpenRunsMigrationAndCreatesDefaultNotebook(t *testing.T) {
 	if err := d.QueryRow(`SELECT COUNT(*) FROM schema_migrations`).Scan(&count); err != nil {
 		t.Fatal(err)
 	}
-	if count != 3 {
-		t.Fatalf("jumlah migrasi setelah buka ulang = %d, ingin 3", count)
+	if count != 4 {
+		t.Fatalf("jumlah migrasi setelah buka ulang = %d, ingin 4", count)
 	}
 }
 
@@ -81,6 +82,7 @@ func TestMigrationCreatesRequiredSchema(t *testing.T) {
 		"idx_notebooks_updated",
 		"idx_sources_notebook_updated",
 		"idx_notes_notebook_updated",
+		"idx_notes_notebook_deleted_updated",
 		"idx_conversations_notebook_updated",
 		"idx_messages_conversation_created",
 	}
@@ -95,6 +97,31 @@ func TestMigrationCreatesRequiredSchema(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNoteListUsesCompositeIndex(t *testing.T) {
+	d, _ := bukaDBUji(t)
+
+	rows, err := d.Query(`EXPLAIN QUERY PLAN SELECT id,title,content,note_type,created_at,updated_at FROM notes WHERE notebook_id=? AND deleted_at IS NULL ORDER BY updated_at DESC`, "default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+
+	var detail string
+	for rows.Next() {
+		var id, parent, notused int
+		if err := rows.Scan(&id, &parent, &notused, &detail); err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(detail, "idx_notes_notebook_deleted_updated") {
+			return
+		}
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	t.Fatal("rencana kueri tidak menggunakan indeks daftar catatan")
 }
 
 func TestNoteSupportsSoftDeletion(t *testing.T) {
