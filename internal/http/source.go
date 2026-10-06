@@ -28,6 +28,14 @@ type Source struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
+func verifySourceIntegrity(source Source) bool {
+	if source.Checksum == "" || !utf8.ValidString(source.Content) {
+		return false
+	}
+	digest := sha256.Sum256([]byte(source.Content))
+	return strings.EqualFold(source.Checksum, hex.EncodeToString(digest[:]))
+}
+
 func (s *Server) listSources(w http.ResponseWriter, r *http.Request) {
 	notebookID := r.PathValue("id")
 	if !validID(notebookID) {
@@ -86,6 +94,10 @@ func (s *Server) getSource(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
+	if !verifySourceIntegrity(source) {
+		http.Error(w, "Integritas isi sumber tidak dapat diverifikasi", http.StatusUnprocessableEntity)
+		return
+	}
 	writeJSON(w, http.StatusOK, source)
 }
 
@@ -125,6 +137,10 @@ func (s *Server) updateSource(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		serverError(w, err)
+		return
+	}
+	if !verifySourceIntegrity(source) {
+		http.Error(w, "Integritas isi sumber tidak dapat diverifikasi", http.StatusUnprocessableEntity)
 		return
 	}
 	writeJSON(w, http.StatusOK, source)
