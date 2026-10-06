@@ -192,6 +192,16 @@
 
 ## Fase 2 — Sumber → `0.3.0`
 
+### 2.0 UI dan identitas versi
+- [ ] Buat ulang UI dasar berdasarkan sketsa yang telah disetujui, dengan mempertahankan perilaku API dan alur data yang sudah benar.
+- [ ] Jadikan struktur UI baru sebagai fondasi yang dapat digunakan ulang untuk Catatan dan Sumber.
+- [ ] Pastikan keadaan loading, kosong, galat, dan berhasil konsisten pada UI baru.
+- [ ] Pastikan UI tetap responsif dan offline-first tanpa menambah dependensi berat tanpa kebutuhan yang jelas.
+- [ ] Tambahkan flag versi pada CLI, misalnya `catatan --version`.
+- [ ] Tampilkan versi aplikasi pada halaman web.
+- [ ] Gunakan satu sumber versi agar versi CLI, web, dan artefak rilis tetap selaras.
+- [ ] Uji versi yang ditampilkan pada CLI dan halaman web setelah proses build tertanam.
+
 ### 2.1 Model sumber
 - [ ] Tentukan entitas sumber.
 - [ ] Tentukan hubungan sumber dengan buku.
