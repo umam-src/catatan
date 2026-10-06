@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.5] - 2026-10-06
+
+### Diperbaiki
+
+- Panel Sumber dan Artefak kini dapat dilipat agar ruang dokumen dan catatan lebih luas.
+- Tombol untuk membuka kembali panel Sumber dan Artefak tetap tersedia di bagian atas.
+
 ## [0.2.4] - 2026-10-06
 
 ### Diperbaiki
