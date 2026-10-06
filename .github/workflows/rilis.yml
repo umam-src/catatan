@@ -76,7 +76,7 @@ jobs:
             exit 1
           fi
 
-          echo "rilis=true" >> "$GITHUB_OUTPUT"
+          echo 'rilis=true' >> "$GITHUB_OUTPUT"
           echo "versi=$versi" >> "$GITHUB_OUTPUT"
           echo "Bump versi terdeteksi: $versi_terakhir → $versi"
 
@@ -129,7 +129,7 @@ jobs:
           npm run build
 
       - name: Bangun program
-        run: go build -trimpath -ldflags='-s -w' -o catatan ./cmd/buku-catatan
+        run: go build -trimpath -ldflags='-s -w' -o catatan ./cmd/catatan
 
       - name: Periksa ukuran
         run: |
