@@ -16,8 +16,14 @@
   let modeMasuk: 'masuk' | 'siapkan' = 'masuk';
   let namaPengguna = '';
   let kataSandi = '';
+  let konfirmasiKataSandi = '';
   let email = '';
   let namaTampilan = '';
+  let menuPenggunaTerbuka = false;
+  let dialogPengaturanTerbuka = false;
+  let pendaftaranDiizinkan = true;
+  let galatPengaturan = '';
+  const kunciPendaftaran = 'catatan.pendaftaranDiizinkan';
 
   let notebooks: Notebook[] = [];
   let notebookID = '';
@@ -52,13 +58,58 @@
 
   function tutupMenuKonteksDiLuar(event: MouseEvent) {
     const target = event.target;
-    if (target instanceof Element && target.closest('.menu-konteks')) return;
+    if (!(target instanceof Element)) return;
+    if (target.closest('.menu-konteks')) return;
     menuKonteksAktif = '';
+    if (!target.closest('.menu-pengguna')) menuPenggunaTerbuka = false;
+  }
+
+  function muatPengaturanPendaftaran() {
+    try {
+      const nilai = localStorage.getItem(kunciPendaftaran);
+      pendaftaranDiizinkan = nilai === null || nilai === 'true';
+      galatPengaturan = '';
+    } catch {
+      galatPengaturan = 'Pengaturan pendaftaran tidak dapat dibaca dari perangkat ini.';
+    }
+  }
+
+  function bukaPengaturan() {
+    menuPenggunaTerbuka = false;
+    muatPengaturanPendaftaran();
+    dialogPengaturanTerbuka = true;
+  }
+
+  function ubahPengaturanPendaftaran(event: Event) {
+    const input = event.currentTarget;
+    if (!(input instanceof HTMLInputElement)) return;
+    try {
+      localStorage.setItem(kunciPendaftaran, String(input.checked));
+      pendaftaranDiizinkan = input.checked;
+      galatPengaturan = '';
+    } catch {
+      input.checked = pendaftaranDiizinkan;
+      galatPengaturan = 'Pengaturan tidak dapat disimpan pada perangkat ini.';
+    }
+  }
+
+  function tanganiTombolEscape(event: KeyboardEvent) {
+    if (event.key !== 'Escape') return;
+    menuPenggunaTerbuka = false;
+    dialogPengaturanTerbuka = false;
   }
 
   async function mulai() {
     memuat = true;
     try {
+      if (typeof window !== 'undefined') {
+        try {
+          const nilai = window.localStorage.getItem(kunciPendaftaran);
+          pendaftaranDiizinkan = nilai === null || nilai === 'true';
+        } catch {
+          galatPengaturan = 'Pengaturan pendaftaran tidak dapat dibaca dari perangkat ini.';
+        }
+      }
       const versiResponse = await fetch('/api/version');
       if (versiResponse.ok) versi = (await versiResponse.json()).version ?? '';
 
@@ -77,6 +128,10 @@
   async function kirimAutentikasi(event: SubmitEvent) {
     event.preventDefault();
     galat = '';
+    if (modeMasuk === 'siapkan' && kataSandi !== konfirmasiKataSandi) {
+      galat = 'Konfirmasi kata sandi tidak sama.';
+      return;
+    }
     try {
       const endpoint = modeMasuk === 'masuk' ? '/api/auth/login' : '/api/auth/setup';
       const body = modeMasuk === 'masuk'
@@ -86,6 +141,7 @@
       const response = await permintaan(endpoint, { method: 'POST', body: JSON.stringify(body) });
       user = (await response.json()).user;
       kataSandi = '';
+      konfirmasiKataSandi = '';
       siap = true;
       await muatBuku();
     } catch (error) {
@@ -95,8 +151,9 @@
 
   async function keluar() {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-    } finally {
+      const response = await fetch('/api/auth/logout', { method: 'POST' });
+      if (!response.ok) throw new Error((await response.text()) || 'Gagal keluar.');
+      menuPenggunaTerbuka = false;
       user = null;
       siap = false;
       notebooks = [];
@@ -106,6 +163,11 @@
       sumberAktif = null;
       notebookID = '';
       menuKonteksAktif = '';
+      modeMasuk = 'masuk';
+      kataSandi = '';
+      konfirmasiKataSandi = '';
+    } catch (error) {
+      galat = error instanceof Error ? error.message : 'Gagal keluar.';
     }
   }
 
@@ -358,6 +420,8 @@
   mulai();
 </script>
 
+<svelte:window onkeydown={tanganiTombolEscape} />
+
 <svelte:head>
   <title>{versi ? `Catatan · ${versi}` : 'Catatan'}</title>
   <meta name="description" content="Catatan lokal yang sederhana dan tetap berada di perangkat." />
@@ -414,17 +478,39 @@
           />
         </label>
 
+        {#if modeMasuk === 'siapkan'}
+          <label>
+            Konfirmasi kata sandi
+            <input
+              bind:value={konfirmasiKataSandi}
+              type="password"
+              minlength="12"
+              autocomplete="new-password"
+              required
+            />
+          </label>
+        {/if}
+
         <button class="tombol utama lebar" type="submit">
           {modeMasuk === 'masuk' ? 'Masuk' : 'Buat akun'}
         </button>
       </form>
 
-      <button class="tautan" type="button" onclick={() => {
-        modeMasuk = modeMasuk === 'masuk' ? 'siapkan' : 'masuk';
-        galat = '';
-      }}>
-        {modeMasuk === 'masuk' ? 'Perangkat baru? Buat akun lokal' : 'Sudah punya akun? Masuk'}
-      </button>
+      {#if modeMasuk === 'siapkan'}
+        <button class="tautan" type="button" onclick={() => {
+          modeMasuk = 'masuk';
+          kataSandi = '';
+          konfirmasiKataSandi = '';
+          galat = '';
+        }}>Sudah punya akun? Masuk</button>
+      {:else if pendaftaranDiizinkan}
+        <button class="tautan" type="button" onclick={() => {
+          modeMasuk = 'siapkan';
+          kataSandi = '';
+          konfirmasiKataSandi = '';
+          galat = '';
+        }}>Perangkat baru? Buat akun lokal</button>
+      {/if}
 
       {#if versi}<p class="versi">Versi {versi}</p>{/if}
     </section>
@@ -478,12 +564,9 @@
       </nav>
 
       <div class="akun">
-        <span class="avatar">{inisial}</span>
-        <div class="akun-teks">
-          <strong>{user?.display_name || user?.username}</strong>
-          <span>Perangkat ini</span>
-        </div>
-        <button class="ikon-tombol" type="button" title="Keluar" aria-label="Keluar" onclick={keluar}>↪</button>
+        <button class="tombol sekunder lebar tombol-pengaturan-samping" type="button" onclick={bukaPengaturan}>
+          <span aria-hidden="true">⚙</span> Pengaturan
+        </button>
       </div>
       {#if versi}<div class="versi-navigasi">v{versi}</div>{/if}
     </aside>
@@ -506,7 +589,29 @@
           <h1>{bukuAktif?.title || 'Belum ada buku'}</h1>
         </div>
         <div class="aksi-atas">
-          <button class="avatar" type="button" title={user?.username}>{inisial}</button>
+          <div class="menu-pengguna">
+            <button
+              class="pemicu-pengguna"
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={menuPenggunaTerbuka}
+              onclick={() => menuPenggunaTerbuka = !menuPenggunaTerbuka}
+            >
+              <span class="avatar">{inisial}</span>
+              <span class="nama-pengguna-atas">{user?.display_name || user?.username}</span>
+              <span class="panah-pengguna" aria-hidden="true">⌄</span>
+            </button>
+            {#if menuPenggunaTerbuka}
+              <div class="daftar-menu-pengguna" role="menu" aria-label="Menu pengguna">
+                <div class="identitas-menu-pengguna">
+                  <strong>{user?.display_name || user?.username}</strong>
+                  <span>@{user?.username}</span>
+                </div>
+                <button type="button" role="menuitem" disabled>Profil <span>Segera</span></button>
+                <button type="button" role="menuitem" onclick={keluar}>Keluar</button>
+              </div>
+            {/if}
+          </div>
         </div>
       </header>
 
@@ -660,6 +765,37 @@
         {/if}
       {/if}
     </main>
+    {#if dialogPengaturanTerbuka}
+      <div
+        class="lapisan-dialog"
+        role="presentation"
+        onclick={(event) => {
+          if (event.target === event.currentTarget) dialogPengaturanTerbuka = false;
+        }}
+      >
+        <div class="dialog-pengaturan" role="dialog" aria-modal="true" aria-labelledby="judul-pengaturan" tabindex="-1">
+          <header>
+            <div>
+              <p class="eyebrow">PREFERENSI</p>
+              <h2 id="judul-pengaturan">Pengaturan</h2>
+            </div>
+            <button class="tombol-tutup-dialog" type="button" aria-label="Tutup pengaturan" onclick={() => dialogPengaturanTerbuka = false}>×</button>
+          </header>
+          <div class="isi-pengaturan">
+            <label class="item-pengaturan">
+              <span>
+                <strong>Pengguna boleh mendaftar</strong>
+                <small>Tampilkan opsi pembuatan akun pada halaman masuk di perangkat ini.</small>
+              </span>
+              <input type="checkbox" checked={pendaftaranDiizinkan} onchange={ubahPengaturanPendaftaran} />
+            </label>
+            {#if galatPengaturan}
+              <p class="pesan-pengaturan" role="alert">{galatPengaturan}</p>
+            {/if}
+          </div>
+        </div>
+      </div>
+    {/if}
   </div>
 {/if}
 

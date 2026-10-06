@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.8] - 2026-10-06
+
+### Ditambahkan
+
+- Konfirmasi kata sandi pada formulir pembuatan akun.
+- Menu pengguna di kanan atas yang menampilkan nama pengguna dan menyediakan aksi keluar serta tempat profil.
+- Tombol Pengaturan di bagian bawah kolom buku.
+- Dialog pengaturan dengan ukuran yang menyesuaikan layar dan tidak mengikuti panjang isi.
+- Sakelar untuk menampilkan atau menyembunyikan opsi pembuatan akun di halaman masuk, tersimpan pada perangkat.
+
 ## [0.2.7] - 2026-10-06
 
 ### Diperbaiki
