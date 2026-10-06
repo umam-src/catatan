@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/http/cookiejar"
 	"path/filepath"
 	"strings"
 	"time"
@@ -237,4 +238,50 @@ func TestSessionExpirationAndUserIsolation(t *testing.T) {
 	if _, err := d.Exec(`UPDATE sessions SET expires_at=?`, time.Now().UTC().Add(-time.Hour).Format(time.RFC3339Nano)); err != nil { t.Fatal(err) }
 	res = requestDenganCookie(t, handler, http.MethodGet, "/api/notebooks", nil, cookie1)
 	if res.Code != http.StatusUnauthorized { t.Fatalf("session kedaluwarsa: status = %d", res.Code) }
+}
+
+
+func TestAuthBrowserSessionRoundTrip(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "catatan.db")
+	d, err := db.Open(context.Background(), path)
+	if err != nil { t.Fatal(err) }
+	t.Cleanup(func() { _ = d.Close() })
+
+	srv := httptest.NewServer(New(d))
+	t.Cleanup(srv.Close)
+
+	jar, err := cookiejar.New(nil)
+	if err != nil { t.Fatal(err) }
+	client := &http.Client{Jar: jar}
+
+	setupBody := strings.NewReader(`{"username":"pengguna","password":"kata-sandi-uji-aman"}`)
+	setupReq, err := http.NewRequest(http.MethodPost, srv.URL+"/api/auth/setup", setupBody)
+	if err != nil { t.Fatal(err) }
+	setupReq.Header.Set("Content-Type", "application/json")
+	setupRes, err := client.Do(setupReq)
+	if err != nil { t.Fatal(err) }
+	defer setupRes.Body.Close()
+	if setupRes.StatusCode != http.StatusCreated { t.Fatalf("setup: status = %d, ingin %d", setupRes.StatusCode, http.StatusCreated) }
+
+	meRes, err := client.Get(srv.URL + "/api/auth/me")
+	if err != nil { t.Fatal(err) }
+	defer meRes.Body.Close()
+	if meRes.StatusCode != http.StatusOK { t.Fatalf("me setelah setup: status = %d, ingin %d", meRes.StatusCode, http.StatusOK) }
+
+	booksRes, err := client.Get(srv.URL + "/api/notebooks")
+	if err != nil { t.Fatal(err) }
+	defer booksRes.Body.Close()
+	if booksRes.StatusCode != http.StatusOK { t.Fatalf("notebooks setelah setup: status = %d, ingin %d", booksRes.StatusCode, http.StatusOK) }
+
+	logoutReq, err := http.NewRequest(http.MethodPost, srv.URL+"/api/auth/logout", nil)
+	if err != nil { t.Fatal(err) }
+	logoutRes, err := client.Do(logoutReq)
+	if err != nil { t.Fatal(err) }
+	defer logoutRes.Body.Close()
+	if logoutRes.StatusCode != http.StatusNoContent { t.Fatalf("logout: status = %d, ingin %d", logoutRes.StatusCode, http.StatusNoContent) }
+
+	afterLogout, err := client.Get(srv.URL + "/api/notebooks")
+	if err != nil { t.Fatal(err) }
+	defer afterLogout.Body.Close()
+	if afterLogout.StatusCode != http.StatusUnauthorized { t.Fatalf("notebooks setelah logout: status = %d, ingin %d", afterLogout.StatusCode, http.StatusUnauthorized) }
 }
