@@ -95,19 +95,19 @@ func (s *Server) exportNotebook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", `attachment; filename="catatan-`+notebook.ID+`.json"`)
 	w.WriteHeader(http.StatusOK)
 	encoder := json.NewEncoder(w)
-	if _, err := w.Write([]byte(`{"format":"catatan-export","version":1,"notebook":`)); err != nil {
+	if _, err := w.Write([]byte("{\"format\":\"catatan-export\",\"version\":1,\"notebook\":")); err != nil {
 		return
 	}
 	if err := encoder.Encode(notebook); err != nil {
 		return
 	}
-	if _, err := w.Write([]byte(`,"notes":`)); err != nil {
+	if _, err := w.Write([]byte(",\"notes\":")); err != nil {
 		return
 	}
 	if err := s.encodeNotes(w, encoder, r, notebookID); err != nil {
 		return
 	}
-	if _, err := w.Write([]byte(`,"sources":`)); err != nil {
+	if _, err := w.Write([]byte(",\"sources\":")); err != nil {
 		return
 	}
 	if err := s.encodeSources(w, encoder, r, notebookID); err != nil {
