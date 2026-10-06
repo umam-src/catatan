@@ -20,7 +20,10 @@
   let file: File | null = null;
   let loading = true;
   let importing = false;
+  let saving = false;
+  let deleting = false;
   let error = '';
+  let notice = '';
 
   async function api(path: string, init: RequestInit = {}) {
     const response = await fetch(path, init);
@@ -53,6 +56,7 @@
       const response = await api('/api/notebooks/' + selectedNotebook + '/sources');
       sources = await response.json();
       activeSource = null;
+      notice = '';
     } catch (err) {
       error = err instanceof Error ? err.message : 'Gagal memuat sumber.';
     }
@@ -60,6 +64,7 @@
 
   async function pilihSumber(source: Source) {
     error = '';
+    notice = '';
     try {
       const response = await api('/api/sources/' + source.id);
       activeSource = await response.json();
@@ -78,6 +83,7 @@
     if (!selectedNotebook || !file || importing) return;
     importing = true;
     error = '';
+    notice = '';
     try {
       const form = new FormData();
       form.set('file', file);
@@ -90,10 +96,54 @@
       title = '';
       const input = document.getElementById('source-file') as HTMLInputElement | null;
       if (input) input.value = '';
+      notice = 'Sumber berhasil diimpor.';
     } catch (err) {
       error = err instanceof Error ? err.message : 'Gagal mengimpor sumber.';
     } finally {
       importing = false;
+    }
+  }
+
+  async function simpanJudul() {
+    if (!activeSource || !title.trim() || saving) return;
+    saving = true;
+    error = '';
+    notice = '';
+    try {
+      const response = await api('/api/sources/' + activeSource.id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: title.trim() })
+      });
+      const updated: Source = await response.json();
+      activeSource = updated;
+      sources = sources.map((source) => source.id === updated.id ? { ...source, title: updated.title, updated_at: updated.updated_at } : source);
+      title = updated.title;
+      notice = 'Judul sumber berhasil disimpan.';
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Gagal menyimpan judul sumber.';
+    } finally {
+      saving = false;
+    }
+  }
+
+  async function hapusSumber() {
+    if (!activeSource || deleting) return;
+    if (!confirm('Hapus sumber ini? Isi sumber akan dihapus dari perangkat ini.')) return;
+    deleting = true;
+    error = '';
+    notice = '';
+    const deletedID = activeSource.id;
+    try {
+      await api('/api/sources/' + deletedID, { method: 'DELETE' });
+      sources = sources.filter((source) => source.id !== deletedID);
+      activeSource = null;
+      title = '';
+      notice = 'Sumber berhasil dihapus.';
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Gagal menghapus sumber.';
+    } finally {
+      deleting = false;
     }
   }
 
@@ -106,6 +156,8 @@
       return 'Ukuran tidak diketahui';
     }
   }
+
+  $: if (activeSource && !saving) title = activeSource.title;
 
   load();
 </script>
@@ -126,6 +178,7 @@
     </header>
 
     {#if error}<div class="error" role="alert">{error}</div>{/if}
+    {#if notice}<div class="notice" role="status">{notice}</div>{/if}
 
     <section class="toolbar">
       <label>Buku
@@ -166,6 +219,14 @@
           <div class="metadata">
             <span>Jenis: {activeSource.kind}</span>
             <span>{ukuran(activeSource)}</span>
+            <span>Diperbarui: {new Date(activeSource.updated_at).toLocaleString('id-ID')}</span>
+          </div>
+          <div class="actions">
+            <label>Ubah judul
+              <input bind:value={title} maxlength="200" aria-label="Judul sumber aktif" />
+            </label>
+            <button class="primary" disabled={!title.trim() || saving || deleting} onclick={simpanJudul}>{saving ? 'Menyimpan…' : 'Simpan judul'}</button>
+            <button class="danger" disabled={saving || deleting} onclick={hapusSumber}>{deleting ? 'Menghapus…' : 'Hapus sumber'}</button>
           </div>
           <pre>{activeSource.content}</pre>
         {:else}
@@ -188,12 +249,16 @@
   header p { margin: 0; color: #686c72; }
   header a { color: #202124; }
   .eyebrow { font-size: 11px; letter-spacing: .12em; color: #73777c; font-weight: 700; }
-  .error { margin: 0 0 16px; padding: 10px 12px; border-radius: 8px; background: #fff0ef; color: #8a1c13; }
+  .error, .notice { margin: 0 0 16px; padding: 10px 12px; border-radius: 8px; }
+  .error { background: #fff0ef; color: #8a1c13; }
+  .notice { background: #eef7ee; color: #245b2a; }
   .toolbar { display: grid; grid-template-columns: 1fr 1fr 1.5fr auto; gap: 12px; align-items: end; padding: 16px; background: #fff; border: 1px solid #e2e5e8; border-radius: 12px; margin-bottom: 20px; }
   label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; }
   input, select { width: 100%; border: 1px solid #d5d9dd; border-radius: 8px; padding: 9px 10px; background: #fff; }
-  .primary { border: 0; border-radius: 8px; padding: 10px 14px; background: #202124; color: #fff; cursor: pointer; }
-  .primary:disabled { opacity: .45; cursor: not-allowed; }
+  .primary, .danger { border: 0; border-radius: 8px; padding: 10px 14px; cursor: pointer; }
+  .primary { background: #202124; color: #fff; }
+  .danger { background: #fff0ef; color: #8a1c13; border: 1px solid #e4b5b0; }
+  .primary:disabled, .danger:disabled { opacity: .45; cursor: not-allowed; }
   .content { min-height: 620px; display: grid; grid-template-columns: 300px 1fr; background: #fff; border: 1px solid #e2e5e8; border-radius: 12px; overflow: hidden; }
   nav { border-right: 1px solid #e2e5e8; padding: 12px; }
   .heading { padding: 8px 10px 12px; font-size: 13px; color: #686c72; }
@@ -204,12 +269,13 @@
   article { padding: 28px; min-width: 0; }
   .source-head { display: flex; justify-content: space-between; gap: 20px; align-items: start; }
   code { max-width: 420px; overflow-wrap: anywhere; color: #686c72; font-size: 12px; }
-  .metadata { display: flex; gap: 18px; color: #73777c; font-size: 13px; margin: 12px 0 20px; }
+  .metadata { display: flex; gap: 18px; flex-wrap: wrap; color: #73777c; font-size: 13px; margin: 12px 0 20px; }
+  .actions { display: grid; grid-template-columns: minmax(220px, 1fr) auto auto; gap: 10px; align-items: end; padding: 14px; margin-bottom: 20px; background: #f7f8fa; border: 1px solid #e2e5e8; border-radius: 10px; }
   pre { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.65; margin: 0; font: inherit; }
   .detail { min-height: 500px; display: grid; place-content: center; text-align: center; }
   @media (max-width: 900px) {
     .page { padding: 20px; }
-    .toolbar { grid-template-columns: 1fr; }
+    .toolbar, .actions { grid-template-columns: 1fr; }
     .content { grid-template-columns: 1fr; }
     nav { border-right: 0; border-bottom: 1px solid #e2e5e8; max-height: 300px; overflow: auto; }
     header { flex-direction: column; }
