@@ -238,3 +238,20 @@ func TestSessionExpirationAndUserIsolation(t *testing.T) {
 	res = requestDenganCookie(t, handler, http.MethodGet, "/api/notebooks", nil, cookie1)
 	if res.Code != http.StatusUnauthorized { t.Fatalf("session kedaluwarsa: status = %d", res.Code) }
 }
+
+
+func TestWebInterfaceIsPublicWithoutSession(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "catatan.db")
+	d, err := db.Open(context.Background(), path)
+	if err != nil { t.Fatal(err) }
+	t.Cleanup(func() { _ = d.Close() })
+	handler := New(d)
+
+	res := requestUji(t, handler, http.MethodGet, "/", nil)
+	if res.Code != http.StatusOK {
+		t.Fatalf("halaman awal tanpa session: status = %d, ingin %d", res.Code, http.StatusOK)
+	}
+	if !strings.Contains(res.Body.String(), "<html") {
+		t.Fatal("halaman awal tidak mengembalikan dokumen HTML")
+	}
+}
