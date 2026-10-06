@@ -4,6 +4,15 @@ Semua perubahan penting pada proyek ini dicatat di sini.
 
 Format mengikuti Keep a Changelog dan versi mengikuti Semantic Versioning.
 
+## [0.2.0] - 2026-10-06
+
+### Ditambahkan
+
+- Alur catatan teks lengkap untuk membuat, membuka, mengubah, memilih, menyimpan otomatis, dan menghapus catatan.
+- Penyimpanan otomatis dengan debounce dan perlindungan terhadap penimpaan perubahan terbaru.
+- Validasi batas judul dan isi catatan.
+- Pengujian alur catatan utama tanpa jaringan.
+
 ## [0.1.0] - 2026-10-06
 
 ### Ditambahkan
