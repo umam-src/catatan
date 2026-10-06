@@ -88,6 +88,21 @@ func TestNoteFlowWorksWithoutNetwork(t *testing.T) {
 	if deleted.Code != http.StatusNoContent { t.Fatalf("hapus catatan: status = %d", deleted.Code) }
 }
 
+func TestDefaultNotebookIsAccessible(t *testing.T) {
+	handler := serverUji(t)
+	for _, path := range []string{
+		"/api/notebooks/default/notes",
+		"/api/notebooks/default/sources",
+		"/api/notebooks/default/export",
+		"/api/notebooks/default/backup",
+	} {
+		res := requestUji(t, handler, http.MethodGet, path, nil)
+		if res.Code != http.StatusOK {
+			t.Errorf("GET %s: status = %d, ingin %d; body = %s", path, res.Code, http.StatusOK, res.Body.String())
+		}
+	}
+}
+
 func TestCreateNotebookRejectsInvalidInput(t *testing.T) {
 	handler := serverUji(t)
 	tests := []struct { name string; body any }{{"kosong", map[string]string{"title": "   "}}, {"tidak dikenal", map[string]string{"title": "Uji", "lain": "rahasia"}}}

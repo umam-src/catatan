@@ -29,7 +29,7 @@ var errInvalidBackup = errors.New("cadangan tidak valid")
 
 func (s *Server) backupNotebook(w http.ResponseWriter, r *http.Request) {
 	notebookID := r.PathValue("id")
-	if !validID(notebookID) {
+	if !validNotebookID(notebookID) {
 		http.Error(w, "ID buku tidak valid", http.StatusBadRequest)
 		return
 	}
@@ -58,7 +58,7 @@ func (s *Server) backupNotebook(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) restoreNotebook(w http.ResponseWriter, r *http.Request) {
 	notebookID := r.PathValue("id")
-	if !validID(notebookID) {
+	if !validNotebookID(notebookID) {
 		http.Error(w, "ID buku tidak valid", http.StatusBadRequest)
 		return
 	}
@@ -118,7 +118,7 @@ func validateBackup(doc backupDocument, notebookID string) error {
 	if doc.Format != "catatan-backup" || doc.Version != backupFormatVersion {
 		return errors.New("format cadangan tidak didukung")
 	}
-	if doc.Notebook.ID != notebookID || !validID(doc.Notebook.ID) {
+	if doc.Notebook.ID != notebookID || !validNotebookID(doc.Notebook.ID) {
 		return errors.New("buku pada cadangan tidak cocok")
 	}
 	if err := validateLength(doc.Notebook.Title, 1, maxTitle, "Judul"); err != nil {

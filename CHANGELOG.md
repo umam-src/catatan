@@ -4,6 +4,12 @@ Semua perubahan penting pada proyek ini dicatat di sini.
 
 Format mengikuti Keep a Changelog dan versi mengikuti Semantic Versioning.
 
+## [0.2.1] - 2026-10-06
+
+### Diperbaiki
+
+- Buku bawaan dengan ID `default` dapat dibuka dan digunakan pada endpoint catatan, sumber, ekspor, dan cadangan.
+
 ## [0.2.0] - 2026-10-06
 
 ### Diubah
