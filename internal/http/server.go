@@ -41,6 +41,8 @@ func New(d *db.DB) http.Handler {
 	mux.HandleFunc("GET /api/notebooks/{id}/sources", s.listSources)
 	mux.HandleFunc("POST /api/notebooks/{id}/sources", s.importSource)
 	mux.HandleFunc("GET /api/notebooks/{id}/export", s.exportNotebook)
+	mux.HandleFunc("GET /api/notebooks/{id}/backup", s.backupNotebook)
+	mux.HandleFunc("POST /api/notebooks/{id}/backup", s.restoreNotebook)
 	mux.HandleFunc("GET /api/sources/{id}", s.getSource)
 	mux.HandleFunc("GET /api/sources/{id}/locations", s.listSourceLocations)
 	mux.HandleFunc("POST /api/sources/{id}/locations", s.createSourceLocation)
@@ -206,6 +208,7 @@ func allowedMethods(path string) string {
 	case strings.HasPrefix(path, "/api/notebooks/") && strings.HasSuffix(path, "/notes"): return http.MethodGet + ", " + http.MethodPost
 	case strings.HasPrefix(path, "/api/notebooks/") && strings.HasSuffix(path, "/sources"): return http.MethodGet + ", " + http.MethodPost
 	case strings.HasPrefix(path, "/api/notebooks/") && strings.HasSuffix(path, "/export"): return http.MethodGet
+	case strings.HasPrefix(path, "/api/notebooks/") && strings.HasSuffix(path, "/backup"): return http.MethodGet + ", " + http.MethodPost
 	case strings.HasPrefix(path, "/api/sources/") && strings.HasSuffix(path, "/locations"): return http.MethodGet + ", " + http.MethodPost
 	case strings.HasPrefix(path, "/api/sources/"): return http.MethodGet + ", " + http.MethodPut + ", " + http.MethodDelete
 	case strings.HasPrefix(path, "/api/notes/"): return http.MethodPut + ", " + http.MethodDelete
