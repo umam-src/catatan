@@ -37,6 +37,8 @@ func New(d *db.DB) http.Handler {
 	mux.HandleFunc("GET /api/auth/me", auth.me)
 	mux.HandleFunc("GET /api/notebooks", s.listNotebooks)
 	mux.HandleFunc("POST /api/notebooks", s.createNotebook)
+	mux.HandleFunc("PUT /api/notebooks/{id}", s.updateNotebook)
+	mux.HandleFunc("DELETE /api/notebooks/{id}", s.deleteNotebook)
 	mux.HandleFunc("GET /api/notebooks/{id}/notes", s.listNotes)
 	mux.HandleFunc("POST /api/notebooks/{id}/notes", s.createNote)
 	mux.HandleFunc("GET /api/notebooks/{id}/sources", s.listSources)
@@ -118,6 +120,36 @@ func (s *Server) createNotebook(w http.ResponseWriter, r *http.Request) {
 	_, err := s.db.ExecContext(r.Context(), `INSERT INTO notebooks(id,owner_id,title,description,created_at,updated_at) VALUES(?,?,?,?,?,?)`, id, userID(r), in.Title, in.Description, now, now)
 	if err != nil { serverError(w, err); return }
 	writeJSON(w, http.StatusCreated, Notebook{ID: id, Title: in.Title, Description: in.Description, CreatedAt: now, UpdatedAt: now})
+}
+
+func (s *Server) updateNotebook(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if !validNotebookID(id) { http.Error(w, "ID buku tidak valid", http.StatusBadRequest); return }
+	exists, err := s.notebookOwnedBy(r, id)
+	if err != nil { serverError(w, err); return }
+	if !exists { http.NotFound(w, r); return }
+
+	var in struct { Title string `json:"title"`; Description string `json:"description"` }
+	if !decode(w, r, &in) { return }
+	in.Title = strings.TrimSpace(in.Title)
+	in.Description = strings.TrimSpace(in.Description)
+	if err := validateLength(in.Title, 1, maxTitle, "Judul"); err != nil { http.Error(w, err.Error(), http.StatusBadRequest); return }
+	if err := validateLength(in.Description, 0, maxDescription, "Deskripsi"); err != nil { http.Error(w, err.Error(), http.StatusBadRequest); return }
+
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	_, err = s.db.ExecContext(r.Context(), `UPDATE notebooks SET title=?,description=?,updated_at=? WHERE id=? AND owner_id=?`, in.Title, in.Description, now, id, userID(r))
+	if err != nil { serverError(w, err); return }
+	writeJSON(w, http.StatusOK, Notebook{ID: id, Title: in.Title, Description: in.Description, UpdatedAt: now})
+}
+
+func (s *Server) deleteNotebook(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if !validNotebookID(id) { http.Error(w, "ID buku tidak valid", http.StatusBadRequest); return }
+
+	result, err := s.db.ExecContext(r.Context(), `DELETE FROM notebooks WHERE id=? AND owner_id=?`, id, userID(r))
+	if err != nil { serverError(w, err); return }
+	if affected, _ := result.RowsAffected(); affected == 0 { http.NotFound(w, r); return }
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *Server) listNotes(w http.ResponseWriter, r *http.Request) {
@@ -217,6 +249,7 @@ func allowedMethods(path string) string {
 	case strings.HasPrefix(path, "/api/sources/") && strings.HasSuffix(path, "/locations"): return http.MethodGet + ", " + http.MethodPost
 	case strings.HasPrefix(path, "/api/sources/"): return http.MethodGet + ", " + http.MethodPut + ", " + http.MethodDelete
 	case strings.HasPrefix(path, "/api/notes/"): return http.MethodPut + ", " + http.MethodDelete
+	case strings.HasPrefix(path, "/api/notebooks/"): return http.MethodGet + ", " + http.MethodPut + ", " + http.MethodDelete
 	default: return ""
 	}
 }
