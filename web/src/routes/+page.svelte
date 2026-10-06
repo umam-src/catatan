@@ -29,6 +29,7 @@
   let panel: Panel = 'sumber';
   let view: View = 'catatan';
   let bukuTerbuka = true;
+  let konteksTerbuka = true;
 
   let statusSimpan: 'tersimpan' | 'menyimpan' | 'gagal' = 'tersimpan';
   let timerSimpan: ReturnType<typeof setTimeout> | undefined;
@@ -261,8 +262,8 @@
     }
   }
 
-  async function hapusCatatan(note: Note = catatanAktif as Note) {
-    if (!note || !window.confirm(`Hapus catatan “${note.title || 'Tanpa judul'}”?`)) return;
+  async function hapusCatatan(note: Note) {
+    if (!window.confirm(`Hapus catatan “${note.title || 'Tanpa judul'}”?`)) return;
     const id = note.id;
     nomorSimpan++;
     if (timerSimpan) clearTimeout(timerSimpan);
@@ -495,7 +496,7 @@
           <button class="tombol utama" type="button" onclick={buatBuku}>+ Buku baru</button>
         </div>
       {:else}
-        <div class="workspace">
+        <div class:konteks-terlipat={!konteksTerbuka} class="workspace">
           <section class="panel-catatan" aria-label="Daftar catatan">
             <div class="panel-header">
               <div>
@@ -563,8 +564,17 @@
 
           <aside class="panel-konteks" aria-label="Konteks">
             <div class="tab-konteks">
-              <button class:aktif={panel === 'sumber'} type="button" onclick={() => panel = 'sumber'}>Sumber</button>
-              <button class:aktif={panel === 'artefak'} type="button" onclick={() => panel = 'artefak'}>Artefak</button>
+              <div class="tab-konteks-pilihan">
+                <button class:aktif={panel === 'sumber'} type="button" onclick={() => panel = 'sumber'}>Sumber</button>
+                <button class:aktif={panel === 'artefak'} type="button" onclick={() => panel = 'artefak'}>Artefak</button>
+              </div>
+              <button
+                class="tombol-lipat-konteks"
+                type="button"
+                aria-label="Sembunyikan panel sumber dan artefak"
+                title="Sembunyikan panel sumber dan artefak"
+                onclick={() => konteksTerbuka = false}
+              >›</button>
             </div>
 
             {#if panel === 'sumber'}
@@ -607,6 +617,15 @@
             {/if}
           </aside>
         </div>
+        {#if !konteksTerbuka}
+          <button
+            class="tombol-buka-konteks"
+            type="button"
+            aria-label="Tampilkan panel sumber dan artefak"
+            title="Tampilkan panel sumber dan artefak"
+            onclick={() => konteksTerbuka = true}
+          >‹</button>
+        {/if}
       {/if}
     </main>
   </div>
@@ -632,13 +651,28 @@
   .menu-konteks-daftar button:hover:not(:disabled) { background: var(--permukaan-lembut); }
   .menu-konteks-daftar button:disabled { color: var(--teks-2); cursor: not-allowed; opacity: .65; }
   .menu-konteks-daftar .berbahaya { color: #a33a32; }
+  .tab-konteks { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .tab-konteks-pilihan { display: flex; min-width: 0; flex: 1 1 auto; }
+  .tombol-lipat-konteks,
+  .tombol-buka-konteks { width: 30px; height: 30px; padding: 0; border: 0; border-radius: 7px; background: transparent; color: var(--teks-2); cursor: pointer; font-size: 17px; }
+  .tombol-lipat-konteks:hover,
+  .tombol-buka-konteks:hover { background: var(--permukaan-lembut); color: var(--teks); }
+  .workspace.konteks-terlipat { grid-template-columns: 248px minmax(0, 1fr); }
+  .workspace.konteks-terlipat .panel-konteks { display: none; }
+  .tombol-buka-konteks { position: fixed; top: 84px; right: 13px; z-index: 6; background: var(--permukaan-lembut); box-shadow: 0 3px 14px rgba(24,25,22,.08); }
   .tanpa-buku-kosong { min-height: calc(100vh - 145px); display: grid; place-content: center; justify-items: center; padding: 40px 24px; text-align: center; }
   .tanpa-buku-kosong h2 { margin: 4px 0 8px; }
   .tanpa-buku-kosong p:not(.eyebrow) { max-width: 420px; margin: 0 0 20px; color: var(--teks-2); }
+
+  @media (max-width: 1120px) and (min-width: 761px) {
+    .workspace.konteks-terlipat { grid-template-columns: 220px minmax(0, 1fr); }
+  }
 
   @media (max-width: 760px) {
     .item-buku-bar .menu-konteks,
     .item-catatan-bar .menu-konteks { right: 4px; }
     .menu-konteks-daftar { right: -2px; }
+    .workspace.konteks-terlipat { grid-template-columns: minmax(0, 1fr); }
+    .tombol-buka-konteks { top: 76px; right: 10px; }
   }
 </style>
