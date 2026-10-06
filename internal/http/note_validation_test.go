@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 	"testing"
@@ -14,7 +15,7 @@ func TestNoteValidationRejectsOversizedTitleAndContent(t *testing.T) {
 		t.Fatalf("buat buku: status = %d", res.Code)
 	}
 	var notebook Notebook
-	if err := decodeJSON(res, &notebook); err != nil {
+	if err := json.NewDecoder(res.Body).Decode(&notebook); err != nil {
 		t.Fatal(err)
 	}
 
@@ -43,7 +44,7 @@ func TestUpdateNoteRejectsInvalidContent(t *testing.T) {
 		t.Fatalf("buat buku: status = %d", res.Code)
 	}
 	var notebook Notebook
-	if err := decodeJSON(res, &notebook); err != nil {
+	if err := json.NewDecoder(res.Body).Decode(&notebook); err != nil {
 		t.Fatal(err)
 	}
 
@@ -55,7 +56,7 @@ func TestUpdateNoteRejectsInvalidContent(t *testing.T) {
 		t.Fatalf("buat catatan: status = %d", res.Code)
 	}
 	var note Note
-	if err := decodeJSON(res, &note); err != nil {
+	if err := json.NewDecoder(res.Body).Decode(&note); err != nil {
 		t.Fatal(err)
 	}
 
