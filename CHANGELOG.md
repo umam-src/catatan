@@ -5,6 +5,8 @@
 ### Diperbaiki
 
 - Tombol untuk melipat daftar buku kini benar-benar ditampilkan pada panel buku.
+- Kontrol daftar buku dipindahkan ke bagian atas agar posisi tombol lipat dan buka konsisten.
+- Daftar buku yang dilipat kini benar-benar disembunyikan sehingga ruang kerja tetap berada di bagian atas.
 - Nama folder data bawaan kini `catatan` dan nama basis data bawaan kini `catatan.db`.
 
 
