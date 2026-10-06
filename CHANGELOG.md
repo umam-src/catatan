@@ -8,6 +8,7 @@
 - Menu pengguna di kanan atas yang menampilkan nama pengguna dan menyediakan aksi keluar serta tempat profil.
 - Tombol Pengaturan di bagian bawah kolom buku.
 - Tampilan tombol Pengaturan menggunakan ikon yang serasi dengan tombol Keluar sebelumnya.
+- Menu pengguna dibuka dari ikon saja; nama pengguna tampil terpisah di sampingnya.
 - Dialog pengaturan dengan ukuran yang menyesuaikan layar dan tidak mengikuti panjang isi.
 - Sakelar untuk menampilkan atau menyembunyikan opsi pembuatan akun di halaman masuk, tersimpan pada perangkat.
 

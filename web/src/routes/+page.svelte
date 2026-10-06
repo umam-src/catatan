@@ -593,14 +593,14 @@
             <button
               class="pemicu-pengguna"
               type="button"
+              aria-label="Menu pengguna"
               aria-haspopup="menu"
               aria-expanded={menuPenggunaTerbuka}
               onclick={() => menuPenggunaTerbuka = !menuPenggunaTerbuka}
             >
               <span class="avatar">{inisial}</span>
-              <span class="nama-pengguna-atas">{user?.display_name || user?.username}</span>
-              <span class="panah-pengguna" aria-hidden="true">⌄</span>
             </button>
+            <span class="nama-pengguna-atas">{user?.display_name || user?.username}</span>
             {#if menuPenggunaTerbuka}
               <div class="daftar-menu-pengguna" role="menu" aria-label="Menu pengguna">
                 <div class="identitas-menu-pengguna">
