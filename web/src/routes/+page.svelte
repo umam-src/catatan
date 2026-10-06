@@ -360,6 +360,15 @@
 {:else}
   <div class:tanpa-buku={!bukuTerbuka} class="aplikasi">
     <aside class="panel-navigasi">
+      <button
+        class="tombol-lipat-buku"
+        type="button"
+        aria-label="Sembunyikan daftar buku"
+        title="Sembunyikan daftar buku"
+        aria-expanded={bukuTerbuka}
+        aria-controls="daftar-buku"
+        onclick={() => bukuTerbuka = false}
+      >‹</button>
       <div class="merek">
         <span class="logo-mark kecil">C</span>
         <div>
