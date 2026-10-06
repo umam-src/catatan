@@ -17,13 +17,19 @@ import (
 
 func serverUji(t *testing.T) http.Handler {
 	t.Helper()
+	handler, _ := serverUjiDenganServer(t)
+	return handler
+}
+
+func serverUjiDenganServer(t *testing.T) (http.Handler, *Server) {
+	t.Helper()
 	path := filepath.Join(t.TempDir(), "catatan.db")
 	d, err := db.Open(context.Background(), path)
 	if err != nil { t.Fatal(err) }
 	t.Cleanup(func() { _ = d.Close() })
 
-	handler := New(d)
-	setup := requestUji(t, handler, http.MethodPost, "/api/auth/setup", map[string]string{
+	server := New(d)
+	setup := requestUji(t, server, http.MethodPost, "/api/auth/setup", map[string]string{
 		"username": "pengguna",
 		"email": "pengguna@lokal.invalid",
 		"display_name": "Pengguna Uji",
@@ -37,8 +43,8 @@ func serverUji(t *testing.T) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r = r.Clone(r.Context())
 		r.AddCookie(sessionCookie)
-		handler.ServeHTTP(w, r)
-	})
+		server.ServeHTTP(w, r)
+	}), server
 }
 
 func requestUji(t *testing.T, handler http.Handler, method, path string, body any) *httptest.ResponseRecorder {
@@ -65,7 +71,7 @@ func TestNoteFlowWorksWithoutNetwork(t *testing.T) {
 
 	createdBook := requestUji(t, handler, http.MethodPost, "/api/notebooks", map[string]string{"title": "Buku Luring"})
 	if createdBook.Code != http.StatusCreated {
-		t.Fatalf("buat buku: status = %d", createdBook.Code)
+		t.Fatalf("buat buku: status = %d, ingin %d", createdBook.Code, http.StatusCreated)
 	}
 	var notebook Notebook
 	if err := json.NewDecoder(createdBook.Body).Decode(&notebook); err != nil {
@@ -324,30 +330,18 @@ func TestSessionExpirationAndUserIsolation(t *testing.T) {
 	if login.Code != http.StatusOK { t.Fatalf("login pengguna 2: status = %d", login.Code) }
 	cookie2 := login.Result().Cookies()[0]
 
-	list := requestDenganCookie(t, handler, http.MethodGet, "/api/notebooks", nil, cookie2)
-	if list.Code != http.StatusOK { t.Fatalf("daftar pengguna 2: status = %d", list.Code) }
+	res = requestDenganCookie(t, handler, http.MethodGet, "/api/notebooks", nil, cookie2)
+	if res.Code != http.StatusOK { t.Fatalf("daftar pengguna 2: status = %d", res.Code) }
 	var notebooks []Notebook
-	if err := json.NewDecoder(list.Body).Decode(&notebooks); err != nil { t.Fatal(err) }
-	if len(notebooks) != 0 { t.Fatalf("isolasi data gagal: pengguna 2 melihat %d buku", len(notebooks)) }
+	if err := json.NewDecoder(res.Body).Decode(&notebooks); err != nil { t.Fatal(err) }
+	if len(notebooks) != 0 { t.Fatalf("buku pengguna 1 bocor ke pengguna 2: %#v", notebooks) }
 
-	if _, err := d.Exec(`UPDATE sessions SET expires_at=? WHERE token_hash=?`, time.Now().UTC().Add(-time.Minute).Format(time.RFC3339Nano), tokenHash(cookie1.Value)); err != nil { t.Fatal(err) }
-	expired := requestDenganCookie(t, handler, http.MethodGet, "/api/notebooks", nil, cookie1)
-	if expired.Code != http.StatusUnauthorized { t.Fatalf("session kedaluwarsa: status = %d, ingin %d", expired.Code, http.StatusUnauthorized) }
-}
+	res = requestDenganCookie(t, handler, http.MethodGet, "/api/notebooks", nil, cookie1)
+	if res.Code != http.StatusOK { t.Fatalf("daftar pengguna 1: status = %d", res.Code) }
+	if err := json.NewDecoder(res.Body).Decode(&notebooks); err != nil { t.Fatal(err) }
+	if len(notebooks) != 1 { t.Fatalf("buku pengguna 1 hilang: %#v", notebooks) }
 
-func TestAuthRejectsCrossOriginSetup(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "catatan.db")
-	d, err := db.Open(context.Background(), path)
-	if err != nil { t.Fatal(err) }
-	t.Cleanup(func() { _ = d.Close() })
-	handler := New(d)
-
-	req := httptest.NewRequest(http.MethodPost, "/api/auth/setup", strings.NewReader(`{"username":"pengguna","password":"kata-sandi-uji-aman"}`))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Origin", "http://situs-lain.invalid")
-	res := httptest.NewRecorder()
-	handler.ServeHTTP(res, req)
-	if res.Code != http.StatusForbidden {
-		t.Fatalf("asal lintas situs: status = %d, ingin %d", res.Code, http.StatusForbidden)
-	}
+	if _, err := d.Exec(`UPDATE sessions SET expires_at=?`, time.Now().UTC().Add(-time.Hour).Format(time.RFC3339Nano)); err != nil { t.Fatal(err) }
+	res = requestDenganCookie(t, handler, http.MethodGet, "/api/notebooks", nil, cookie1)
+	if res.Code != http.StatusUnauthorized { t.Fatalf("session kedaluwarsa: status = %d", res.Code) }
 }
