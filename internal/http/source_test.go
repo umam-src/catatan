@@ -94,10 +94,9 @@ func TestSourceIntegrityRejectsInvalidUTF8(t *testing.T) {
 }
 
 func TestGetSourceRejectsCorruptContent(t *testing.T) {
-	handler := serverUji(t)
+	handler, server := serverUjiDenganServer(t)
 	notebook := buatBukuUjiSumber(t, handler)
 	source := imporSumberUji(t, handler, notebook.ID)
-	server := handler.(*Server)
 	if _, err := server.db.Exec(`UPDATE sources SET content=? WHERE id=?`, "isi rusak", source.ID); err != nil { t.Fatal(err) }
 	res := requestUji(t, handler, http.MethodGet, "/api/sources/"+source.ID, nil)
 	if res.Code != http.StatusUnprocessableEntity { t.Fatalf("sumber rusak: status = %d, body = %q", res.Code, res.Body.String()) }
