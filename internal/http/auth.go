@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/umam-src/buku-catatan/internal/db"
+	"github.com/umam-src/catatan/internal/db"
 )
 
 const (
@@ -260,7 +260,6 @@ func userFromRequest(ctx context.Context) (sessionUser, bool) {
 	user, ok := ctx.Value(authContextKey{}).(sessionUser)
 	return user, ok
 }
-
 
 func userID(r *http.Request) string {
 	user, _ := userFromRequest(r.Context())
