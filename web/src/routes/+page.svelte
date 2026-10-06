@@ -110,6 +110,7 @@
       sources = [];
       catatanAktif = null;
       sumberAktif = null;
+      view = 'catatan';
       return;
     }
 
@@ -156,6 +157,38 @@
     }
   }
 
+  async function ubahBuku(notebook: Notebook) {
+    const title = window.prompt('Nama buku', notebook.title);
+    if (!title?.trim() || title.trim() === notebook.title) return;
+    try {
+      const response = await permintaan('/api/notebooks/' + notebook.id, {
+        method: 'PUT',
+        body: JSON.stringify({ title: title.trim(), description: notebook.description })
+      });
+      const updated: Notebook = await response.json();
+      notebooks = notebooks.map((item) => item.id === updated.id ? { ...item, ...updated } : item);
+      galat = '';
+    } catch (error) {
+      galat = error instanceof Error ? error.message : 'Gagal mengubah buku.';
+    }
+  }
+
+  async function hapusBuku(notebook: Notebook) {
+    if (!window.confirm(`Hapus buku “${notebook.title}”?\n\nSemua catatan, sumber, dan isi terkait di dalamnya juga akan dihapus.`)) return;
+    if (timerSimpan) clearTimeout(timerSimpan);
+    nomorSimpan++;
+    try {
+      await permintaan('/api/notebooks/' + notebook.id, { method: 'DELETE' });
+      const sisa = notebooks.filter((item) => item.id !== notebook.id);
+      notebooks = sisa;
+      notebookID = sisa[0]?.id ?? '';
+      await muatIsiBuku();
+      galat = '';
+    } catch (error) {
+      galat = error instanceof Error ? error.message : 'Gagal menghapus buku.';
+    }
+  }
+
   async function buatCatatan() {
     if (!notebookID) return;
     try {
@@ -180,6 +213,23 @@
     view = 'catatan';
     statusSimpan = 'tersimpan';
     galat = '';
+  }
+
+  async function ubahCatatan(note: Note) {
+    const title = window.prompt('Judul catatan', note.title);
+    if (!title?.trim() || title.trim() === note.title) return;
+    try {
+      const response = await permintaan('/api/notes/' + note.id, {
+        method: 'PUT',
+        body: JSON.stringify({ title: title.trim(), content: note.content.trim() || ' ' })
+      });
+      const data = await response.json();
+      notes = notes.map((item) => item.id === note.id ? { ...item, title: title.trim(), updated_at: data.updated_at } : item);
+      if (catatanAktif?.id === note.id) catatanAktif = { ...catatanAktif, title: title.trim(), updated_at: data.updated_at };
+      galat = '';
+    } catch (error) {
+      galat = error instanceof Error ? error.message : 'Gagal mengubah catatan.';
+    }
   }
 
   function jadwalkanSimpan() {
@@ -211,9 +261,9 @@
     }
   }
 
-  async function hapusCatatan() {
-    if (!catatanAktif || !window.confirm('Hapus catatan ini?')) return;
-    const id = catatanAktif.id;
+  async function hapusCatatan(note: Note = catatanAktif as Note) {
+    if (!note || !window.confirm(`Hapus catatan “${note.title || 'Tanpa judul'}”?`)) return;
+    const id = note.id;
     nomorSimpan++;
     if (timerSimpan) clearTimeout(timerSimpan);
     try {
@@ -382,14 +432,19 @@
       <div class="judul-panel">BUKU</div>
       <nav id="daftar-buku" class="daftar-buku" aria-label="Buku">
         {#each notebooks as notebook}
-          <button
-            class:aktif={notebook.id === notebookID}
-            class="item-buku"
-            type="button"
-            onclick={() => pilihBuku(notebook.id)}
-          >
-            {notebook.title}
-          </button>
+          <div class:aktif={notebook.id === notebookID} class="item-buku-bar">
+            <button class="item-buku" type="button" onclick={() => pilihBuku(notebook.id)}>
+              {notebook.title}
+            </button>
+            <details class="menu-konteks">
+              <summary aria-label={"Menu " + notebook.title} title="Menu buku">⋯</summary>
+              <div class="menu-konteks-daftar">
+                <button type="button" onclick={() => ubahBuku(notebook)}>Ubah nama</button>
+                <button type="button" disabled title="Akan tersedia pada pengaturan izin">Izin akses</button>
+                <button class="berbahaya" type="button" onclick={() => hapusBuku(notebook)}>Hapus buku</button>
+              </div>
+            </details>
+          </div>
         {:else}
           <p class="teks-kosong">Belum ada buku.</p>
         {/each}
@@ -419,12 +474,11 @@
             onclick={() => bukuTerbuka = true}
           >›</button>
         {/if}
-        <div>
+        <div class="identitas-buku">
           <p class="eyebrow">BUKU</p>
           <h1>{bukuAktif?.title || 'Belum ada buku'}</h1>
         </div>
         <div class="aksi-atas">
-          <button class="tombol sekunder" type="button" onclick={buatCatatan} disabled={!notebookID}>+ Catatan</button>
           <button class="avatar" type="button" title={user?.username}>{inisial}</button>
         </div>
       </header>
@@ -433,118 +487,158 @@
         {#if galat}<div class="pesan galat" role="alert">{galat}</div>{/if}
       </div>
 
-      <div class="workspace">
-        <section class="panel-catatan" aria-label="Daftar catatan">
-          <div class="panel-header">
-            <div>
-              <strong>Catatan</strong>
-              <span>{notes.length} catatan</span>
-            </div>
-            <button class="ikon-tombol" type="button" onclick={buatCatatan} disabled={!notebookID} title="Catatan baru">+</button>
-          </div>
-
-          <div class="daftar-catatan">
-            {#each notes as note}
-              <button
-                class:aktif={catatanAktif?.id === note.id}
-                class="item-catatan"
-                type="button"
-                onclick={() => pilihCatatan(note)}
-              >
-                <strong>{note.title || 'Tanpa judul'}</strong>
-                <span>{note.content.trim().slice(0, 76) || 'Belum ada isi'}</span>
-              </button>
-            {:else}
-              <div class="keadaan-kosong kecil">
-                <span class="ikon-kosong">+</span>
-                <strong>Belum ada catatan</strong>
-                <span>Buat catatan pertama untuk buku ini.</span>
-                <button class="tombol sekunder" type="button" onclick={buatCatatan} disabled={!notebookID}>Buat catatan</button>
-              </div>
-            {/each}
-          </div>
-        </section>
-
-        <section class="editor" aria-label="Ruang kerja">
-          {#if view === 'pratinjau' && sumberAktif}
-            <div class="editor-atas">
-              <button class="tautan-kembali" type="button" onclick={() => { view = 'catatan'; sumberAktif = null; }}>← Kembali ke catatan</button>
-              <span class="status">Sumber asli</span>
-            </div>
-            <div class="pratinjau">
-              <p class="eyebrow">{sumberAktif.kind}</p>
-              <h2>{sumberAktif.title}</h2>
-              <p class="meta-sumber">{sumberAktif.locator || 'Sumber lokal'}</p>
-              <pre>{sumberAktif.content || 'Isi sumber kosong.'}</pre>
-            </div>
-          {:else if catatanAktif}
-            <div class="editor-atas">
-              <span class="status {statusSimpan}">
-                <i></i>
-                {statusSimpan === 'menyimpan' ? 'Menyimpan…' : statusSimpan === 'gagal' ? 'Belum tersimpan' : 'Tersimpan'}
-              </span>
-              <button class="tombol-hapus" type="button" onclick={hapusCatatan}>Hapus</button>
-            </div>
-            <input class="judul-catatan" bind:value={catatanAktif.title} oninput={jadwalkanSimpan} aria-label="Judul catatan" />
-            <textarea bind:value={catatanAktif.content} oninput={jadwalkanSimpan} aria-label="Isi catatan" placeholder="Mulai menulis…"></textarea>
-          {:else}
-            <div class="keadaan-kosong besar">
-              <span class="ikon-kosong besar">+</span>
-              <p class="eyebrow">RUANG KERJA</p>
-              <h2>Pilih atau buat catatan.</h2>
-              <p>Tempat menulis Anda tetap sederhana. Semua catatan tersimpan di perangkat ini.</p>
-              <button class="tombol utama" type="button" onclick={buatCatatan} disabled={!notebookID}>+ Catatan baru</button>
-            </div>
-          {/if}
-        </section>
-
-        <aside class="panel-konteks" aria-label="Konteks">
-          <div class="tab-konteks">
-            <button class:aktif={panel === 'sumber'} type="button" onclick={() => panel = 'sumber'}>Sumber</button>
-            <button class:aktif={panel === 'artefak'} type="button" onclick={() => panel = 'artefak'}>Artefak</button>
-          </div>
-
-          {#if panel === 'sumber'}
-            <div class="konteks-header">
+      {#if !notebookID}
+        <div class="keadaan-kosong tanpa-buku-kosong">
+          <p class="eyebrow">RUANG KERJA</p>
+          <h2>Belum ada buku</h2>
+          <p>Buat buku untuk mulai menyimpan catatan.</p>
+          <button class="tombol utama" type="button" onclick={buatBuku}>+ Buku baru</button>
+        </div>
+      {:else}
+        <div class="workspace">
+          <section class="panel-catatan" aria-label="Daftar catatan">
+            <div class="panel-header">
               <div>
-                <strong>Sumber</strong>
-                <span>{sources.length} sumber</span>
+                <strong>Catatan</strong>
+                <span>{notes.length} catatan</span>
               </div>
-              <button class="ikon-tombol" type="button" onclick={bukaImpor} disabled={!notebookID} title="Tambah sumber">+</button>
             </div>
-            <input bind:this={imporInput} class="tersembunyi" type="file" accept=".txt,.md,.csv,.json,.html,.xml,.log,text/*" onchange={imporSumber} />
-            <div class="daftar-sumber">
-              {#each sources as source}
-                <article class:aktif={sumberAktif?.id === source.id} class="item-sumber">
-                  <button type="button" onclick={() => pilihSumber(source)}>
-                    <strong>{source.title}</strong>
-                    <span>{source.kind}</span>
+
+            <div class="daftar-catatan">
+              {#each notes as note}
+                <div class:aktif={catatanAktif?.id === note.id} class="item-catatan-bar">
+                  <button class="item-catatan" type="button" onclick={() => pilihCatatan(note)}>
+                    <strong>{note.title || 'Tanpa judul'}</strong>
+                    <span>{note.content.trim().slice(0, 76) || 'Belum ada isi'}</span>
                   </button>
-                  <button class="hapus-kecil" type="button" title="Hapus sumber" aria-label={"Hapus " + source.title} onclick={() => hapusSumber(source)}>×</button>
-                </article>
+                  <details class="menu-konteks">
+                    <summary aria-label={"Menu " + (note.title || 'catatan')} title="Menu catatan">⋯</summary>
+                    <div class="menu-konteks-daftar">
+                      <button type="button" onclick={() => ubahCatatan(note)}>Ubah nama</button>
+                      <button type="button" disabled title="Akan tersedia pada pengaturan izin">Izin akses</button>
+                      <button class="berbahaya" type="button" onclick={() => hapusCatatan(note)}>Hapus catatan</button>
+                    </div>
+                  </details>
+                </div>
               {:else}
-                <div class="konteks-kosong">
-                  <strong>Belum ada sumber.</strong>
-                  <span>Tambahkan berkas teks untuk digunakan sebagai referensi.</span>
-                  <button class="tombol sekunder" type="button" onclick={bukaImpor} disabled={!notebookID}>+ Tambah sumber</button>
+                <div class="keadaan-kosong kecil">
+                  <strong>Belum ada catatan</strong>
+                  <span>Mulai dengan catatan pertama untuk buku ini.</span>
+                  <button class="tombol sekunder" type="button" onclick={buatCatatan}>Buat catatan</button>
                 </div>
               {/each}
             </div>
-          {:else}
-            <div class="konteks-header">
-              <div>
-                <strong>Artefak</strong>
-                <span>Hasil kerja</span>
+          </section>
+
+          <section class="editor" aria-label="Ruang kerja">
+            {#if view === 'pratinjau' && sumberAktif}
+              <div class="editor-atas">
+                <button class="tautan-kembali" type="button" onclick={() => { view = 'catatan'; sumberAktif = null; }}>← Kembali ke catatan</button>
+                <span class="status">Sumber asli</span>
               </div>
+              <div class="pratinjau">
+                <p class="eyebrow">{sumberAktif.kind}</p>
+                <h2>{sumberAktif.title}</h2>
+                <p class="meta-sumber">{sumberAktif.locator || 'Sumber lokal'}</p>
+                <pre>{sumberAktif.content || 'Isi sumber kosong.'}</pre>
+              </div>
+            {:else if catatanAktif}
+              <div class="editor-atas">
+                <span class="status {statusSimpan}">
+                  <i></i>
+                  {statusSimpan === 'menyimpan' ? 'Menyimpan…' : statusSimpan === 'gagal' ? 'Belum tersimpan' : 'Tersimpan'}
+                </span>
+              </div>
+              <input class="judul-catatan" bind:value={catatanAktif.title} oninput={jadwalkanSimpan} aria-label="Judul catatan" />
+              <textarea bind:value={catatanAktif.content} oninput={jadwalkanSimpan} aria-label="Isi catatan" placeholder="Mulai menulis…"></textarea>
+            {:else}
+              <div class="keadaan-kosong besar">
+                <p class="eyebrow">RUANG KERJA</p>
+                <h2>Belum ada catatan</h2>
+                <p>Buat catatan pertama untuk mulai menulis.</p>
+                <button class="tombol utama" type="button" onclick={buatCatatan}>Buat catatan</button>
+              </div>
+            {/if}
+          </section>
+
+          <aside class="panel-konteks" aria-label="Konteks">
+            <div class="tab-konteks">
+              <button class:aktif={panel === 'sumber'} type="button" onclick={() => panel = 'sumber'}>Sumber</button>
+              <button class:aktif={panel === 'artefak'} type="button" onclick={() => panel = 'artefak'}>Artefak</button>
             </div>
-            <div class="konteks-kosong">
-              <span class="ikon-kosong">—</span>
-              <strong>Belum ada artefak.</strong>
-              <span>Ruang artefak disiapkan untuk tahap berikutnya tanpa mengganggu ruang kerja sekarang.</span>
-            </div>
-          {/if}
-        </aside>
-      </div>
+
+            {#if panel === 'sumber'}
+              <div class="konteks-header">
+                <div>
+                  <strong>Sumber</strong>
+                  <span>{sources.length} sumber</span>
+                </div>
+                <button class="ikon-tombol" type="button" onclick={bukaImpor} disabled={!notebookID} title="Tambah sumber">+</button>
+              </div>
+              <input bind:this={imporInput} class="tersembunyi" type="file" accept=".txt,.md,.csv,.json,.html,.xml,.log,text/*" onchange={imporSumber} />
+              <div class="daftar-sumber">
+                {#each sources as source}
+                  <article class:aktif={sumberAktif?.id === source.id} class="item-sumber">
+                    <button type="button" onclick={() => pilihSumber(source)}>
+                      <strong>{source.title}</strong>
+                      <span>{source.kind}</span>
+                    </button>
+                    <button class="hapus-kecil" type="button" title="Hapus sumber" aria-label={"Hapus " + source.title} onclick={() => hapusSumber(source)}>×</button>
+                  </article>
+                {:else}
+                  <div class="konteks-kosong">
+                    <strong>Belum ada sumber.</strong>
+                    <span>Tambahkan berkas teks untuk digunakan sebagai referensi.</span>
+                    <button class="tombol sekunder" type="button" onclick={bukaImpor} disabled={!notebookID}>+ Tambah sumber</button>
+                  </div>
+                {/each}
+              </div>
+            {:else}
+              <div class="konteks-header">
+                <div>
+                  <strong>Artefak</strong>
+                  <span>Hasil kerja</span>
+                </div>
+              </div>
+              <div class="konteks-kosong">
+                <strong>Belum ada artefak.</strong>
+                <span>Ruang artefak disiapkan untuk tahap berikutnya tanpa mengganggu ruang kerja sekarang.</span>
+              </div>
+            {/if}
+          </aside>
+        </div>
+      {/if}
     </main>
   </div>
 {/if}
+
+<style>
+  .identitas-buku { min-width: 0; }
+  .item-buku-bar,
+  .item-catatan-bar { position: relative; display: flex; align-items: stretch; min-width: 0; }
+  .item-buku-bar .item-buku,
+  .item-catatan-bar .item-catatan { flex: 1 1 auto; min-width: 0; }
+  .item-buku-bar.aktif .item-buku,
+  .item-catatan-bar.aktif .item-catatan { padding-right: 38px; }
+  .menu-konteks { position: relative; flex: 0 0 auto; }
+  .item-buku-bar .menu-konteks,
+  .item-catatan-bar .menu-konteks { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); z-index: 2; }
+  .menu-konteks summary { list-style: none; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 7px; color: var(--teks-2); cursor: pointer; font-size: 18px; line-height: 1; }
+  .menu-konteks summary::-webkit-details-marker { display: none; }
+  .menu-konteks summary:hover,
+  .menu-konteks[open] summary { background: var(--permukaan-lembut); color: var(--teks); }
+  .menu-konteks-daftar { position: absolute; top: 34px; right: 0; min-width: 155px; padding: 5px; border: 1px solid var(--garis); border-radius: 9px; background: var(--permukaan); box-shadow: 0 8px 24px rgba(24,25,22,.12); z-index: 10; }
+  .menu-konteks-daftar button { display: block; width: 100%; padding: 8px 10px; border: 0; border-radius: 6px; background: transparent; color: var(--teks); text-align: left; cursor: pointer; font: inherit; }
+  .menu-konteks-daftar button:hover:not(:disabled) { background: var(--permukaan-lembut); }
+  .menu-konteks-daftar button:disabled { color: var(--teks-2); cursor: not-allowed; opacity: .65; }
+  .menu-konteks-daftar .berbahaya { color: #a33a32; }
+  .tanpa-buku-kosong { min-height: calc(100vh - 145px); display: grid; place-content: center; justify-items: center; padding: 40px 24px; text-align: center; }
+  .tanpa-buku-kosong h2 { margin: 4px 0 8px; }
+  .tanpa-buku-kosong p:not(.eyebrow) { max-width: 420px; margin: 0 0 20px; color: var(--teks-2); }
+
+  @media (max-width: 760px) {
+    .item-buku-bar .menu-konteks,
+    .item-catatan-bar .menu-konteks { right: 4px; }
+    .menu-konteks-daftar { right: -2px; }
+  }
+</style>
