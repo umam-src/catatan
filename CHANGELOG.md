@@ -17,6 +17,7 @@
 - Judul buku tetap rata kiri saat drawer buku disembunyikan.
 - Versi aplikasi ditampilkan di tengah kolom navigasi.
 - Status drawer buku dipertahankan setelah halaman dimuat ulang.
+- Status drawer Sumber dan Artefak dipertahankan setelah halaman dimuat ulang.
 
 ## [0.2.7] - 2026-10-06
 

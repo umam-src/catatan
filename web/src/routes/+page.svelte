@@ -25,6 +25,7 @@
   let galatPengaturan = '';
   const kunciPendaftaran = 'catatan.pendaftaranDiizinkan';
   const kunciStatusDrawer = 'catatan.bukuTerbuka';
+  const kunciStatusDrawerKonteks = 'catatan.konteksTerbuka';
 
   let notebooks: Notebook[] = [];
   let notebookID = '';
@@ -90,6 +91,15 @@
     }
   }
 
+  function ubahStatusDrawerKonteks(terbuka: boolean) {
+    konteksTerbuka = terbuka;
+    try {
+      window.localStorage.setItem(kunciStatusDrawerKonteks, String(terbuka));
+    } catch {
+      galat = 'Status drawer Artefak tidak dapat disimpan pada perangkat ini.';
+    }
+  }
+
   function ubahPengaturanPendaftaran(event: Event) {
     const input = event.currentTarget;
     if (!(input instanceof HTMLInputElement)) return;
@@ -124,6 +134,14 @@
           if (nilaiDrawer === 'true' || nilaiDrawer === 'false') bukuTerbuka = nilaiDrawer === 'true';
         } catch {
           galat = 'Status daftar buku tidak dapat dibaca pada perangkat ini.';
+        }
+        try {
+          const nilaiDrawerKonteks = window.localStorage.getItem(kunciStatusDrawerKonteks);
+          if (nilaiDrawerKonteks === 'true' || nilaiDrawerKonteks === 'false') {
+            konteksTerbuka = nilaiDrawerKonteks === 'true';
+          }
+        } catch {
+          galat = 'Status drawer Artefak tidak dapat dibaca pada perangkat ini.';
         }
       }
       const versiResponse = await fetch('/api/version');
@@ -733,7 +751,7 @@
                 type="button"
                 aria-label="Sembunyikan panel sumber dan artefak"
                 title="Sembunyikan panel sumber dan artefak"
-                onclick={() => konteksTerbuka = false}
+                onclick={() => ubahStatusDrawerKonteks(false)}
               >›</button>
             </div>
 
@@ -783,7 +801,7 @@
             type="button"
             aria-label="Tampilkan panel sumber dan artefak"
             title="Tampilkan panel sumber dan artefak"
-            onclick={() => konteksTerbuka = true}
+            onclick={() => ubahStatusDrawerKonteks(true)}
           >‹</button>
         {/if}
       {/if}
