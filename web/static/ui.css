@@ -263,7 +263,7 @@ input:focus { border-color: #aaa9a2; }
   font-size: 17px;
 }
 .ikon-tombol:hover { background: #eeeeea; color: var(--teks); }
-.versi-navigasi { margin: 8px 5px 0; color: var(--teks-3); font-size: 9px; }
+.versi-navigasi { margin: 8px 5px 0; color: var(--teks-3); text-align: center; font-size: 9px; }
 .tombol-pengaturan-samping {
   width: 100%;
   min-height: 38px;
@@ -373,6 +373,8 @@ input:focus { border-color: #aaa9a2; }
   justify-content: space-between;
   border-bottom: 1px solid var(--garis);
 }
+.bar-atas.drawer-tertutup { justify-content: flex-start; }
+.bar-atas.drawer-tertutup .aksi-atas { margin-left: auto; }
 .bar-atas h1 { margin: 4px 0 0; font-size: 18px; letter-spacing: -.02em; }
 .aksi-atas { display: flex; align-items: center; gap: 8px; }
 

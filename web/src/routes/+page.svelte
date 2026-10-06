@@ -24,6 +24,7 @@
   let pendaftaranDiizinkan = true;
   let galatPengaturan = '';
   const kunciPendaftaran = 'catatan.pendaftaranDiizinkan';
+  const kunciStatusDrawer = 'catatan.bukuTerbuka';
 
   let notebooks: Notebook[] = [];
   let notebookID = '';
@@ -80,6 +81,15 @@
     dialogPengaturanTerbuka = true;
   }
 
+  function ubahStatusDrawer(terbuka: boolean) {
+    bukuTerbuka = terbuka;
+    try {
+      window.localStorage.setItem(kunciStatusDrawer, String(terbuka));
+    } catch {
+      galat = 'Status daftar buku tidak dapat disimpan pada perangkat ini.';
+    }
+  }
+
   function ubahPengaturanPendaftaran(event: Event) {
     const input = event.currentTarget;
     if (!(input instanceof HTMLInputElement)) return;
@@ -108,6 +118,12 @@
           pendaftaranDiizinkan = nilai === null || nilai === 'true';
         } catch {
           galatPengaturan = 'Pengaturan pendaftaran tidak dapat dibaca dari perangkat ini.';
+        }
+        try {
+          const nilaiDrawer = window.localStorage.getItem(kunciStatusDrawer);
+          if (nilaiDrawer === 'true' || nilaiDrawer === 'false') bukuTerbuka = nilaiDrawer === 'true';
+        } catch {
+          galat = 'Status daftar buku tidak dapat dibaca pada perangkat ini.';
         }
       }
       const versiResponse = await fetch('/api/version');
@@ -517,7 +533,7 @@
   </main>
 {:else}
   <div class:tanpa-buku={!bukuTerbuka} class="aplikasi" onclick={tutupMenuKonteksDiLuar}>
-    <aside class="panel-navigasi">
+    <aside class:tersembunyi={!bukuTerbuka} class="panel-navigasi">
       <button
         class="tombol-lipat-buku"
         type="button"
@@ -525,7 +541,7 @@
         title="Sembunyikan daftar buku"
         aria-expanded={bukuTerbuka}
         aria-controls="daftar-buku"
-        onclick={() => bukuTerbuka = false}
+        onclick={() => ubahStatusDrawer(false)}
       >‹</button>
       <div class="merek">
         <span class="logo-mark kecil">C</span>
@@ -580,7 +596,7 @@
     </aside>
 
     <main class="ruang-kerja">
-      <header class="bar-atas">
+      <header class:drawer-tertutup={!bukuTerbuka} class="bar-atas">
         {#if !bukuTerbuka}
           <button
             class="tombol-buka-buku"
@@ -589,7 +605,7 @@
             title="Tampilkan daftar buku"
             aria-expanded={bukuTerbuka}
             aria-controls="daftar-buku"
-            onclick={() => bukuTerbuka = true}
+            onclick={() => ubahStatusDrawer(true)}
           >›</button>
         {/if}
         <div class="identitas-buku">

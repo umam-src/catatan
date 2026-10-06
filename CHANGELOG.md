@@ -12,6 +12,12 @@
 - Dialog pengaturan dengan ukuran yang menyesuaikan layar dan tidak mengikuti panjang isi.
 - Sakelar untuk menampilkan atau menyembunyikan opsi pembuatan akun di halaman masuk, tersimpan pada perangkat.
 
+### Diperbaiki
+
+- Judul buku tetap rata kiri saat drawer buku disembunyikan.
+- Versi aplikasi ditampilkan di tengah kolom navigasi.
+- Status drawer buku dipertahankan setelah halaman dimuat ulang.
+
 ## [0.2.7] - 2026-10-06
 
 ### Diperbaiki
