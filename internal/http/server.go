@@ -38,6 +38,9 @@ func New(d *db.DB) http.Handler {
 	mux.HandleFunc("POST /api/notebooks", s.createNotebook)
 	mux.HandleFunc("GET /api/notebooks/{id}/notes", s.listNotes)
 	mux.HandleFunc("POST /api/notebooks/{id}/notes", s.createNote)
+	mux.HandleFunc("GET /api/notebooks/{id}/sources", s.listSources)
+	mux.HandleFunc("POST /api/notebooks/{id}/sources", s.importSource)
+	mux.HandleFunc("GET /api/sources/{id}", s.getSource)
 	mux.HandleFunc("PUT /api/notes/{id}", s.updateNote)
 	mux.HandleFunc("DELETE /api/notes/{id}", s.deleteNote)
 	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, _ *http.Request) {
@@ -390,6 +393,10 @@ func allowedMethods(path string) string {
 		return http.MethodGet + ", " + http.MethodPost
 	case strings.HasPrefix(path, "/api/notebooks/") && strings.HasSuffix(path, "/notes"):
 		return http.MethodGet + ", " + http.MethodPost
+	case strings.HasPrefix(path, "/api/notebooks/") && strings.HasSuffix(path, "/sources"):
+		return http.MethodGet + ", " + http.MethodPost
+	case strings.HasPrefix(path, "/api/sources/"):
+		return http.MethodGet
 	case strings.HasPrefix(path, "/api/notes/"):
 		return http.MethodPut + ", " + http.MethodDelete
 	default:
