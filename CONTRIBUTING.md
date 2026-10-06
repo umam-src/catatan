@@ -21,8 +21,9 @@ Kode, nama berkas, komentar, dokumentasi, dan pesan commit menggunakan Bahasa In
 3. Ubah kode secukupnya.
 4. Jalankan pemeriksaan lokal.
 5. Perbarui dokumentasi jika keputusan atau perilaku berubah.
-6. Periksa ukuran hasil build.
-7. Buat commit dengan pesan singkat dan jelas.
+6. Jika mengubah tabel, kolom, relasi, indeks, atau aturan skema, perbarui `docs/database.md` dan tambahkan atau sesuaikan pengujian migrasi.
+7. Periksa ukuran hasil build.
+8. Buat commit dengan pesan singkat dan jelas.
 
 ## Versi
 
