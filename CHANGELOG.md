@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.3] - 2026-10-06
+
+### Diperbaiki
+
+- Tombol untuk melipat daftar buku kini benar-benar ditampilkan pada panel buku.
+- Nama folder data bawaan kini `catatan` dan nama basis data bawaan kini `catatan.db`.
+
+
 Semua perubahan penting pada proyek ini dicatat di sini.
 
 Format mengikuti Keep a Changelog dan versi mengikuti Semantic Versioning.
