@@ -391,7 +391,7 @@ func allowedMethods(path string) string {
 	case strings.HasPrefix(path, "/api/notebooks/") && strings.HasSuffix(path, "/notes"):
 		return http.MethodGet + ", " + http.MethodPost
 	case strings.HasPrefix(path, "/api/notes/"):
-		return http.MethodPut
+		return http.MethodPut + ", " + http.MethodDelete
 	default:
 		return ""
 	}
