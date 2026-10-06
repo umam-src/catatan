@@ -36,7 +36,7 @@ jobs:
       - name: Verifikasi UI tertanam
         run: test -f internal/ui/dist/index.html && test "$(find internal/ui/dist -type f | wc -l)" -gt 0
       - name: Bangun program
-        run: go build -trimpath -ldflags='-s -w' -o catatan ./cmd/buku-catatan
+        run: go build -trimpath -ldflags='-s -w' -o catatan ./cmd/catatan
       - name: Periksa ukuran
         run: |
           raw_bytes=$(stat -c%s catatan)

@@ -1,4 +1,4 @@
-module github.com/umam-src/buku-catatan
+module github.com/umam-src/catatan
 
 go 1.23.0
 

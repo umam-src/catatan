@@ -44,7 +44,7 @@ Prasyarat:
 Jalankan aplikasi:
 
 ```bash
-go run ./cmd/buku-catatan
+go run ./cmd/catatan
 ```
 
 Untuk memasang dependensi dan membangun antarmuka:
@@ -82,7 +82,7 @@ CI menjalankan pemeriksaan tersebut serta memastikan hasil antarmuka tersedia un
 Dari direktori akar proyek:
 
 ```bash
-go build -trimpath -ldflags='-s -w' -o catatan ./cmd/buku-catatan
+go build -trimpath -ldflags='-s -w' -o catatan ./cmd/catatan
 ```
 
 Program produksi menanam hasil antarmuka ke dalam berkas eksekusi. Data pengguna berada di luar berkas program sehingga pembaruan program tidak menimpa catatan.

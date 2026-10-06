@@ -12,7 +12,7 @@ import (
 	"time"
 	"testing"
 
-	"github.com/umam-src/buku-catatan/internal/db"
+	"github.com/umam-src/catatan/internal/db"
 )
 
 func serverUji(t *testing.T) http.Handler {
