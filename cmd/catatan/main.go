@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"github.com/umam-src/catatan/internal/ai"
 	"github.com/umam-src/catatan/internal/db"
 	"github.com/umam-src/catatan/internal/version"
 	apphttp "github.com/umam-src/catatan/internal/http"
@@ -48,7 +49,20 @@ func main() {
 	}
 	defer database.Close()
 
-	server := &http.Server{Addr: *addr, Handler: apphttp.New(database)}
+	aiConfig, aiConfigured, err := ai.ConfigFromEnv()
+	if err != nil {
+		log.Fatal(err)
+	}
+	var aiProvider *ai.Client
+	if aiConfigured {
+		aiProvider, err = ai.NewClient(*aiConfig)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("penyedia model lokal aktif: %s", aiConfig.BaseURL)
+	}
+
+	server := &http.Server{Addr: *addr, Handler: apphttp.NewWithAI(database, aiProvider)}
 	go func() {
 		log.Printf("Buku Catatan: http://%s", *addr)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
