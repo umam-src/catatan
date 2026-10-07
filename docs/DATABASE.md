@@ -247,3 +247,15 @@ Pada pengembangan sebelum `v1.0.0`, migrasi dapat dirapikan jika riwayat pengemb
 ## Backup dan pemulihan
 
 Format cadangan harus mempertahankan data buku, catatan, sumber, serta metadata penting tanpa menyimpan rahasia sistem. Pemeriksaan integritas dilakukan sebelum data aktif ditimpa. Detail format cadangan mengikuti keputusan implementasi Fase 2 dan harus diperbarui bersama dokumen ini ketika format tersebut ditetapkan.
+
+
+## Pengukuran pencarian lokal
+
+Pengukuran satu kali pada runner CI Linux, menggunakan dataset sintetis dan 100 pencarian setelah pemanasan:
+
+| Data uji | Ukuran basis data | Rata-rata pencarian |
+| ---: | ---: | ---: |
+| 1.000 catatan | 720.896 byte (≈0,69 MiB) | 2,73 ms |
+| 10.000 catatan | 5.386.240 byte (≈5,14 MiB) | 25,20 ms |
+
+Hasil ini menjadi garis dasar untuk optimasi berikutnya. Belum ada bukti yang membenarkan indeks tambahan atau struktur pencarian yang lebih kompleks. Pengukuran tidak dijalankan pada CI rutin agar waktu CI tetap hemat.

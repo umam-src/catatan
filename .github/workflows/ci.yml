@@ -24,11 +24,6 @@ jobs:
         run: go mod verify
       - name: Uji Go
         run: go test ./...
-      - name: Pengukuran pencarian satu kali
-        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[benchmark]')
-        env:
-          CATATAN_BENCHMARK: '1'
-        run: go test ./internal/db -run '^TestSearchMeasurement$' -v
       - name: Periksa Go
         run: go vet ./...
       - name: Pasang dan bangun UI

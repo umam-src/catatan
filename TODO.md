@@ -25,9 +25,9 @@
 **Issue:** #83
 - [x] Tambahkan API pencarian dan alur pemanggilan dari antarmuka. (#88)
 - [x] Integrasikan pencarian lokal pada antarmuka dengan konteks buku dan keadaan hasil. (#89)
-- [ ] Uji data lebih besar.
-- [ ] Catat waktu pencarian dan dampak penyimpanan.
-- [ ] Evaluasi optimasi tambahan hanya jika pengukuran membuktikan perlu.
+- [x] Uji data lebih besar.
+- [x] Catat waktu pencarian dan dampak penyimpanan.
+- [x] Evaluasi optimasi tambahan hanya jika pengukuran membuktikan perlu; belum ada optimasi tambahan yang dibenarkan.
 
 ### 3.2 Kontrak penyedia model
 **Issue:** #84
