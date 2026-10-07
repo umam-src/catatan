@@ -34,7 +34,8 @@
 - [x] Tetapkan antarmuka penyedia model yang minimal.
 - [x] Gunakan pola kompatibel OpenAI tanpa mengikat model data inti.
 - [x] Pisahkan konfigurasi penyedia dari logika aplikasi.
-- [x] Dukung konfigurasi lokal tanpa layanan awan wajib.
+- [x] Dukung konfigurasi lokal tanpa layanan awan wajib melalui `config.json`.
+- [ ] Tambahkan pengaturan AI dari antarmuka pengguna.
 - [x] Jangan menyimpan rahasia penyedia di repository, basis data, atau log.
 - [x] Tangani penyedia tidak tersedia, waktu habis, dan respons tidak sah.
 - [x] Tetapkan batas waktu dan ukuran permintaan/respons.
