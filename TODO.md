@@ -23,15 +23,10 @@
 
 ### 3.1 Pencarian lokal
 **Issue:** #83
-- [ ] Tetapkan strategi indeks pencarian berdasarkan kebutuhan nyata.
-- [ ] Indeks judul dan isi catatan.
-- [ ] Indeks isi sumber lokal.
-- [ ] Pastikan hasil terisolasi berdasarkan buku/pemilik.
-- [ ] Perbarui indeks secara efisien saat data berubah.
-- [ ] Tangani kueri kosong, data kosong, dan hasil tidak ditemukan.
-- [ ] Uji data kecil dan data lebih besar.
-- [ ] Ukur waktu pencarian dan dampak penyimpanan.
-- [ ] Hindari indeks/dependensi yang lebih berat daripada manfaatnya.
+- [ ] Tambahkan API pencarian dan alur pemanggilan dari antarmuka.
+- [ ] Uji data lebih besar.
+- [ ] Catat waktu pencarian dan dampak penyimpanan.
+- [ ] Evaluasi optimasi tambahan hanya jika pengukuran membuktikan perlu.
 
 ### 3.2 Kontrak penyedia model
 **Issue:** #84
