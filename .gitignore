@@ -9,6 +9,7 @@
 *.db-shm
 *.db-wal
 /data/
+config.json
 
 # Berkas sistem
 .DS_Store
