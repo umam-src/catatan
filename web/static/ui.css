@@ -827,3 +827,105 @@ dialog.dialog::backdrop { background: var(--lapisan); backdrop-filter: blur(3px)
     animation: none !important;
   }
 }
+
+
+/* Ruang percakapan */
+.chat-atas {
+  justify-content: space-between;
+}
+.tombol-chat {
+  margin-left: auto;
+}
+.chat-ruang {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px clamp(16px, 4vw, 48px);
+}
+.chat-pesan {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.chat-pesan-item {
+  max-width: min(760px, 92%);
+  padding: 14px 16px;
+  border: 1px solid var(--garis);
+  border-radius: 14px;
+  background: var(--permukaan);
+}
+.chat-pesan-item.user {
+  align-self: flex-end;
+  background: var(--permukaan-lembut);
+}
+.chat-peran {
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--teks-lembut);
+}
+.chat-isi {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+.chat-kutipan {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.chat-kutipan button {
+  border: 1px solid var(--garis);
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: var(--permukaan-lembut);
+  color: var(--teks);
+  cursor: pointer;
+  font-size: 12px;
+}
+.chat-form {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+.chat-form textarea {
+  min-height: 76px;
+  max-height: 220px;
+  resize: vertical;
+  flex: 1;
+}
+.pilih-sumber-konteks {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  width: 100%;
+  padding: 10px;
+  cursor: pointer;
+}
+.pilih-sumber-konteks input {
+  margin-top: 4px;
+  flex: 0 0 auto;
+}
+.pilih-sumber-konteks span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+.pilih-sumber-konteks small {
+  color: var(--teks-lembut);
+}
+@media (max-width: 760px) {
+  .chat-ruang {
+    padding: 12px;
+  }
+  .chat-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
