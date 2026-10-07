@@ -23,12 +23,16 @@ func TestOpenAICompatibleProviderGeneratesWithoutExternalNetwork(t *testing.T) {
 	defer server.Close()
 
 	provider, err := NewClient(Config{BaseURL: server.URL, APIKey: "test-key"})
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	response, err := provider.Generate(context.Background(), Request{
 		Model: "uji-model",
 		Messages: []Message{{Role: RoleUser, Content: "Halo"}},
 	})
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	if response.Text != "jawaban lokal" || response.Model != "uji-model" {
 		t.Fatalf("response = %#v", response)
 	}
@@ -45,7 +49,9 @@ func TestOpenAICompatibleProviderRejectsInvalidResponse(t *testing.T) {
 	defer server.Close()
 
 	provider, err := NewClient(Config{BaseURL: server.URL})
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	_, err = provider.Generate(context.Background(), Request{
 		Model: "uji-model",
 		Messages: []Message{{Role: RoleUser, Content: "Halo"}},
@@ -56,27 +62,33 @@ func TestOpenAICompatibleProviderRejectsInvalidResponse(t *testing.T) {
 }
 
 func TestOpenAICompatibleProviderClassifiesUnavailableAndTimeout(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("X-Test-Mode") == "timeout" {
-			<-r.Context().Done()
-			return
-		}
-		http.Error(w, "gagal", http.StatusBadGateway)
-	}))
-	defer server.Close()
-
-	provider, err := NewClient(Config{BaseURL: server.URL, Timeout: 20 * time.Millisecond})
-	if err != nil { t.Fatal(err) }
-	_, err = provider.Generate(context.Background(), Request{Model: "uji", Messages: []Message{{Role: RoleUser, Content: "Halo"}}})
+	provider, err := NewClient(Config{
+		BaseURL: "http://127.0.0.1:1",
+		HTTPClient: &http.Client{Transport: roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			return nil, errors.New("penyedia tidak tersedia")
+		})},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = provider.Generate(context.Background(), Request{
+		Model: "uji",
+		Messages: []Message{{Role: RoleUser, Content: "Halo"}},
+	})
 	if !errors.Is(err, ErrProviderUnavailable) {
 		t.Fatalf("error gateway = %v", err)
 	}
 
 	provider.httpClient = &http.Client{Transport: roundTripperFunc(func(req *http.Request) (*http.Response, error) {
-		req.Header.Set("X-Test-Mode", "timeout")
-		return http.DefaultTransport.RoundTrip(req)
+		<-req.Context().Done()
+		return nil, req.Context().Err()
 	})}
-	_, err = provider.Generate(context.Background(), Request{Model: "uji", Messages: []Message{{Role: RoleUser, Content: "Halo"}}})
+	provider.timeout = 20 * time.Millisecond
+
+	_, err = provider.Generate(context.Background(), Request{
+		Model: "uji",
+		Messages: []Message{{Role: RoleUser, Content: "Halo"}},
+	})
 	if !errors.Is(err, ErrTimeout) {
 		t.Fatalf("error timeout = %v", err)
 	}
@@ -90,7 +102,9 @@ func TestOpenAICompatibleProviderEnforcesSizeLimits(t *testing.T) {
 	defer server.Close()
 
 	provider, err := NewClient(Config{BaseURL: server.URL, MaxRequestBytes: 64})
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	_, err = provider.Generate(context.Background(), Request{
 		Model: "uji", Messages: []Message{{Role: RoleUser, Content: strings.Repeat("x", 100)}},
 	})
