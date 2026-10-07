@@ -4,6 +4,9 @@
   type Note = { id: string; title: string; content: string; updated_at: string };
   type Source = { id: string; title: string; kind: string; content?: string; locator: string; checksum: string; metadata_json: string };
   type SearchResult = { id: string; kind: 'note' | 'source'; notebook_id: string; title: string; relevance: number };
+  type Conversation = { id: string; notebook_id: string; title: string; created_at: string; updated_at: string };
+  type Citation = { source_id: string; source_ref: string; start_line: number; end_line: number };
+  type ChatMessage = { id: string; role: 'user' | 'assistant'; content: string; citations?: Citation[]; source_ids?: string[]; created_at: string };
 
   type Panel = 'sumber' | 'artefak';
   type View = 'catatan' | 'chat' | 'pratinjau';
@@ -47,6 +50,14 @@
   let pencarianAktif = false;
   let timerPencarian: ReturnType<typeof setTimeout> | undefined;
   let pengendaliPencarian: AbortController | undefined;
+  let conversations: Conversation[] = [];
+  let conversationID = '';
+  let chatMessages: ChatMessage[] = [];
+  let chatInput = '';
+  let chatMemuat = false;
+  let chatMengirim = false;
+  let chatStatus: 'disabled' | 'ready' | 'unavailable' | 'invalid' = 'disabled';
+  let sumberKonteks: string[] = [];
 
   let statusSimpan: 'tersimpan' | 'menyimpan' | 'gagal' = 'tersimpan';
   let timerSimpan: ReturnType<typeof setTimeout> | undefined;
@@ -387,6 +398,76 @@
       notebookID = notebooks[0]?.id ?? '';
     }
     await muatIsiBuku();
+  }
+
+  async function muatChat() {
+    if (!notebookID) return;
+    const response = await permintaan('/api/notebooks/' + notebookID + '/conversations');
+    conversations = await response.json();
+    conversationID = conversations[0]?.id ?? '';
+    chatMessages = [];
+    if (conversationID) {
+      const messages = await permintaan('/api/conversations/' + conversationID + '/messages');
+      chatMessages = await messages.json();
+    }
+  }
+
+  async function bukaChat() {
+    if (!notebookID) return;
+    galat = '';
+    view = 'chat';
+    tampilanMobile = 'editor';
+    chatMemuat = true;
+    try {
+      const status = await permintaan('/api/ai/status');
+      chatStatus = (await status.json()).status ?? 'disabled';
+      await muatChat();
+      if (!conversationID) {
+        const response = await permintaan('/api/notebooks/' + notebookID + '/conversations', {
+          method: 'POST',
+          body: JSON.stringify({ title: 'Percakapan baru' })
+        });
+        const conversation: Conversation = await response.json();
+        conversations = [conversation, ...conversations];
+        conversationID = conversation.id;
+      }
+    } catch (error) {
+      galat = error instanceof Error ? error.message : 'Chat tidak dapat dibuka.';
+    } finally {
+      chatMemuat = false;
+    }
+  }
+
+  function toggleSumberKonteks(id: string) {
+    sumberKonteks = sumberKonteks.includes(id)
+      ? sumberKonteks.filter((item) => item !== id)
+      : [...sumberKonteks, id];
+  }
+
+  async function kirimChat(event: SubmitEvent) {
+    event.preventDefault();
+    const content = chatInput.trim();
+    if (!content || !conversationID || chatMengirim) return;
+    chatMengirim = true;
+    galat = '';
+    try {
+      const response = await permintaan('/api/conversations/' + conversationID + '/messages', {
+        method: 'POST',
+        body: JSON.stringify({ content, source_ids: sumberKonteks })
+      });
+      const data = await response.json();
+      chatMessages = [...chatMessages, data.user_message, data.assistant_message];
+      chatInput = '';
+    } catch (error) {
+      galat = error instanceof Error ? error.message : 'Pesan tidak dapat dikirim.';
+    } finally {
+      chatMengirim = false;
+    }
+  }
+
+  function bukaKutipan(citation: Citation) {
+    const source = sources.find((item) => item.id === citation.source_id);
+    if (source) void pilihSumber(source);
   }
 
   async function muatIsiBuku() {
@@ -967,7 +1048,41 @@
           </section>
 
           <section class="editor" aria-label="Ruang kerja">
-            {#if view === 'pratinjau' && sumberAktif}
+            {#if view === 'chat'}
+              <div class="editor-atas chat-atas">
+                <button class="tautan-kembali" type="button" onclick={() => { view = 'catatan'; }}>← Kembali ke catatan</button>
+                <span class="status">AI · {chatStatus === 'ready' ? 'siap' : chatStatus === 'disabled' ? 'nonaktif' : 'tidak tersedia'}</span>
+              </div>
+              <div class="chat-ruang">
+                {#if chatMemuat}
+                  <div class="keadaan-kosong kecil"><strong>Memuat percakapan…</strong></div>
+                {:else}
+                  <div class="chat-pesan" aria-live="polite">
+                    {#each chatMessages as message}
+                      <article class="chat-pesan-item" class:user={message.role === 'user'}>
+                        <div class="chat-peran">{message.role === 'user' ? 'Anda' : 'AI'}</div>
+                        <div class="chat-isi">{message.content}</div>
+                        {#if message.citations?.length}
+                          <div class="chat-kutipan">
+                            {#each message.citations as citation}
+                              <button type="button" onclick={() => bukaKutipan(citation)} title="Buka sumber dan lokasi kutipan">
+                                {citation.source_ref} · L{citation.start_line}{citation.end_line !== citation.start_line ? `–L${citation.end_line}` : ''}
+                              </button>
+                            {/each}
+                          </div>
+                        {/if}
+                      </article>
+                    {:else}
+                      <div class="keadaan-kosong besar"><h2>Mulai percakapan</h2><p>Pilih sumber di panel kanan bila jawaban perlu merujuk isi buku.</p></div>
+                    {/each}
+                  </div>
+                  <form class="chat-form" onsubmit={kirimChat}>
+                    <textarea bind:value={chatInput} aria-label="Pesan chat" placeholder="Tanyakan sesuatu…" maxlength="16384"></textarea>
+                    <button class="tombol utama" type="submit" disabled={chatMengirim || !chatInput.trim() || chatStatus !== 'ready'}>{chatMengirim ? 'Mengirim…' : 'Kirim'}</button>
+                  </form>
+                {/if}
+              </div>
+            {:else if view === 'pratinjau' && sumberAktif}
               <div class="editor-atas">
                 <button class="tautan-kembali" type="button" onclick={() => { view = 'catatan'; sumberAktif = null; }}>← Kembali ke catatan</button>
                 <span class="status">Sumber asli</span>
@@ -984,6 +1099,7 @@
                   <i></i>
                   {statusSimpan === 'menyimpan' ? 'Menyimpan…' : statusSimpan === 'gagal' ? 'Belum tersimpan' : 'Tersimpan'}
                 </span>
+                <button class="tombol sekunder tombol-chat" type="button" onclick={bukaChat}>Chat</button>
               </div>
               <input class="judul-catatan" bind:value={catatanAktif.title} oninput={jadwalkanSimpan} aria-label="Judul catatan" />
               <textarea bind:value={catatanAktif.content} oninput={jadwalkanSimpan} aria-label="Isi catatan" placeholder="Mulai menulis…"></textarea>
@@ -1017,7 +1133,7 @@
               <div class="konteks-header">
                 <div>
                   <strong>Sumber</strong>
-                  <span>{sources.length} sumber</span>
+                  <span>{sources.length} sumber{view === 'chat' ? ` · ${sumberKonteks.length} dipilih` : ''}</span>
                 </div>
                 <button class="ikon-tombol" type="button" onclick={bukaImpor} disabled={!notebookID} title="Tambah sumber">+</button>
               </div>
@@ -1025,11 +1141,18 @@
               <div class="daftar-sumber">
                 {#each sources as source}
                   <article class:aktif={sumberAktif?.id === source.id} class="item-sumber">
-                    <button type="button" onclick={() => pilihSumber(source)}>
-                      <strong>{source.title}</strong>
-                      <span>{source.kind}</span>
-                    </button>
-                    <button class="hapus-kecil" type="button" title="Hapus sumber" aria-label={"Hapus " + source.title} onclick={() => hapusSumber(source)}>×</button>
+                    {#if view === 'chat'}
+                      <label class="pilih-sumber-konteks">
+                        <input type="checkbox" checked={sumberKonteks.includes(source.id)} onchange={() => toggleSumberKonteks(source.id)} />
+                        <span><strong>{source.title}</strong><small>{source.kind}</small></span>
+                      </label>
+                    {:else}
+                      <button type="button" onclick={() => pilihSumber(source)}>
+                        <strong>{source.title}</strong>
+                        <span>{source.kind}</span>
+                      </button>
+                    {/if}
+                    {#if view !== 'chat'}<button class="hapus-kecil" type="button" title="Hapus sumber" aria-label={"Hapus " + source.title} onclick={() => hapusSumber(source)}>×</button>{/if}
                   </article>
                 {:else}
                   <div class="konteks-kosong">
