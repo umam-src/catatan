@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.2] - 2026-10-07
+
+### Ditambahkan
+
+- Konfigurasi AI pengguna melalui `config.json` pada folder data Catatan.
+- Environment variable tetap tersedia sebagai pengganti untuk pengembangan dan CI.
+
+### Diubah
+
+- URL dan nama model dari `config.json` dapat ditimpa oleh environment variable.
+- Kunci API tetap hanya dibaca dari lingkungan proses dan tidak disimpan di berkas konfigurasi.
+- Versi program diselaraskan dengan rilis `0.3.2`.
+
 ## [0.3.1] - 2026-10-07
 
 ### Ditambahkan
