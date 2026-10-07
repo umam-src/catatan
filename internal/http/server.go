@@ -42,7 +42,7 @@ func New(d *db.DB) http.Handler {
 }
 
 func NewWithAI(d *db.DB, provider aiStatusProvider) http.Handler {
-	return NewWithAIModel(d, provider, "")
+	return NewWithAIModel(d, provider, ai.ModelFromEnv())
 }
 
 func NewWithAIModel(d *db.DB, provider aiStatusProvider, model string) http.Handler {
