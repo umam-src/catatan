@@ -75,24 +75,23 @@ func TestOpenAICompatibleProviderDiscoversModelFromModels(t *testing.T) {
 	}
 }
 
-func TestOpenAICompatibleProviderRejectsV1BaseURL(t *testing.T) {
+func TestOpenAICompatibleProviderSupportsProviderBasePath(t *testing.T) {
+	var gotPath string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
 		w.Header().Set("Content-Type", "application/json")
-		switch r.URL.Path {
-		case "/v1/models":
-			_, _ = w.Write([]byte(`{"data":[{"id":"llama-uji"}]}`))
-		case "/v1/chat/completions":
-			_, _ = w.Write([]byte(`{"model":"llama-uji","choices":[{"message":{"content":"jawaban lokal"}}]}`))
-		default:
-			t.Fatalf("path = %q", r.URL.Path)
-		}
+		_, _ = w.Write([]byte(`{"data":[{"id":"gemini-2.5-flash"}]}`))
 	}))
 	defer server.Close()
 
-	if _, err := NewClient(Config{BaseURL: server.URL + "/v1"}); err == nil {
-		t.Fatal("alamat dasar dengan /v1 seharusnya ditolak")
-	}
+	provider, err := NewClient(Config{BaseURL: server.URL + "/v1beta/openai/"})
+	if err != nil { t.Fatal(err) }
+	models, err := provider.Models(context.Background())
+	if err != nil { t.Fatal(err) }
+	if gotPath != "/v1beta/openai/models" { t.Fatalf("path = %q", gotPath) }
+	if len(models) != 1 || models[0] != "gemini-2.5-flash" { t.Fatalf("models = %#v", models) }
 }
+
 
 func TestOpenAICompatibleProviderRejectsInvalidResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
