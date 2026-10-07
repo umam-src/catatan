@@ -31,14 +31,14 @@
 
 ### 3.2 Kontrak penyedia model
 **Issue:** #84
-- [ ] Tetapkan antarmuka penyedia model yang minimal.
-- [ ] Gunakan pola kompatibel OpenAI tanpa mengikat model data inti.
-- [ ] Pisahkan konfigurasi penyedia dari logika aplikasi.
-- [ ] Dukung konfigurasi lokal tanpa layanan awan wajib.
-- [ ] Jangan menyimpan rahasia penyedia di repository, basis data, atau log.
-- [ ] Tangani penyedia tidak tersedia, waktu habis, dan respons tidak sah.
-- [ ] Tetapkan batas waktu dan ukuran permintaan/respons.
-- [ ] Uji kontrak tanpa model sungguhan.
+- [x] Tetapkan antarmuka penyedia model yang minimal.
+- [x] Gunakan pola kompatibel OpenAI tanpa mengikat model data inti.
+- [x] Pisahkan konfigurasi penyedia dari logika aplikasi.
+- [x] Dukung konfigurasi lokal tanpa layanan awan wajib.
+- [x] Jangan menyimpan rahasia penyedia di repository, basis data, atau log.
+- [x] Tangani penyedia tidak tersedia, waktu habis, dan respons tidak sah.
+- [x] Tetapkan batas waktu dan ukuran permintaan/respons.
+- [x] Uji kontrak tanpa model sungguhan.
 
 ### 3.3 Integrasi model lokal
 **Issue:** #85

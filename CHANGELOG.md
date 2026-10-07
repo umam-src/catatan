@@ -1,5 +1,15 @@
 # Changelog
 
+## [Belum dirilis]
+
+### Ditambahkan
+
+- Kontrak penyedia model lokal yang kompatibel dengan pola OpenAI.
+- Client HTTP standar Go dengan timeout, batas ukuran, dan galat terklasifikasi.
+- Pengujian provider tanpa jaringan eksternal atau model sungguhan.
+- Dokumentasi batas dan konfigurasi provider lokal.
+
+
 ## [0.3.0] - 2026-10-07
 
 ### Ditambahkan
