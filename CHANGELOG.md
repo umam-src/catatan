@@ -1,5 +1,15 @@
 # Changelog
 
+## [Belum dirilis]
+
+### Ditambahkan
+
+- Pengujian round-trip cadangan dan pemulihan yang memastikan isi serta metadata sumber tetap utuh.
+
+### Diperbaiki
+
+- Dokumentasi status proyek, sumber, ekspor, dan pemulihan diselaraskan dengan implementasi Fase 2.
+
 ## [0.2.9] - 2026-10-07
 
 ### Diubah
