@@ -1,1 +1,52 @@
-package db\n\nimport (\n	"context"\n	"errors"\n	"strings"\n)\n\nconst (\n	defaultSearchLimit = 20\n	maxSearchLimit     = 100\n)\n\ntype SearchResult struct {\n	ID string `json:"id"`\n	Kind string `json:"kind"`\n	NotebookID string `json:"notebook_id"`\n	Title string `json:"title"`\n	Content string `json:"content"`\n	Relevance float64 `json:"relevance"`\n}\n\nfunc (d *DB) Search(ctx context.Context, ownerID, notebookID, query string, limit int) ([]SearchResult, error) {\n	query = strings.TrimSpace(query)\n	if query == "" { return []SearchResult{}, nil }\n	if limit <= 0 { limit = defaultSearchLimit }\n	if limit > maxSearchLimit { limit = maxSearchLimit }\n	if ownerID == "" { return nil, errors.New("pemilik pencarian wajib diisi") }\n\n	args := []any{query, ownerID}\n	filter := ""\n	if notebookID != "" { filter = " AND sd.notebook_id = ?"; args = append(args, notebookID) }\n	args = append(args, limit)\n	rows, err := d.QueryContext(ctx, `SELECT sd.id, sd.kind, sd.notebook_id, sd.title, sd.content,\n		bm25(search_index, 5.0, 1.0) AS relevance\n		FROM search_index\n		JOIN search_documents sd ON sd.rowid = search_index.rowid\n		JOIN notebooks n ON n.id = sd.notebook_id\n		WHERE search_index MATCH ? AND n.owner_id = ?`+filter+`\n		ORDER BY relevance ASC, sd.rowid ASC\n		LIMIT ?`, args...)\n	if err != nil { return nil, err }\n	defer rows.Close()\n	results := make([]SearchResult, 0)\n	for rows.Next() {\n		var result SearchResult\n		if err := rows.Scan(&result.ID, &result.Kind, &result.NotebookID, &result.Title, &result.Content, &result.Relevance); err != nil { return nil, err }\n		results = append(results, result)\n	}\n	if err := rows.Err(); err != nil { return nil, err }\n	return results, nil\n}\n
+package db
+
+import (
+	"context"
+	"errors"
+	"strings"
+)
+
+const (
+	defaultSearchLimit = 20
+	maxSearchLimit     = 100
+)
+
+type SearchResult struct {
+	ID string `json:"id"`
+	Kind string `json:"kind"`
+	NotebookID string `json:"notebook_id"`
+	Title string `json:"title"`
+	Content string `json:"content"`
+	Relevance float64 `json:"relevance"`
+}
+
+func (d *DB) Search(ctx context.Context, ownerID, notebookID, query string, limit int) ([]SearchResult, error) {
+	query = strings.TrimSpace(query)
+	if query == "" { return []SearchResult{}, nil }
+	if limit <= 0 { limit = defaultSearchLimit }
+	if limit > maxSearchLimit { limit = maxSearchLimit }
+	if ownerID == "" { return nil, errors.New("pemilik pencarian wajib diisi") }
+
+	args := []any{query, ownerID}
+	filter := ""
+	if notebookID != "" { filter = " AND sd.notebook_id = ?"; args = append(args, notebookID) }
+	args = append(args, limit)
+	rows, err := d.QueryContext(ctx, `SELECT sd.id, sd.kind, sd.notebook_id, sd.title, sd.content,
+		bm25(search_index, 5.0, 1.0) AS relevance
+		FROM search_index
+		JOIN search_documents sd ON sd.rowid = search_index.rowid
+		JOIN notebooks n ON n.id = sd.notebook_id
+		WHERE search_index MATCH ? AND n.owner_id = ?`+filter+`
+		ORDER BY relevance ASC, sd.rowid ASC
+		LIMIT ?`, args...)
+	if err != nil { return nil, err }
+	defer rows.Close()
+	results := make([]SearchResult, 0)
+	for rows.Next() {
+		var result SearchResult
+		if err := rows.Scan(&result.ID, &result.Kind, &result.NotebookID, &result.Title, &result.Content, &result.Relevance); err != nil { return nil, err }
+		results = append(results, result)
+	}
+	if err := rows.Err(); err != nil { return nil, err }
+	return results, nil
+}
