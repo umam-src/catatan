@@ -7,7 +7,9 @@ import (
 	"testing"
 )
 
-func bukaDBUji(t *testing.T) (*DB, string) {
+type testHelper interface { Helper(); TempDir() string; Cleanup(func()); Fatal(...any) }
+
+func bukaDBUji(t testHelper) (*DB, string) {
 	t.Helper()
 
 	path := filepath.Join(t.TempDir(), "catatan.db")
