@@ -2,6 +2,7 @@ package http
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
@@ -13,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/umam-src/catatan/internal/ai"
 	"github.com/umam-src/catatan/internal/db"
 	"github.com/umam-src/catatan/internal/ui"
 	"github.com/umam-src/catatan/internal/version"
