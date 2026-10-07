@@ -18,24 +18,33 @@ const (
 	defaultTimeout          = 30 * time.Second
 	defaultMaxRequestBytes  = 1 << 20
 	defaultMaxResponseBytes = 1 << 20
+	defaultProbeTimeout     = 2 * time.Second
+)
+
+type ProviderStatus string
+
+const (
+	ProviderReady       ProviderStatus = "ready"
+	ProviderUnavailable ProviderStatus = "unavailable"
+	ProviderInvalid     ProviderStatus = "invalid"
 )
 
 type Config struct {
-	BaseURL string
-	APIKey string
-	Timeout time.Duration
-	MaxRequestBytes int64
+	BaseURL          string
+	APIKey           string
+	Timeout          time.Duration
+	MaxRequestBytes  int64
 	MaxResponseBytes int64
-	HTTPClient *http.Client
+	HTTPClient       *http.Client
 }
 
 type Client struct {
-	baseURL *url.URL
-	apiKey string
-	timeout time.Duration
-	maxRequestBytes int64
+	baseURL          *url.URL
+	apiKey           string
+	timeout          time.Duration
+	maxRequestBytes  int64
 	maxResponseBytes int64
-	httpClient *http.Client
+	httpClient       *http.Client
 }
 
 func NewClient(cfg Config) (*Client, error) {
@@ -51,21 +60,79 @@ func NewClient(cfg Config) (*Client, error) {
 		return nil, fmt.Errorf("skema alamat penyedia model harus http atau https")
 	}
 	timeout := cfg.Timeout
-	if timeout <= 0 { timeout = defaultTimeout }
+	if timeout <= 0 {
+		timeout = defaultTimeout
+	}
 	maxRequest := cfg.MaxRequestBytes
-	if maxRequest <= 0 { maxRequest = defaultMaxRequestBytes }
+	if maxRequest <= 0 {
+		maxRequest = defaultMaxRequestBytes
+	}
 	maxResponse := cfg.MaxResponseBytes
-	if maxResponse <= 0 { maxResponse = defaultMaxResponseBytes }
+	if maxResponse <= 0 {
+		maxResponse = defaultMaxResponseBytes
+	}
 	if maxRequest < 1 || maxResponse < 1 {
 		return nil, fmt.Errorf("batas ukuran harus positif")
 	}
 	httpClient := cfg.HTTPClient
-	if httpClient == nil { httpClient = &http.Client{} }
+	if httpClient == nil {
+		httpClient = &http.Client{}
+	}
 	return &Client{
-		baseURL: u, apiKey: cfg.APIKey, timeout: timeout,
-		maxRequestBytes: maxRequest, maxResponseBytes: maxResponse,
-		httpClient: httpClient,
+		baseURL:          u,
+		apiKey:           cfg.APIKey,
+		timeout:          timeout,
+		maxRequestBytes:  maxRequest,
+		maxResponseBytes: maxResponse,
+		httpClient:       httpClient,
 	}, nil
+}
+
+// Probe memeriksa kesiapan server tanpa mengirim isi catatan atau menjalankan model.
+func (c *Client) Probe(ctx context.Context) ProviderStatus {
+	probeCtx, cancel := context.WithTimeout(ctx, defaultProbeTimeout)
+	defer cancel()
+
+	endpoint := *c.baseURL
+	endpoint.Path = strings.TrimRight(endpoint.Path, "/") + "/v1/models"
+	req, err := http.NewRequestWithContext(probeCtx, http.MethodGet, endpoint.String(), nil)
+	if err != nil {
+		return ProviderInvalid
+	}
+	if c.apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+c.apiKey)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return ProviderUnavailable
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, c.maxResponseBytes))
+		if resp.StatusCode >= 500 {
+			return ProviderUnavailable
+		}
+		return ProviderInvalid
+	}
+	if resp.ContentLength > c.maxResponseBytes {
+		return ProviderInvalid
+	}
+	body, err := io.ReadAll(io.LimitReader(resp.Body, c.maxResponseBytes+1))
+	if err != nil || int64(len(body)) > c.maxResponseBytes {
+		return ProviderInvalid
+	}
+
+	var out struct {
+		Data []struct {
+			ID string `json:"id"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(body, &out); err != nil {
+		return ProviderInvalid
+	}
+	return ProviderReady
 }
 
 func (c *Client) Generate(ctx context.Context, in Request) (Response, error) {
@@ -85,7 +152,7 @@ func (c *Client) Generate(ctx context.Context, in Request) (Response, error) {
 	}
 
 	body, err := json.Marshal(struct {
-		Model string `json:"model"`
+		Model    string    `json:"model"`
 		Messages []Message `json:"messages"`
 	}{Model: in.Model, Messages: in.Messages})
 	if err != nil {
