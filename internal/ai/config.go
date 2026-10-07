@@ -17,9 +17,6 @@ func ConfigFromEnv() (*Config, bool, error) {
 		BaseURL: baseURL,
 		APIKey:  os.Getenv("CATATAN_AI_API_KEY"),
 	}
-	if model := strings.TrimSpace(os.Getenv("CATATAN_AI_MODEL")); model != "" {
-		_ = model
-	}
 	if _, err := NewClient(cfg); err != nil {
 		return nil, false, fmt.Errorf("konfigurasi penyedia model: %w", err)
 	}
