@@ -1,9 +1,10 @@
 # Changelog
 
-## [Belum dirilis]
+## [0.3.0] - 2026-10-07
 
 ### Ditambahkan
 
+- Pengelolaan sumber teks lokal dengan checksum, penanda lokasi, ekspor, serta cadangan dan pemulihan lokal.
 - Pengujian round-trip cadangan dan pemulihan yang memastikan isi serta metadata sumber tetap utuh.
 
 ### Diperbaiki
