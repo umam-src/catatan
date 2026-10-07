@@ -72,7 +72,7 @@ Nilai tersebut dapat diubah oleh pemanggil saat diperlukan. Batas diterapkan seb
 
 Catatan tidak membundel runtime inference atau model.
 
-Runtime seperti llama-server dan Ollama dapat digunakan melalui kontrak OpenAI-compatible yang sama. Catatan cukup mengetahui alamat dasar dan model yang dipilih; tidak perlu adapter atau SDK khusus runtime.
+Runtime seperti llama-server dan Ollama dapat digunakan melalui kontrak OpenAI-compatible yang sama. Catatan cukup mengetahui alamat dasar server; nama model dapat dipilih dari konfigurasi atau, jika dikosongkan, diambil dari model pertama pada `/v1/models`.
 
 Contoh alamat lokal:
 
@@ -88,8 +88,8 @@ Untuk penggunaan biasa, alamat server dan nama model dapat disimpan di `config.j
 ```json
 {
   "ai": {
-    "url": "http://127.0.0.1:11434/v1",
-    "model": "llama3.2"
+    "url": "http://127.0.0.1:8080",
+    "model": ""
   }
 }
 ```
@@ -121,7 +121,7 @@ Galat dapat diperiksa dengan \`errors.Is\` tanpa bergantung pada teks pesan.
 
 ## Pengujian
 
-Pengujian menggunakan \`httptest\` dan tidak mengunduh model atau menghubungi layanan eksternal. Probe diuji untuk status siap, tidak tersedia, respons tidak sah, JSON tidak sah, dan memastikan tidak ada prompt yang dikirim.
+Pengujian menggunakan \`httptest\` dan tidak mengunduh model atau menghubungi layanan eksternal. Probe diuji untuk status siap, tidak tersedia, respons tidak sah, JSON tidak sah, model kosong, dan memastikan tidak ada prompt yang dikirim.
 
 Integrasi runtime model sungguhan tetap menjadi pengujian manual pada fase integrasi.
 

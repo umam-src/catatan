@@ -53,7 +53,7 @@ func NewClient(cfg Config) (*Client, error) {
 		return nil, fmt.Errorf("alamat penyedia model wajib diisi")
 	}
 	u, err := url.Parse(base)
-	if err != nil || u.Scheme == "" || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
+	if err != nil || u.Scheme == "" || u.Host == "" || u.User != nil || u.Path != "" || u.RawQuery != "" || u.Fragment != "" {
 		return nil, fmt.Errorf("alamat penyedia model tidak valid")
 	}
 	if u.Scheme != "http" && u.Scheme != "https" {
@@ -88,15 +88,9 @@ func NewClient(cfg Config) (*Client, error) {
 	}, nil
 }
 
-// endpoint membuat alamat API tanpa menggandakan awalan /v1 jika URL dasar
-// pengguna sudah menyertakannya.
 func (c *Client) endpoint(path string) *url.URL {
 	endpoint := *c.baseURL
-	basePath := strings.TrimRight(endpoint.Path, "/")
-	if strings.HasPrefix(path, "/v1/") && strings.HasSuffix(basePath, "/v1") {
-		path = strings.TrimPrefix(path, "/v1")
-	}
-	endpoint.Path = basePath + path
+	endpoint.Path = strings.TrimRight(endpoint.Path, "/") + path
 	return &endpoint
 }
 
@@ -192,7 +186,7 @@ func (c *Client) Generate(ctx context.Context, in Request) (Response, error) {
 	body, err := json.Marshal(struct {
 		Model    string    `json:"model"`
 		Messages []Message `json:"messages"`
-	}{Model: in.Model, Messages: in.Messages})
+	}{Model: model, Messages: in.Messages})
 	if err != nil {
 		return Response{}, fmt.Errorf("%w: %v", ErrProviderRejected, err)
 	}

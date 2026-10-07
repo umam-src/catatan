@@ -2,6 +2,7 @@ package ai
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -74,7 +75,7 @@ func TestOpenAICompatibleProviderDiscoversModelFromModels(t *testing.T) {
 	}
 }
 
-func TestOpenAICompatibleProviderAcceptsV1BaseURL(t *testing.T) {
+func TestOpenAICompatibleProviderRejectsV1BaseURL(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
@@ -88,15 +89,8 @@ func TestOpenAICompatibleProviderAcceptsV1BaseURL(t *testing.T) {
 	}))
 	defer server.Close()
 
-	provider, err := NewClient(Config{BaseURL: server.URL + "/v1"})
-	if err != nil { t.Fatal(err) }
-	if status := provider.Probe(context.Background()); status != ProviderReady {
-		t.Fatalf("status = %q", status)
-	}
-	if _, err := provider.Generate(context.Background(), Request{
-		Model: "llama-uji", Messages: []Message{{Role: RoleUser, Content: "Halo"}},
-	}); err != nil {
-		t.Fatal(err)
+	if _, err := NewClient(Config{BaseURL: server.URL + "/v1"}); err == nil {
+		t.Fatal("alamat dasar dengan /v1 seharusnya ditolak")
 	}
 }
 
