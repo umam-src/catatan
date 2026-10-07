@@ -258,43 +258,65 @@ Status implementasi sumber: **selesai**. Issue Fase 2 #33–#39 telah diselesaik
 
 ## Fase 3 — Pencarian dan AI Lokal → `0.4.0`
 
+**Issue induk:** #5 · **Gerbang rilis:** #13
+
 ### 3.1 Pencarian lokal
-- [ ] Tetapkan indeks pencarian.
-- [ ] Indeks catatan.
-- [ ] Indeks sumber.
+**Issue:** #83
+- [ ] Tetapkan strategi indeks pencarian berdasarkan kebutuhan nyata.
+- [ ] Indeks judul dan isi catatan.
+- [ ] Indeks isi sumber lokal.
+- [ ] Pastikan hasil terisolasi berdasarkan buku/pemilik.
 - [ ] Perbarui indeks secara efisien saat data berubah.
-- [ ] Uji pencarian pada data kecil dan besar.
-- [ ] Ukur waktu pencarian.
+- [ ] Tangani kueri kosong, data kosong, dan hasil tidak ditemukan.
+- [ ] Uji data kecil dan data lebih besar.
+- [ ] Ukur waktu pencarian dan dampak penyimpanan.
+- [ ] Hindari indeks/dependensi yang lebih berat daripada manfaatnya.
 
-### 3.2 Kontrak model
-- [ ] Tetapkan kontrak penyedia yang kompatibel dengan pola OpenAI tanpa mengikat model data inti.
-- [ ] Tetapkan antarmuka penyedia model sederhana.
-- [ ] Pisahkan konfigurasi dari logika aplikasi.
-- [ ] Hindari ketergantungan provider tertentu pada model data inti.
-- [ ] Jangan menyimpan rahasia provider di repository.
+### 3.2 Kontrak penyedia model
+**Issue:** #84
+- [ ] Tetapkan antarmuka penyedia model yang minimal.
+- [ ] Gunakan pola kompatibel OpenAI tanpa mengikat model data inti.
+- [ ] Pisahkan konfigurasi penyedia dari logika aplikasi.
+- [ ] Dukung konfigurasi lokal tanpa layanan awan wajib.
+- [ ] Jangan menyimpan rahasia penyedia di repository, basis data, atau log.
+- [ ] Tangani penyedia tidak tersedia, waktu habis, dan respons tidak sah.
+- [ ] Tetapkan batas waktu dan ukuran permintaan/respons.
+- [ ] Uji kontrak tanpa model sungguhan.
 
-### 3.3 Model lokal
+### 3.3 Integrasi model lokal
+**Issue:** #85
+- [ ] Pilih integrasi awal berdasarkan manfaat dan biaya pemeliharaan.
 - [ ] Dukungan server yang kompatibel dengan OpenAI.
-- [ ] Integrasi opsional `llama-server`.
-- [ ] Integrasi opsional Ollama.
-- [ ] Tangani provider tidak tersedia.
-- [ ] Tetapkan batas penggunaan sumber daya.
+- [ ] Evaluasi integrasi opsional llama-server.
+- [ ] Evaluasi integrasi opsional Ollama.
+- [ ] Tangani penyedia tidak tersedia tanpa merusak alur non-AI.
+- [ ] Uji setidaknya satu jalur model lokal secara menyeluruh.
+- [ ] Ukur dampak ukuran program, waktu mulai, dan penggunaan memori.
+- [ ] Jangan menjadikan model tertentu sebagai ketergantungan wajib.
 
-### 3.4 Percakapan dan konteks
-- [ ] Percakapan per buku.
-- [ ] Beberapa percakapan dalam satu buku bila diperlukan.
-- [ ] Pemilihan konteks sumber.
-- [ ] Batas konteks agar penggunaan sumber daya terkendali.
-- [ ] Kutipan sumber pada jawaban.
+### 3.4 Percakapan, konteks, dan kutipan
+**Issue:** #86
+- [ ] Percakapan terikat pada buku dan pemilik.
+- [ ] Dukungan beberapa percakapan dalam satu buku bila terbukti perlu.
+- [ ] Pemilihan sumber sebagai konteks.
+- [ ] Batas jumlah dan ukuran konteks.
+- [ ] Kutipan sumber yang dapat diverifikasi.
+- [ ] Tandai/tolak konteks yang tidak cocok dengan checksum sumber.
+- [ ] Jangan mengirim sumber yang tidak dipilih ke penyedia model.
+- [ ] Uji isolasi dan ketepatan kutipan.
 - [ ] Mode tanpa AI tetap lengkap.
 
 ### 3.5 Gerbang `0.4.0`
-- [ ] Pencarian lokal stabil.
+- [ ] #83–#86 selesai.
+- [ ] Pencarian lokal stabil dan terukur.
 - [ ] AI sepenuhnya opsional.
-- [ ] Pengujian provider dan mode tanpa AI lulus.
+- [ ] Setidaknya satu penyedia model lokal teruji.
+- [ ] Kutipan sumber dapat diverifikasi.
+- [ ] Pengujian regresi dan mode tanpa AI lulus.
 - [ ] CI hijau.
 - [ ] Ukuran dan penggunaan sumber daya diverifikasi.
-- [ ] Rilis `0.4.0` terverifikasi.
+- [ ] CHANGELOG dan dokumentasi diselaraskan.
+- [ ] Gerbang #13 diverifikasi dan rilis `0.4.0` terbit.
 
 ---
 
