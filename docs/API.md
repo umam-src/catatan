@@ -82,3 +82,14 @@ Variabel yang didukung:
 Contoh Ollama: `CATATAN_AI_URL=http://127.0.0.1:11434/v1`.
 
 Kunci API hanya dibaca dari lingkungan proses dan tidak disimpan oleh aplikasi.
+
+## Percakapan
+
+- GET /api/notebooks/{id}/conversations — daftar percakapan dalam buku milik pengguna.
+- POST /api/notebooks/{id}/conversations — membuat percakapan baru.
+- GET /api/conversations/{id}/messages — membaca riwayat percakapan.
+- POST /api/conversations/{id}/messages — mengirim pesan dengan content dan daftar source_ids yang dipilih.
+
+Batas konteks: maksimal 8 sumber dan 64 KiB isi sumber gabungan. Sumber harus dimiliki buku percakapan dan checksum harus cocok sebelum dikirim ke provider. Jika sumber dipilih, jawaban wajib memiliki kutipan yang dapat diverifikasi seperti [S1:L1-L3].
+
+Model percakapan dibaca dari CATATAN_AI_MODEL. Provider, model, dan percakapan AI tetap opsional; tanpa AI, buku, catatan, sumber, dan pencarian tetap berjalan.

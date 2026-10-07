@@ -124,3 +124,11 @@ Fase ini tidak:
 - mewajibkan embeddings;
 - mewajibkan streaming;
 - menambahkan tool calling.
+
+## Percakapan dan kutipan
+
+Percakapan menggunakan CATATAN_AI_MODEL sebagai nama model runtime. Isi sumber hanya dikirim jika source_ids dipilih pengguna dan sumber tersebut berada pada buku percakapan.
+
+Batas awal konteks adalah 8 sumber dan 64 KiB isi gabungan. Isi sumber diverifikasi dengan SHA-256 sebelum dikirim. Jawaban dengan konteks sumber harus menyertakan kutipan [S1:L1-L3]; server memeriksa ID sumber dan rentang baris sebelum menyimpannya.
+
+Isi sumber diperlakukan sebagai data tidak tepercaya, bukan instruksi, untuk membatasi dampak injeksi prompt.

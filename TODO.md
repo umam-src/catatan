@@ -54,15 +54,18 @@
 
 ### 3.4 Percakapan, konteks, dan kutipan
 **Issue:** #86
-- [ ] Percakapan terikat pada buku dan pemilik.
-- [ ] Dukungan beberapa percakapan dalam satu buku bila terbukti perlu.
-- [ ] Pemilihan sumber sebagai konteks.
-- [ ] Batas jumlah dan ukuran konteks.
-- [ ] Kutipan sumber yang dapat diverifikasi.
-- [ ] Tandai/tolak konteks yang tidak cocok dengan checksum sumber.
-- [ ] Jangan mengirim sumber yang tidak dipilih ke penyedia model.
-- [ ] Uji isolasi dan ketepatan kutipan.
-- [ ] Mode tanpa AI tetap lengkap.
+- [x] Percakapan terikat pada buku dan pemilik.
+- [x] Dukungan beberapa percakapan dalam satu buku melalui model data yang sudah tersedia.
+- [x] Pemilihan sumber sebagai konteks.
+- [x] Batas jumlah dan ukuran konteks.
+- [x] Kutipan sumber yang dapat diverifikasi.
+- [x] Tolak konteks yang tidak cocok dengan checksum sumber.
+- [x] Jangan mengirim sumber yang tidak dipilih ke penyedia model.
+- [x] Uji isolasi dan ketepatan kutipan dengan provider tiruan.
+- [x] Mode tanpa AI tetap lengkap pada alur non-percakapan.
+
+- [ ] Tambahkan antarmuka percakapan dan pemilihan sumber.
+- [ ] Uji end-to-end dengan runtime model nyata.
 
 ### 3.5 Gerbang `0.4.0`
 - [ ] #83–#86 selesai.

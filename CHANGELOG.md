@@ -4,6 +4,8 @@
 
 ### Ditambahkan
 
+- API percakapan berbasis buku dengan riwayat pesan dan konteks sumber terpilih.
+- Batas konteks dan kutipan sumber yang diverifikasi sebelum jawaban disimpan.
 - Kontrak penyedia model lokal yang kompatibel dengan pola OpenAI.
 - Pemeriksaan kesiapan provider melalui endpoint `/v1/models` tanpa mengirim isi catatan.
 - Client HTTP standar Go dengan timeout, batas ukuran, dan galat terklasifikasi.
