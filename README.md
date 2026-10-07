@@ -58,6 +58,21 @@ npm run build
 npm run check
 ```
 
+## Pengaturan AI lokal
+
+AI bersifat opsional. Untuk menggunakan server AI lokal seperti Ollama, buat berkas `config.json` di folder data Catatan:
+
+```json
+{
+  "ai": {
+    "url": "http://127.0.0.1:11434/v1",
+    "model": "llama3.2"
+  }
+}
+```
+
+Tidak perlu Docker atau layanan awan untuk penggunaan ini. Kunci API, jika memang diperlukan server yang digunakan, tetap diberikan melalui pengaturan lingkungan dan tidak disimpan oleh Catatan.
+
 ## Menguji
 
 Pengujian Go mencakup basis data, migrasi, API, autentikasi, session, isolasi data, dan validasi masukan.
