@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.2.9] - 2026-10-07
+
+### Diubah
+
+- Tema antarmuka dirombak agar lebih nyaman: huruf lebih besar (tidak ada teks di bawah 12 px), kontras teks memenuhi 4,5:1, jarak lebih lapang, dan warna dipusatkan pada token di `ui.css`.
+- Isi catatan memakai huruf berserif bawaan sistem dengan lebar baris dibatasi sekitar 70 karakter. Tidak ada font yang diunduh.
+- Dialog pengaturan dibuat lebih tegas: bayangan berlapis, sudut lebih bulat, sakelar yang jelas, keterangan singkat, dan tombol Selesai.
+- Label huruf kapital kecil (BUKU, RUANG KERJA, PREFERENSI) dihapus; judul tampil dengan huruf biasa.
+- Tata letak desktop tetap N | C | S/A. Lebar kolom kini diatur lewat token.
+- Ponsel didesain ulang: satu panel pada satu waktu (daftar catatan lalu editor layar penuh) dengan tombol kembali, bilah bawah Catatan/Sumber/Artefak, tombol catatan baru yang mengambang, dan Sumber/Artefak sebagai lembar bawah.
+- Daftar buku dan panel Sumber/Artefak selalu tertutup saat aplikasi dibuka di ponsel.
+
+### Ditambahkan
+
+- Tema gelap otomatis mengikuti pengaturan perangkat.
+- Dialog aplikasi untuk membuat buku, mengubah nama buku atau judul catatan, dan konfirmasi penghapusan. Dialog ini menggantikan dialog bawaan peramban, memakai elemen `<dialog>` modal (fokus terkunci, Esc menutup), dan tampil sebagai lembar bawah di ponsel.
+
+### Diperbaiki
+
+- Penanda buku dan catatan yang sedang dipilih tidak pernah tampil karena kelas `aktif` dipasang pada pembungkus, bukan pada tombol yang diberi gaya.
+- Membuka sumber di ponsel tidak lagi tertutup lembar Sumber.
+- Tombol lipat daftar buku tidak lagi diposisikan dengan angka tetap di `app.html`; gaya sebaris dipindahkan ke `ui.css`.
+- Menu ⋯ muncul saat butir disorot atau terpilih pada perangkat dengan penunjuk, dan selalu tampak pada layar sentuh. Target sentuh minimal 44 px.
+
 ## [0.2.8] - 2026-10-06
 
 ### Ditambahkan

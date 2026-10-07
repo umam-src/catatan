@@ -2,33 +2,11 @@
 <html lang="id">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#f7f8fa" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f2f4f0" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#111513" media="(prefers-color-scheme: dark)" />
     <link rel="stylesheet" href="/ui.css" />
-    <style>
-      .aplikasi.tanpa-buku .panel-navigasi { display: none; }
-      .tombol-lipat-buku {
-        position: fixed;
-        top: 22px;
-        left: 214px;
-        right: auto;
-        z-index: 20;
-      }
-      .tombol-buka-buku { margin-right: 10px; }
-
-      @media (max-width: 1120px) and (min-width: 761px) {
-        .tombol-lipat-buku { left: 186px; }
-      }
-
-      @media (max-width: 760px) {
-        .tombol-lipat-buku {
-          position: absolute;
-          top: 11px;
-          right: 13px;
-          left: auto;
-        }
-      }
-    </style>
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover">

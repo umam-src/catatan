@@ -58,6 +58,12 @@ Dokumen ini mencatat pembelajaran dari pekerjaan pengembangan Catatan agar kesal
 
 **Aturan:** Hentikan operasi, verifikasi keadaan repositori, lalu lanjutkan dari keadaan yang sudah diketahui benar.
 
+### 7. Pastikan kelas penanda keadaan dipasang pada elemen yang diberi gaya
+
+**Masalah:** Kelas `aktif` dipasang pada pembungkus butir, sedangkan CSS menyasar `.item-buku.aktif` dan `.item-catatan.aktif`. Penanda butir terpilih tidak pernah tampil, dan tidak ada pengujian yang menangkapnya.
+
+**Aturan:** Saat mengubah gaya, render tampilan dan periksa setiap keadaan (aktif, hover, fokus, kosong, galat) pada desktop, ponsel, dan tema gelap. Jangan menganggap selektor CSS berlaku hanya karena berkas lolos pemeriksaan.
+
 ## Prosedur Sebelum Commit
 
 - [ ] Pastikan branch benar.

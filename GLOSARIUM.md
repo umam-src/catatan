@@ -64,6 +64,11 @@ Dokumen ini menjadi **rujukan utama pembakuan istilah** untuk proyek Buku Catata
 | Gagal | Failed, Error | `Gagal menyimpan catatan` |
 | Terhubung | Connected | `Terhubung` |
 | Offline | Offline | Dipertahankan karena merupakan istilah teknologi yang lazim dan jelas. |
+| Dialog | Popup, Modal | `Dialog pengaturan` |
+| Lembar bawah | Bottom sheet | `Lembar bawah Sumber` |
+| Bilah bawah | Bottom bar, Tab bar | `Bilah bawah ponsel` |
+| Tema gelap | Dark mode | `Tema gelap mengikuti perangkat` |
+| Token | Variabel gaya | `Token warna` (nilai gaya bernama di `:root`) |
 |
 
 ## 4. Istilah kode

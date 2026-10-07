@@ -45,12 +45,79 @@
   let nomorSimpan = 0;
   let imporInput: HTMLInputElement;
 
+  // Ponsel menampilkan satu panel pada satu waktu: daftar catatan atau editor.
+  let tampilanMobile: 'daftar' | 'editor' = 'daftar';
+
+  type DialogAksi = {
+    jenis: 'teks' | 'konfirmasi';
+    judul: string;
+    pesan: string;
+    label: string;
+    bahaya: boolean;
+    nilai: string;
+    selesai: (hasil: string | boolean | null) => void;
+  };
+  let dialogAksi: DialogAksi | null = null;
+
   async function permintaan(path: string, init: RequestInit = {}) {
     const headers = new Headers(init.headers);
     if (init.body && !(init.body instanceof FormData)) headers.set('Content-Type', 'application/json');
     const response = await fetch(path, { ...init, headers });
     if (!response.ok) throw new Error((await response.text()) || 'Permintaan gagal.');
     return response;
+  }
+
+  function layarKecil() {
+    return typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches;
+  }
+
+  function kembaliKeDaftar() {
+    tampilanMobile = 'daftar';
+    if (view === 'pratinjau') {
+      view = 'catatan';
+      sumberAktif = null;
+    }
+  }
+
+  function tanyaTeks(judul: string, nilaiAwal = '', label = 'Simpan'): Promise<string | null> {
+    return new Promise((selesai) => {
+      dialogAksi = {
+        jenis: 'teks',
+        judul,
+        pesan: '',
+        label,
+        bahaya: false,
+        nilai: nilaiAwal,
+        selesai: (hasil) => selesai(typeof hasil === 'string' ? hasil : null)
+      };
+    });
+  }
+
+  function konfirmasi(judul: string, pesan: string, label: string): Promise<boolean> {
+    return new Promise((selesai) => {
+      dialogAksi = { jenis: 'konfirmasi', judul, pesan, label, bahaya: true, nilai: '', selesai: (hasil) => selesai(hasil === true) };
+    });
+  }
+
+  function tutupDialogAksi(hasil: string | boolean | null) {
+    const dialog = dialogAksi;
+    dialogAksi = null;
+    dialog?.selesai(hasil);
+  }
+
+  function kirimDialogAksi(event: SubmitEvent) {
+    event.preventDefault();
+    if (!dialogAksi) return;
+    tutupDialogAksi(dialogAksi.jenis === 'teks' ? dialogAksi.nilai : true);
+  }
+
+  // Membuka <dialog> sebagai modal (fokus terkunci, latar tidak aktif) dan memfokuskan elemen bertanda data-fokus.
+  function bukaModal(node: HTMLDialogElement) {
+    if (!node.open) node.showModal();
+    const sasaran = node.querySelector<HTMLElement>('[data-fokus]');
+    if (!sasaran) return;
+    sasaran.focus();
+    if (sasaran instanceof HTMLInputElement) sasaran.select();
   }
 
   function sinkronkanMenuKonteks(id: string, event: Event) {
@@ -171,6 +238,10 @@
         } catch {
           galat = 'Status drawer Artefak tidak dapat dibaca pada perangkat ini.';
         }
+        if (layarKecil()) {
+          bukuTerbuka = false;
+          konteksTerbuka = false;
+        }
       }
       const versiResponse = await fetch('/api/version');
       if (versiResponse.ok) versi = (await versiResponse.json()).version ?? '';
@@ -225,6 +296,7 @@
       sumberAktif = null;
       notebookID = '';
       menuKonteksAktif = '';
+      tampilanMobile = 'daftar';
       modeMasuk = 'masuk';
       kataSandi = '';
       konfirmasiKataSandi = '';
@@ -250,6 +322,7 @@
       catatanAktif = null;
       sumberAktif = null;
       view = 'catatan';
+      tampilanMobile = 'daftar';
       return;
     }
 
@@ -263,6 +336,7 @@
     catatanAktif = notes[0] ? { ...notes[0] } : null;
     sumberAktif = null;
     view = 'catatan';
+    tampilanMobile = 'daftar';
     statusSimpan = 'tersimpan';
   }
 
@@ -281,7 +355,7 @@
   }
 
   async function buatBuku() {
-    const title = window.prompt('Nama buku');
+    const title = await tanyaTeks('Buku baru', '', 'Buat buku');
     if (!title?.trim()) return;
     try {
       const response = await permintaan('/api/notebooks', {
@@ -299,7 +373,7 @@
 
   async function ubahBuku(notebook: Notebook) {
     menuKonteksAktif = '';
-    const title = window.prompt('Nama buku', notebook.title);
+    const title = await tanyaTeks('Ubah nama buku', notebook.title);
     if (!title?.trim() || title.trim() === notebook.title) return;
     try {
       const response = await permintaan('/api/notebooks/' + notebook.id, {
@@ -316,7 +390,7 @@
 
   async function hapusBuku(notebook: Notebook) {
     menuKonteksAktif = '';
-    if (!window.confirm(`Hapus buku “${notebook.title}”?\n\nSemua catatan, sumber, dan isi terkait di dalamnya juga akan dihapus.`)) return;
+    if (!(await konfirmasi(`Hapus buku “${notebook.title}”?`, 'Semua catatan, sumber, dan isi terkait di dalamnya juga akan dihapus.', 'Hapus buku'))) return;
     if (timerSimpan) clearTimeout(timerSimpan);
     nomorSimpan++;
     try {
@@ -343,6 +417,7 @@
       notes = [note, ...notes];
       catatanAktif = { ...note };
       view = 'catatan';
+      tampilanMobile = 'editor';
       statusSimpan = 'tersimpan';
     } catch (error) {
       galat = error instanceof Error ? error.message : 'Gagal membuat catatan.';
@@ -355,13 +430,14 @@
     menuKonteksAktif = '';
     catatanAktif = { ...note };
     view = 'catatan';
+    tampilanMobile = 'editor';
     statusSimpan = 'tersimpan';
     galat = '';
   }
 
   async function ubahCatatan(note: Note) {
     menuKonteksAktif = '';
-    const title = window.prompt('Judul catatan', note.title);
+    const title = await tanyaTeks('Ubah judul catatan', note.title);
     if (!title?.trim() || title.trim() === note.title) return;
     try {
       const response = await permintaan('/api/notes/' + note.id, {
@@ -408,7 +484,7 @@
 
   async function hapusCatatan(note: Note) {
     menuKonteksAktif = '';
-    if (!window.confirm(`Hapus catatan “${note.title || 'Tanpa judul'}”?`)) return;
+    if (!(await konfirmasi(`Hapus catatan “${note.title || 'Tanpa judul'}”?`, 'Catatan ini akan dihapus dari buku.', 'Hapus catatan'))) return;
     const id = note.id;
     nomorSimpan++;
     if (timerSimpan) clearTimeout(timerSimpan);
@@ -416,6 +492,7 @@
       await permintaan('/api/notes/' + id, { method: 'DELETE' });
       notes = notes.filter((item) => item.id !== id);
       catatanAktif = notes[0] ? { ...notes[0] } : null;
+      tampilanMobile = 'daftar';
       statusSimpan = 'tersimpan';
       galat = '';
     } catch (error) {
@@ -430,13 +507,15 @@
       const response = await permintaan('/api/sources/' + source.id);
       sumberAktif = await response.json();
       view = 'pratinjau';
+      tampilanMobile = 'editor';
+      if (layarKecil()) ubahStatusDrawerKonteks(false);
     } catch (error) {
       galat = error instanceof Error ? error.message : 'Gagal membuka sumber.';
     }
   }
 
   async function hapusSumber(source: Source) {
-    if (!window.confirm('Hapus sumber ini?')) return;
+    if (!(await konfirmasi(`Hapus sumber “${source.title}”?`, 'Sumber ini akan dihapus dari buku.', 'Hapus sumber'))) return;
     try {
       await permintaan('/api/sources/' + source.id, { method: 'DELETE' });
       sources = sources.filter((item) => item.id !== source.id);
@@ -508,7 +587,6 @@
           <path d="M12 6.3C9.8 5 7.2 4.7 4.5 5.4v13c2.7-.7 5.3-.4 7.5.9m0-13c2.2-1.3 4.8-1.6 7.5-.9v13c-2.7-.7-5.3-.4-7.5.9m0-13v13" />
         </svg>
       </div>
-      <p class="eyebrow">CATATAN</p>
       <h1>{modeMasuk === 'masuk' ? 'Selamat datang kembali.' : 'Mulai di perangkat ini.'}</h1>
       <p class="pengantar">
         {modeMasuk === 'masuk'
@@ -596,7 +674,9 @@
         aria-expanded={bukuTerbuka}
         aria-controls="daftar-buku"
         onclick={() => ubahStatusDrawer(false)}
-      >‹</button>
+      >
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6" /></svg>
+      </button>
       <div class="merek">
         <span class="logo-mark kecil">
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -611,7 +691,7 @@
 
       <button class="tombol sekunder lebar" type="button" onclick={buatBuku}>+ Buku baru</button>
 
-      <div class="judul-panel">BUKU</div>
+      <div class="judul-panel">Buku</div>
       <nav id="daftar-buku" class="daftar-buku" aria-label="Buku">
         {#each notebooks as notebook}
           <div
@@ -645,11 +725,11 @@
         <button class="tombol-pengaturan-samping" type="button" onclick={bukaPengaturan}>
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <line x1="4" y1="6" x2="20" y2="6" />
-            <circle cx="9" cy="6" r="2" fill="var(--permukaan)" />
+            <circle cx="9" cy="6" r="2" fill="var(--permukaan-lembut)" />
             <line x1="4" y1="12" x2="20" y2="12" />
-            <circle cx="15" cy="12" r="2" fill="var(--permukaan)" />
+            <circle cx="15" cy="12" r="2" fill="var(--permukaan-lembut)" />
             <line x1="4" y1="18" x2="20" y2="18" />
-            <circle cx="11" cy="18" r="2" fill="var(--permukaan)" />
+            <circle cx="11" cy="18" r="2" fill="var(--permukaan-lembut)" />
           </svg>
           <span>Pengaturan</span>
         </button>
@@ -665,8 +745,8 @@
       ></button>
     {/if}
 
-    <main class="ruang-kerja">
-      <header class:drawer-tertutup={!bukuTerbuka} class="bar-atas">
+    <main class:layar-editor={tampilanMobile === 'editor'} class="ruang-kerja">
+      <header class="bar-atas">
         {#if !bukuTerbuka}
           <button
             class="tombol-buka-buku"
@@ -676,25 +756,17 @@
             aria-expanded={bukuTerbuka}
             aria-controls="daftar-buku"
             onclick={() => ubahStatusDrawer(true)}
-          >›</button>
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+          </button>
         {/if}
+        <button class="tombol-kembali-mobile" type="button" onclick={kembaliKeDaftar}>
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6" /></svg>
+          Catatan
+        </button>
         <div class="identitas-buku">
-          <p class="eyebrow">BUKU</p>
           <h1>{bukuAktif?.title || 'Belum ada buku'}</h1>
         </div>
-        <button
-          class="tombol-konteks-mobile"
-          type="button"
-          aria-expanded={konteksTerbuka}
-          aria-label={konteksTerbuka ? 'Tutup panel sumber dan artefak' : 'Buka panel sumber dan artefak'}
-          onclick={() => ubahStatusDrawerKonteks(!konteksTerbuka)}
-        >
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="16" rx="2" />
-            <path d="M14 4v16" />
-          </svg>
-          <span>{panel === 'artefak' ? 'Artefak' : 'Sumber'}</span>
-        </button>
         <div class="aksi-atas">
           <div class="menu-pengguna">
             <button
@@ -727,7 +799,6 @@
 
       {#if !notebookID}
         <div class="keadaan-kosong tanpa-buku-kosong">
-          <p class="eyebrow">RUANG KERJA</p>
           <h2>Belum ada buku</h2>
           <p>Buat buku untuk mulai menyimpan catatan.</p>
           <button class="tombol utama" type="button" onclick={buatBuku}>+ Buku baru</button>
@@ -801,7 +872,6 @@
               <textarea bind:value={catatanAktif.content} oninput={jadwalkanSimpan} aria-label="Isi catatan" placeholder="Mulai menulis…"></textarea>
             {:else}
               <div class="keadaan-kosong besar">
-                <p class="eyebrow">RUANG KERJA</p>
                 <h2>Belum ada catatan</h2>
                 <p>Buat catatan pertama untuk mulai menulis.</p>
                 <button class="tombol utama" type="button" onclick={buatCatatan}>Buat catatan</button>
@@ -821,7 +891,9 @@
                 aria-label="Sembunyikan panel sumber dan artefak"
                 title="Sembunyikan panel sumber dan artefak"
                 onclick={() => ubahStatusDrawerKonteks(false)}
-              >›</button>
+              >
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+              </button>
             </div>
 
             {#if panel === 'sumber'}
@@ -879,89 +951,129 @@
             aria-label="Tampilkan panel sumber dan artefak"
             title="Tampilkan panel sumber dan artefak"
             onclick={() => ubahStatusDrawerKonteks(true)}
-          >‹</button>
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6" /></svg>
+          </button>
         {/if}
+        <nav class="bar-bawah-mobile" aria-label="Navigasi ponsel">
+          <button class:aktif={!konteksTerbuka} type="button" onclick={() => { ubahStatusDrawerKonteks(false); kembaliKeDaftar(); }}>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z" /><path d="M9 12h7M9 16h7" /></svg>
+            <span>Catatan</span>
+          </button>
+          <button class:aktif={konteksTerbuka && panel === 'sumber'} type="button" onclick={() => { panel = 'sumber'; ubahStatusDrawerKonteks(true); }}>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h9l5 5v11H5z" /><path d="M14 4v5h5" /></svg>
+            <span>Sumber</span>
+          </button>
+          <button class:aktif={konteksTerbuka && panel === 'artefak'} type="button" onclick={() => { panel = 'artefak'; ubahStatusDrawerKonteks(true); }}>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z" /><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5" /></svg>
+            <span>Artefak</span>
+          </button>
+        </nav>
       {/if}
     </main>
     {#if dialogPengaturanTerbuka}
-      <div
-        class="lapisan-dialog"
-        role="presentation"
+      <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
+      <dialog
+        class="dialog dialog-pengaturan"
+        aria-labelledby="judul-pengaturan"
+        use:bukaModal
+        onclose={() => (dialogPengaturanTerbuka = false)}
         onclick={(event) => {
           if (event.target === event.currentTarget) dialogPengaturanTerbuka = false;
         }}
       >
-        <div class="dialog-pengaturan" role="dialog" aria-modal="true" aria-labelledby="judul-pengaturan" tabindex="-1">
+        <header>
+          <div>
+            <h2 id="judul-pengaturan">Pengaturan</h2>
+            <p>Berlaku untuk perangkat ini dan tetap tersimpan tanpa jaringan.</p>
+          </div>
+          <button class="tombol-tutup-dialog" type="button" aria-label="Tutup pengaturan" onclick={() => (dialogPengaturanTerbuka = false)}>×</button>
+        </header>
+        <div class="isi-pengaturan">
+          <label class="item-pengaturan">
+            <span>
+              <strong>Pengguna boleh mendaftar</strong>
+              <small>Tampilkan opsi pembuatan akun pada halaman masuk di perangkat ini.</small>
+            </span>
+            <input type="checkbox" checked={pendaftaranDiizinkan} onchange={ubahPengaturanPendaftaran} />
+          </label>
+          {#if galatPengaturan}
+            <p class="pesan-pengaturan" role="alert">{galatPengaturan}</p>
+          {/if}
+        </div>
+        <footer>
+          <button data-fokus class="tombol utama" type="button" onclick={() => (dialogPengaturanTerbuka = false)}>Selesai</button>
+        </footer>
+      </dialog>
+    {/if}
+    {#if dialogAksi}
+      <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
+      <dialog
+        class="dialog dialog-aksi"
+        aria-labelledby="judul-dialog-aksi"
+        use:bukaModal
+        onclose={() => tutupDialogAksi(null)}
+        onclick={(event) => {
+          if (event.target === event.currentTarget) tutupDialogAksi(null);
+        }}
+      >
+        <form onsubmit={kirimDialogAksi}>
           <header>
             <div>
-              <p class="eyebrow">PREFERENSI</p>
-              <h2 id="judul-pengaturan">Pengaturan</h2>
+              <h2 id="judul-dialog-aksi">{dialogAksi.judul}</h2>
+              {#if dialogAksi.pesan}<p>{dialogAksi.pesan}</p>{/if}
             </div>
-            <button class="tombol-tutup-dialog" type="button" aria-label="Tutup pengaturan" onclick={() => dialogPengaturanTerbuka = false}>×</button>
           </header>
-          <div class="isi-pengaturan">
-            <label class="item-pengaturan">
-              <span>
-                <strong>Pengguna boleh mendaftar</strong>
-                <small>Tampilkan opsi pembuatan akun pada halaman masuk di perangkat ini.</small>
-              </span>
-              <input type="checkbox" checked={pendaftaranDiizinkan} onchange={ubahPengaturanPendaftaran} />
-            </label>
-            {#if galatPengaturan}
-              <p class="pesan-pengaturan" role="alert">{galatPengaturan}</p>
-            {/if}
-          </div>
-        </div>
-      </div>
+          {#if dialogAksi.jenis === 'teks'}
+            <div class="isi-dialog">
+              <input data-fokus bind:value={dialogAksi.nilai} aria-label={dialogAksi.judul} autocomplete="off" required />
+            </div>
+          {/if}
+          <footer>
+            <button data-fokus class="tombol sekunder" type="button" onclick={() => tutupDialogAksi(null)}>Batal</button>
+            <button class:bahaya={dialogAksi.bahaya} class="tombol utama" type="submit">{dialogAksi.label}</button>
+          </footer>
+        </form>
+      </dialog>
     {/if}
   </div>
 {/if}
 
 <style>
-  .identitas-buku { min-width: 0; }
   .item-buku-bar,
   .item-catatan-bar { position: relative; display: flex; align-items: stretch; min-width: 0; }
   .item-buku-bar.menu-terbuka,
   .item-catatan-bar.menu-terbuka { z-index: 20; }
   .item-buku-bar .item-buku,
   .item-catatan-bar .item-catatan { flex: 1 1 auto; min-width: 0; }
-  .item-buku-bar.aktif .item-buku,
-  .item-catatan-bar.aktif .item-catatan { padding-right: 38px; }
-  .menu-konteks { position: relative; flex: 0 0 auto; }
-  .item-buku-bar .menu-konteks,
-  .item-catatan-bar .menu-konteks { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); z-index: 2; }
-  .menu-konteks summary { list-style: none; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 7px; color: var(--teks-2); cursor: pointer; font-size: 18px; line-height: 1; }
+  .menu-konteks { position: absolute; top: 50%; right: 4px; transform: translateY(-50%); z-index: 2; }
+  .menu-konteks summary { list-style: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: var(--radius-kecil); color: var(--teks-2); cursor: pointer; font-size: 1.25rem; line-height: 1; }
   .menu-konteks summary::-webkit-details-marker { display: none; }
   .menu-konteks summary:hover,
-  .menu-konteks[open] summary { background: var(--permukaan-lembut); color: var(--teks); }
-  .menu-konteks-daftar { position: absolute; top: 34px; right: 0; min-width: 155px; padding: 5px; border: 1px solid var(--garis); border-radius: 9px; background: var(--permukaan); box-shadow: 0 8px 24px rgba(24,25,22,.12); z-index: 10; }
+  .menu-konteks[open] summary { background: var(--permukaan-hover); color: var(--teks); }
+  .menu-konteks-daftar { position: absolute; top: 42px; right: 0; min-width: 190px; padding: 6px; border: 1px solid var(--garis); border-radius: var(--radius); background: var(--permukaan); color: var(--teks); box-shadow: var(--bayangan-dialog); z-index: 10; }
   .menu-konteks-daftar:popover-open { position: fixed; inset: auto; max-width: calc(100vw - 16px); max-height: calc(100dvh - 16px); margin: 0; overflow: auto; z-index: 1000; }
-  .menu-konteks-daftar button { display: block; width: 100%; padding: 8px 10px; border: 0; border-radius: 6px; background: transparent; color: var(--teks); text-align: left; cursor: pointer; font: inherit; }
-  .menu-konteks-daftar button:hover:not(:disabled) { background: var(--permukaan-lembut); }
-  .menu-konteks-daftar button:disabled { color: var(--teks-2); cursor: not-allowed; opacity: .65; }
-  .menu-konteks-daftar .berbahaya { color: #a33a32; }
-  .tab-konteks { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-  .tab-konteks-pilihan { display: flex; min-width: 0; flex: 1 1 auto; }
-  .tombol-lipat-konteks,
-  .tombol-buka-konteks { width: 30px; height: 30px; padding: 0; border: 0; border-radius: 7px; background: transparent; color: var(--teks-2); cursor: pointer; font-size: 17px; }
-  .tombol-lipat-konteks:hover,
-  .tombol-buka-konteks:hover { background: var(--permukaan-lembut); color: var(--teks); }
-  .workspace.konteks-terlipat { grid-template-columns: 248px minmax(0, 1fr); }
+  .menu-konteks-daftar button { display: block; width: 100%; min-height: 44px; padding: 8px 12px; border: 0; border-radius: var(--radius-kecil); background: transparent; color: var(--teks); text-align: left; cursor: pointer; }
+  .menu-konteks-daftar button:hover:not(:disabled) { background: var(--permukaan-hover); }
+  .menu-konteks-daftar button:disabled { color: var(--teks-3); cursor: not-allowed; }
+  .menu-konteks-daftar .berbahaya { color: var(--bahaya); }
+
+  /* Pada perangkat dengan penunjuk, menu ⋯ muncul saat butir disorot atau terpilih. */
+  @media (hover: hover) {
+    .menu-konteks summary { opacity: 0; }
+    .item-buku-bar:hover summary,
+    .item-catatan-bar:hover summary,
+    .item-buku-bar:focus-within summary,
+    .item-catatan-bar:focus-within summary,
+    .item-buku-bar.aktif summary,
+    .item-catatan-bar.aktif summary,
+    .menu-konteks[open] summary { opacity: 1; }
+  }
+
+  .workspace.konteks-terlipat { grid-template-columns: var(--lebar-catatan) minmax(0, 1fr); }
   .workspace.konteks-terlipat .panel-konteks { display: none; }
-  .tombol-buka-konteks { position: fixed; top: 84px; right: 13px; z-index: 6; background: var(--permukaan-lembut); box-shadow: 0 3px 14px rgba(24,25,22,.08); }
-  .tanpa-buku-kosong { min-height: calc(100vh - 145px); display: grid; place-content: center; justify-items: center; padding: 40px 24px; text-align: center; }
+  .tombol-buka-konteks { position: fixed; top: calc(var(--tinggi-bar) + 12px); right: 12px; z-index: 6; border: 1px solid var(--garis); background: var(--permukaan); box-shadow: var(--bayangan-kecil); }
+  .tanpa-buku-kosong { flex: 1 1 auto; display: grid; place-content: center; justify-items: center; padding: 40px 24px; text-align: center; }
   .tanpa-buku-kosong h2 { margin: 4px 0 8px; }
-  .tanpa-buku-kosong p:not(.eyebrow) { max-width: 420px; margin: 0 0 20px; color: var(--teks-2); }
-
-  @media (max-width: 1120px) and (min-width: 761px) {
-    .workspace.konteks-terlipat { grid-template-columns: 220px minmax(0, 1fr); }
-  }
-
-  @media (max-width: 760px) {
-    .item-buku-bar .menu-konteks,
-    .item-catatan-bar .menu-konteks { right: 4px; }
-    .menu-konteks-daftar { right: -2px; }
-    .workspace.konteks-terlipat { grid-template-columns: minmax(0, 1fr); }
-    .tombol-buka-konteks { top: 76px; right: 10px; }
-  }
+  .tanpa-buku-kosong p { max-width: 420px; margin: 0 0 20px; color: var(--teks-2); }
 </style>

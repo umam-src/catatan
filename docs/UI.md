@@ -52,11 +52,35 @@ S/A adalah panel konteks yang berganti antara:
 
 Sumber tetap merupakan sumber asli. Isi sumber tidak disalin ke catatan hanya karena dibuka sebagai referensi.
 
+## Tema
+
+Seluruh warna, jarak, radius, bayangan, dan lebar kolom berasal dari token di `web/static/ui.css`. Komponen tidak boleh menulis warna langsung.
+
+- Tema terang dan gelap tersedia; gelap dipilih otomatis mengikuti perangkat.
+- Huruf antarmuka dan huruf isi catatan memakai huruf bawaan sistem. Isi catatan berserif; ganti lewat token `--huruf-catatan`.
+- Ukuran teks memakai `rem` dan tidak ada teks di bawah 12 px. Isi catatan 17 px (18 px di ponsel) dengan tinggi baris 1,8.
+- Kontras teks minimal 4,5:1 pada kedua tema.
+- Target sentuh minimal 44 px pada butir yang dapat diketuk.
+- Gerak hanya menjawab tindakan pengguna dan mengikuti `prefers-reduced-motion`.
+
+## Dialog
+
+Dialog memakai elemen `<dialog>` modal sehingga fokus terkunci dan Esc menutupnya. Dialog bawaan peramban (`prompt`, `confirm`) tidak dipakai.
+
+- Pengaturan: ukuran tetap agar tidak melompat saat isi bertambah.
+- Aksi (buat, ubah nama, konfirmasi): tombol utama di kanan, Batal di kiri. Konfirmasi hapus memfokuskan Batal.
+- Di ponsel, dialog tampil sebagai lembar bawah.
+
 ## Responsif
 
 - desktop: N | C | S/A;
-- layar menengah: S/A menjadi panel dari sisi kanan;
-- ponsel: N dan C menjadi alur utama, S/A tetap tersedia sebagai panel.
+- layar menengah (hingga 1120 px): S/A menjadi panel dari sisi kanan;
+- ponsel (hingga 760 px): satu panel pada satu waktu.
+  - daftar catatan adalah layar awal; memilih catatan membuka editor layar penuh dengan tombol kembali;
+  - bilah bawah Catatan / Sumber / Artefak; Sumber dan Artefak naik sebagai lembar bawah;
+  - tombol catatan baru mengambang di jangkauan jempol;
+  - daftar buku berupa laci dari kiri;
+  - membuka sumber menutup lembar dan menampilkan isinya di ruang kerja.
 
 ## Keadaan
 
