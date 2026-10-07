@@ -70,28 +70,30 @@ Pemeriksaan menggunakan `GET /v1/models` dan tidak mengirim isi catatan.
 
 ### Konfigurasi lokal
 
-Provider diaktifkan hanya jika lingkungan proses memiliki `CATATAN_AI_URL`.
-
-Variabel yang didukung:
-
-| Variabel | Wajib | Keterangan |
-|---|---|---|
-| `CATATAN_AI_URL` | Ya untuk mengaktifkan | Alamat dasar server kompatibel OpenAI |
-| `CATATAN_AI_MODEL` | Tidak | Nama model yang digunakan percakapan |
-| `CATATAN_AI_API_KEY` | Tidak | Kunci runtime bila server membutuhkannya |
+Untuk penggunaan biasa, konfigurasi AI disimpan di `config.json` pada folder data Catatan. Berkas ini tidak dibuat otomatis; pengguna dapat membuatnya sendiri saat ingin mengaktifkan AI.
 
 Contoh Ollama:
 
-```env
-CATATAN_AI_URL=http://127.0.0.1:11434/v1
-CATATAN_AI_MODEL=llama3.2
-
-# Hanya jika provider membutuhkan autentikasi.
-# Jangan commit nilai rahasia ke Git.
-# CATATAN_AI_API_KEY=
+```json
+{
+  "ai": {
+    "url": "http://127.0.0.1:11434/v1",
+    "model": "llama3.2"
+  }
+}
 ```
 
-Kunci API hanya dibaca dari lingkungan proses dan tidak disimpan oleh aplikasi.
+Lokasi berkas mengikuti folder data aplikasi. Jika aplikasi dijalankan dengan opsi `-data`, berkas konfigurasi berada di folder tersebut.
+
+Environment variable tetap didukung sebagai pengganti untuk pengembangan dan CI. Jika diisi, nilainya menimpa konfigurasi berkas:
+
+| Variabel | Keterangan |
+|---|---|
+| `CATATAN_AI_URL` | Menimpa alamat server |
+| `CATATAN_AI_MODEL` | Menimpa nama model |
+| `CATATAN_AI_API_KEY` | Kunci runtime bila server membutuhkannya |
+
+Kunci API hanya dibaca dari lingkungan proses dan tidak disimpan di `config.json`, SQLite, atau log.
 
 ## Percakapan
 
