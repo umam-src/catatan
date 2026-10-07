@@ -5,6 +5,7 @@
 ### Ditambahkan
 
 - Kontrak penyedia model lokal yang kompatibel dengan pola OpenAI.
+- Pemeriksaan kesiapan provider melalui endpoint `/v1/models` tanpa mengirim isi catatan.
 - Client HTTP standar Go dengan timeout, batas ukuran, dan galat terklasifikasi.
 - Pengujian provider tanpa jaringan eksternal atau model sungguhan.
 - Dokumentasi batas dan konfigurasi provider lokal.
