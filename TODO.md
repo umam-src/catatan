@@ -22,42 +22,16 @@
 **Issue utama:** #16 · **Gerbang:** #9 dan #10 · **PR aktif:** #28
 
 ### 0.1 Struktur aplikasi
-- [x] Struktur Go + SvelteKit tetap sederhana.
-- [x] Program utama dapat dibangun menjadi satu berkas eksekusi.
-- [x] UI web tertanam dalam program Go.
-- [x] Server hanya mendengar `127.0.0.1` secara bawaan.
-- [x] Verifikasi akhir bahwa distribusi tidak membutuhkan direktori UI terpisah saat runtime.
 
 ### 0.2 Basis data
-- [x] Model inti menyiapkan buku, sumber, catatan, percakapan, dan pesan untuk perkembangan fase berikutnya.
-- [x] SQLite berjalan tanpa CGO.
-- [x] Basis data baru dapat dibuat dari nol.
-- [x] Migrasi awal tersedia.
-- [x] Pengujian integrasi basis data tersedia.
-- [x] Pengujian migrasi tersedia.
-- [x] Kebijakan perubahan skema pra-`v1.0.0` terdokumentasi.
 - [ ] Tinjau kembali indeks dan struktur tabel berdasarkan kebutuhan fase berikutnya.
-- [x] Rancang fondasi otorisasi berbasis ACL: User/Group → ACL → Resource.
-- [x] Tentukan izin terstandar dan indeks ACL sebelum migrasi implementasi.
-- [x] Jangan menambahkan Role atau ABAC tanpa kebutuhan yang terukur.
-- [x] Pastikan kegagalan transaksi tidak meninggalkan data setengah tersimpan.
 
 ### 0.3 API dan keamanan masukan
 **Issue:** #18
-- [x] Validasi ID buku dan catatan.
-- [x] Validasi masukan judul dan isi.
-- [x] Batas ukuran badan permintaan.
-- [x] Metode HTTP yang tidak didukung ditangani dengan benar.
-- [x] Jalur API tidak membuka akses berkas di luar sumber daya.
-- [x] Status HTTP untuk galat utama konsisten.
-- [x] Isi catatan tidak ditulis ke log.
-- [x] Pengujian masukan kosong, terlalu panjang, ID tidak valid, dan data tidak ditemukan.
-- [x] Pemeriksaan awal rahasia dan data pribadi.
 - [ ] Lakukan pemeriksaan akhir setelah seluruh perubahan Fase 0 digabung.
 
 ### 0.4 UI produksi dan alur dasar
 **Issue:** #19
-- [x] Bangun UI produksi dan verifikasi hasil tertanam melalui CI.
 - [ ] Uji buka buku.
 - [ ] Uji daftar catatan.
 - [ ] Uji buka catatan.
@@ -67,67 +41,28 @@
 - [ ] Pastikan pemuatan ulang data tidak dilakukan berulang tanpa kebutuhan.
 - [ ] Pastikan kegagalan layanan tidak menghilangkan data lokal.
 - [ ] Pastikan kondisi kosong dan galat ditampilkan dengan jelas.
-- [x] Hindari pustaka UI berat tanpa manfaat nyata.
 
 ### 0.5 Autentikasi dan identitas
 **Issue:** #26 · **Blocker Fase 0**
-- [x] Tetapkan identitas internal pengguna yang stabil.
-- [x] Pisahkan identitas pengguna dari metode autentikasi.
-- [x] Implementasikan login lokal.
-- [x] Hash kata sandi dengan metode yang aman.
-- [x] Implementasikan session yang aman dan dapat dicabut.
-- [x] Implementasikan logout.
-- [x] Hubungkan data dengan pemilik pengguna.
-- [x] Uji isolasi data antar pengguna.
-- [x] Rancang batas penyedia untuk LDAP/AD/Synology dan SSO.
-- [x] Pastikan login lokal tidak bergantung pada layanan awan.
-- [x] Jangan mencatat password, token, cookie, atau kredensial.
-- [x] Uji kasus login gagal dan session kedaluwarsa.
 
 ### 0.6 Optimasi dan ukuran
-- [x] Inventarisasi dependensi Go dan antarmuka pada manifest proyek.
 - [ ] Hapus dependensi yang tidak diperlukan.
 - [ ] Evaluasi kontribusi ukuran `modernc.org/sqlite`.
 - [ ] Optimalkan aset UI produksi berdasarkan pengukuran.
-- [x] Ukur ukuran program hasil build.
-- [x] Target normal <20 MiB diterapkan.
-- [x] Beri peringatan pada >=30 MiB.
-- [x] Gagal pada >=50 MiB.
-- [x] Ukur ukuran gzip.
-- [x] Catat hasil pengukuran untuk pembanding fase berikutnya: biner 9.793.796 byte dan gzip 4.226.513 byte pada CI terakhir.
 - [ ] Ukur arsip rilis setelah format artefak rilis ditetapkan.
 
 ### 0.7 CI dan build
-- [x] Instalasi npm menggunakan `npm ci`.
-- [x] Verifikasi modul Go.
-- [x] `go vet ./...`.
-- [x] Build dan pemeriksaan UI tertanam.
-- [x] CI terakhir pada head sebelum komit dokumentasi ini hijau.
 - [ ] Pisahkan pemeriksaan CI umum dari pekerjaan rilis.
 - [ ] Jalankan build rilis hanya saat diperlukan.
 - [ ] Pastikan bump patch juga memicu build rilis.
 - [ ] Verifikasi artefak rilis.
-- [x] Hindari langkah CI duplikat yang tidak diperlukan untuk menghemat menit.
 
 ### 0.8 Dokumentasi dan kesiapan rilis
 **Issue:** #21
-- [x] Lisensi MIT tersedia.
-- [x] README diselaraskan dengan kondisi aktual.
-- [x] Selaraskan README, TODO, ROADMAP, CHANGELOG, dan CONTRIBUTING pada struktur dan status yang telah diverifikasi.
-- [x] Pastikan GLOSARIUM menggunakan istilah Indonesia baku.
-- [x] Dokumentasikan kebijakan skema pra-`v1.0.0`.
-- [x] Dokumentasikan cara menjalankan.
-- [x] Dokumentasikan cara menguji.
-- [x] Dokumentasikan cara membangun.
-- [x] Pastikan dokumentasi tidak menjanjikan fitur yang belum tersedia.
-- [x] Pemeriksaan akhir rahasia dan data sensitif pada sumber kode dan dokumentasi yang dapat dicari.
 
 ### 0.9 Gerbang `0.1.0`
 **Issue:** #9 dan #10
 - [ ] Seluruh butir Fase 0 selesai.
-- [x] Seluruh pengujian otomatis lulus pada CI terakhir.
-- [x] CI hijau.
-- [x] Ukuran artefak terukur dan memenuhi batas.
 - [ ] Pemeriksaan keamanan akhir lulus setelah seluruh perubahan Fase 0 digabung.
 - [ ] CHANGELOG mencatat `0.1.0`.
 - [ ] Nomor versi aplikasi/artefak ditetapkan bila berlaku.
@@ -143,18 +78,11 @@
 **PR terkait:** #27
 
 ### 1.1 Editor dan penyimpanan
-- [x] Membuat catatan kosong.
-- [x] Mengubah isi catatan.
-- [x] Penyimpanan otomatis dengan debounce.
-- [x] Indikator status penyimpanan.
 - [ ] Pastikan judul dapat diubah tanpa mengganggu isi.
 - [ ] Tangani konflik antara perubahan lama dan perubahan terbaru.
 - [ ] Kurangi permintaan penyimpanan yang tidak diperlukan.
 
 ### 1.2 Penghapusan dan daftar
-- [x] Penghapusan lunak.
-- [x] Migrasi `deleted_at`.
-- [x] Daftar hanya menampilkan catatan aktif.
 - [ ] Tinjau alur pemulihan atau penghapusan permanen jika memang dibutuhkan.
 - [ ] Optimalkan pemuatan daftar catatan.
 
@@ -195,66 +123,27 @@
 Status implementasi sumber: **selesai**. Issue Fase 2 #33–#39 telah diselesaikan; #40 menjadi pemeriksaan akhir fase.
 
 ### 2.0 Antarmuka dan identitas
-- [x] Antarmuka sumber tersedia dan dapat digunakan tanpa jaringan.
-- [x] Keadaan kosong, galat, dan berhasil pada alur sumber ditangani.
-- [x] Panel Sumber dan Artefak dapat dilipat.
-- [x] Tampilan responsif desktop dan ponsel.
 - [ ] Gunakan satu sumber versi untuk seluruh artefak rilis.
 - [ ] Uji versi CLI dan halaman web setelah build tertanam.
 
 ### 2.1 Model dan sumber lokal
-- [x] Entitas sumber dan hubungan sumber dengan buku.
-- [x] Metadata minimum sumber.
-- [x] Identitas sumber yang stabil.
-- [x] Impor sumber teks lokal UTF-8.
-- [x] Validasi tipe, ukuran, isi, metadata, dan checksum.
-- [x] Isolasi akses berdasarkan pemilik buku.
-- [x] Pengujian impor, daftar, detail, integritas, dan akses.
 
 ### 2.2 Pengelolaan sumber
-- [x] Ubah metadata sumber yang dapat diubah pengguna.
-- [x] Validasi perubahan dengan aturan yang sama seperti impor.
-- [x] Perbarui `updated_at` secara konsisten.
-- [x] Hapus sumber secara aman.
-- [x] Tolak akses lintas pengguna dan sumber yang tidak ditemukan.
-- [x] Uji pengubahan, penghapusan, validasi, isolasi, dan data tidak ditemukan.
 
 ### 2.3 Integritas dan lokasi sumber
-- [x] Verifikasi checksum saat isi sumber dibaca atau diekspor.
-- [x] Bedakan sumber tidak ditemukan dan isi sumber rusak.
-- [x] Tolak isi sumber yang tidak dapat diverifikasi.
-- [x] Simpan penanda lokasi baris yang dapat diverifikasi.
-- [x] Validasi lokasi terhadap checksum sumber.
-- [x] Dokumentasikan batas kestabilan penanda setelah isi berubah.
 
 ### 2.4 Hubungan sumber dan catatan
-- [x] Evaluasi kebutuhan relasi sumber-catatan.
-- [x] Tidak menambah tabel relasi langsung karena kebutuhan belum terbukti.
-- [x] Dokumentasikan keputusan dan batas peninjauan kembali.
-- [x] Pertahankan isolasi kepemilikan buku tanpa menduplikasi sumber.
 
 ### 2.5 Ekspor, cadangan, dan pemulihan
-- [x] Ekspor buku beserta catatan, sumber, metadata, checksum, dan lokasi.
-- [x] Ekspor deterministik dan sepenuhnya luring.
-- [x] Cadangan menggunakan format terverifikasi.
-- [x] Pemulihan dilakukan dalam transaksi sehingga kegagalan dapat dibatalkan.
-- [x] Cadangan rusak atau tidak sesuai checksum ditolak sebelum perubahan data.
-- [x] Uji round-trip cadangan dan pemulihan sumber.
-- [x] Dokumentasikan batas kompatibilitas format sebelum `v1.0.0`.
 
 ### 2.6 Evaluasi format tambahan
-- [x] URL ditunda pada Fase 2 karena belum ada kebutuhan terverifikasi.
-- [x] Berkas ringan selain teks ditunda untuk menjaga ukuran dan pemeliharaan.
-- [x] PDF/OCR, audio, video, ekstraksi berat, dan layanan AI tetap di fase berikutnya.
 
 ### 2.7 Gerbang `0.3.0`
-- [x] Issue #33–#39 selesai.
 - [ ] Pemeriksaan terpadu #40 selesai.
 - [ ] CI hijau pada perubahan terakhir.
 - [ ] Ukuran rilis diverifikasi pada perubahan terakhir.
 - [ ] CHANGELOG dan dokumentasi akhir diselaraskan.
 - [ ] Gerbang rilis #12 diverifikasi sebelum tag `v0.3.0`.
-
 
 ## Fase 3 — Pencarian dan AI Lokal → `0.4.0`
 
@@ -444,7 +333,6 @@ Status implementasi sumber: **selesai**. Issue Fase 2 #33–#39 telah diselesaik
 
 Rincian yang sebelumnya berada di `docs/roadmap.md` telah dipindahkan ke TODO agar hanya ada satu roadmap. Butir yang dipertahankan di sini meliputi:
 
-- [x] Model data awal menyiapkan buku, sumber, catatan, percakapan, dan pesan.
 - [ ] Sumber URL diperlakukan sebagai fitur opsional pada fase sumber.
 - [ ] Kontrak model mengikuti pola OpenAI-compatible tanpa mengikat data inti pada satu penyedia.
 - [ ] Konsep Open Notebook diadopsi secara selektif, bukan sebagai salinan arsitektur.
