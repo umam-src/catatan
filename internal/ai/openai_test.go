@@ -41,6 +41,65 @@ func TestOpenAICompatibleProviderGeneratesWithoutExternalNetwork(t *testing.T) {
 	}
 }
 
+
+func TestOpenAICompatibleProviderDiscoversModelFromModels(t *testing.T) {
+	var chatModel string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/v1/models":
+			_, _ = w.Write([]byte(`{"data":[{"id":"llama-uji"}]}`))
+		case "/v1/chat/completions":
+			var in struct { Model string `json:"model"` }
+			if err := json.NewDecoder(r.Body).Decode(&in); err != nil { t.Fatal(err) }
+			chatModel = in.Model
+			_, _ = w.Write([]byte(`{"model":"llama-uji","choices":[{"message":{"content":"jawaban lokal"}}]}`))
+		default:
+			t.Fatalf("path = %q", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	provider, err := NewClient(Config{BaseURL: server.URL})
+	if err != nil { t.Fatal(err) }
+	if got, err := provider.Models(context.Background()); err != nil || len(got) != 1 || got[0] != "llama-uji" {
+		t.Fatalf("models = %#v, err = %v", got, err)
+	}
+	response, err := provider.Generate(context.Background(), Request{
+		Messages: []Message{{Role: RoleUser, Content: "Halo"}},
+	})
+	if err != nil { t.Fatal(err) }
+	if chatModel != "llama-uji" || response.Model != "llama-uji" {
+		t.Fatalf("model = %q, response = %#v", chatModel, response)
+	}
+}
+
+func TestOpenAICompatibleProviderAcceptsV1BaseURL(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/v1/models":
+			_, _ = w.Write([]byte(`{"data":[{"id":"llama-uji"}]}`))
+		case "/v1/chat/completions":
+			_, _ = w.Write([]byte(`{"model":"llama-uji","choices":[{"message":{"content":"jawaban lokal"}}]}`))
+		default:
+			t.Fatalf("path = %q", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	provider, err := NewClient(Config{BaseURL: server.URL + "/v1"})
+	if err != nil { t.Fatal(err) }
+	if status := provider.Probe(context.Background()); status != ProviderReady {
+		t.Fatalf("status = %q", status)
+	}
+	if _, err := provider.Generate(context.Background(), Request{
+		Model: "llama-uji", Messages: []Message{{Role: RoleUser, Content: "Halo"}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestOpenAICompatibleProviderRejectsInvalidResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
