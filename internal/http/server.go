@@ -32,8 +32,9 @@ type aiStatusProvider interface {
 }
 
 type Server struct {
-	db *db.DB
-	ai aiStatusProvider
+	db    *db.DB
+	ai    aiStatusProvider
+	model string
 }
 
 func New(d *db.DB) http.Handler {
