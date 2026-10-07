@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.3] - 2026-10-07
+
+### Diperbaiki
+
+- Menstandarkan alamat dasar penyedia AI lokal menjadi `http://127.0.0.1:8080`.
+- Model AI kini dapat dipilih otomatis dari `/v1/models` saat nama model tidak dikonfigurasi.
+- Alamat provider yang sudah menyertakan `/v1` ditolak agar format konfigurasi konsisten.
+
 ## [0.3.2] - 2026-10-07
 
 ### Ditambahkan
