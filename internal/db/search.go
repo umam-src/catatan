@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+var ErrInvalidSearchQuery = errors.New("kueri pencarian tidak valid")
+
 const (
 	defaultSearchLimit = 20
 	maxSearchLimit     = 100
@@ -26,6 +28,7 @@ func (d *DB) Search(ctx context.Context, ownerID, notebookID, query string, limi
 	if limit <= 0 { limit = defaultSearchLimit }
 	if limit > maxSearchLimit { limit = maxSearchLimit }
 	if ownerID == "" { return nil, errors.New("pemilik pencarian wajib diisi") }
+	if strings.Count(query, `"`)%2 != 0 { return nil, ErrInvalidSearchQuery }
 
 	args := []any{query, ownerID}
 	filter := ""

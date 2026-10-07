@@ -35,6 +35,7 @@ func New(d *db.DB) http.Handler {
 	mux.HandleFunc("POST /api/auth/login", auth.login)
 	mux.HandleFunc("POST /api/auth/logout", auth.logout)
 	mux.HandleFunc("GET /api/auth/me", auth.me)
+	mux.HandleFunc("GET /api/search", s.search)
 	mux.HandleFunc("GET /api/notebooks", s.listNotebooks)
 	mux.HandleFunc("POST /api/notebooks", s.createNotebook)
 	mux.HandleFunc("PUT /api/notebooks/{id}", s.updateNotebook)
@@ -240,6 +241,7 @@ func allowedMethods(path string) string {
 	switch {
 	case path == "/api/auth/setup" || path == "/api/auth/login" || path == "/api/auth/logout": return http.MethodPost
 	case path == "/api/auth/me": return http.MethodGet
+	case path == "/api/search": return http.MethodGet
 	case path == "/api/health": return http.MethodGet
 	case path == "/api/notebooks": return http.MethodGet + ", " + http.MethodPost
 	case strings.HasPrefix(path, "/api/notebooks/") && strings.HasSuffix(path, "/notes"): return http.MethodGet + ", " + http.MethodPost
