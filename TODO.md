@@ -24,6 +24,7 @@
 ### 3.1 Pencarian lokal
 **Issue:** #83
 - [x] Tambahkan API pencarian dan alur pemanggilan dari antarmuka. (#88)
+- [x] Integrasikan pencarian lokal pada antarmuka dengan konteks buku dan keadaan hasil. (#89)
 - [ ] Uji data lebih besar.
 - [ ] Catat waktu pencarian dan dampak penyimpanan.
 - [ ] Evaluasi optimasi tambahan hanya jika pengukuran membuktikan perlu.
