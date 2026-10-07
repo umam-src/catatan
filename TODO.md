@@ -2,7 +2,7 @@
 
 > Rincian pekerjaan berjalan yang diturunkan dari `ROADMAP.md`. Roadmap menentukan arah; TODO memecahnya menjadi pekerjaan yang dapat dikerjakan dan diverifikasi. Rincian teknis yang lebih dalam tetap berada pada issue dan PR.
 
-**Status:** `[x]` selesai · `[~]` sedang dikerjakan · `[ ]` belum dikerjakan
+**Status:** `[~]` sedang dikerjakan · `[ ]` belum dikerjakan
 
 ## Aturan kerja
 
