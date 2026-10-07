@@ -6,11 +6,11 @@ Catatan memakai batas kecil antara logika aplikasi dan server model. Dukungan AI
 
 ## Kontrak internal
 
-Paket `internal/ai` menyediakan:
+Paket \`internal/ai\` menyediakan:
 
-- `Provider` untuk batas pemanggilan model;
-- `Request` berisi model dan pesan;
-- `Response` berisi teks dan nama model;
+- \`Provider\` untuk batas pemanggilan model;
+- \`Request\` berisi model dan pesan;
+- \`Response\` berisi teks dan nama model;
 - jenis pesan system, user, dan assistant;
 - galat terklasifikasi untuk ketidaktersediaan, penolakan, waktu habis, respons tidak sah, dan batas ukuran.
 
@@ -18,32 +18,68 @@ Kontrak sengaja lebih kecil daripada seluruh spesifikasi OpenAI. Embeddings, str
 
 ## Server kompatibel OpenAI
 
-Implementasi awal menggunakan HTTP standar Go dan endpoint:
+Implementasi menggunakan HTTP standar Go dan endpoint:
 
-`POST /v1/chat/completions`
+\`POST /v1/chat/completions\`
 
 Permintaan minimum:
 
-```json
+\`\`\`json
 {
   "model": "nama-model",
   "messages": [
     {"role": "user", "content": "Halo"}
   ]
 }
-```
+\`\`\`
 
 Respons yang diterima harus memiliki setidaknya satu pilihan dengan isi pesan teks.
 
-Alamat dasar dapat menunjuk ke server lokal, misalnya `http://127.0.0.1:8080`. Tidak ada alamat awan yang diwajibkan.
+Alamat dasar dapat menunjuk ke server lokal, misalnya \`http://127.0.0.1:8080\`. Tidak ada alamat awan yang diwajibkan.
+
+## Pemeriksaan kesiapan
+
+\`Client.Probe\` melakukan pemeriksaan ringan ke \`GET /v1/models\`.
+
+Probe:
+
+- tidak mengirim prompt atau isi catatan;
+- tidak menjalankan generasi model;
+- memiliki batas waktu 2 detik;
+- mengirim kunci API hanya jika konfigurasi memang memilikinya;
+- tidak menyimpan atau mencatat respons provider.
+
+Status yang dikembalikan:
+
+| Status | Arti |
+|---|---|
+| \`ready\` | Endpoint kompatibel merespons dengan JSON yang sah |
+| \`unavailable\` | Server tidak dapat dihubungi atau mengembalikan HTTP 5xx |
+| \`invalid\` | Endpoint merespons tetapi kontraknya tidak sesuai |
+
+Status \`ready\` berarti server API siap dijangkau, bukan jaminan bahwa model tertentu tersedia atau mampu memenuhi semua permintaan.
 
 ## Batas bawaan
 
 - waktu permintaan: 30 detik;
+- waktu probe: 2 detik;
 - ukuran permintaan: 1 MiB;
 - ukuran respons: 1 MiB.
 
 Nilai tersebut dapat diubah oleh pemanggil saat diperlukan. Batas diterapkan sebelum data diteruskan atau dibaca penuh.
+
+## Runtime lokal
+
+Catatan tidak membundel runtime inference atau model.
+
+Runtime seperti llama-server dan Ollama dapat digunakan melalui kontrak OpenAI-compatible yang sama. Catatan cukup mengetahui alamat dasar dan model yang dipilih; tidak perlu adapter atau SDK khusus runtime.
+
+Contoh alamat lokal:
+
+- llama-server: sesuai alamat dan port yang dijalankan pengguna;
+- Ollama: \`http://127.0.0.1:11434/v1\`.
+
+Pengujian dengan runtime sungguhan dilakukan di lingkungan pengembangan, bukan sebagai prasyarat CI.
 
 ## Konfigurasi dan rahasia
 
@@ -62,19 +98,21 @@ Catatan tidak menganggap kunci API sebagai bagian dari identitas atau otorisasi 
 
 | Kondisi | Galat |
 |---|---|
-| Server tidak dapat dihubungi | `ErrProviderUnavailable` |
-| HTTP 5xx | `ErrProviderUnavailable` |
-| HTTP 4xx | `ErrProviderRejected` |
-| Waktu habis | `ErrTimeout` |
-| JSON/struktur respons tidak sesuai | `ErrInvalidResponse` |
-| Permintaan melewati batas | `ErrRequestTooLarge` |
-| Respons melewati batas | `ErrResponseTooLarge` |
+| Server tidak dapat dihubungi | \`ErrProviderUnavailable\` |
+| HTTP 5xx | \`ErrProviderUnavailable\` |
+| HTTP 4xx | \`ErrProviderRejected\` |
+| Waktu habis | \`ErrTimeout\` |
+| JSON/struktur respons tidak sesuai | \`ErrInvalidResponse\` |
+| Permintaan melewati batas | \`ErrRequestTooLarge\` |
+| Respons melewati batas | \`ErrResponseTooLarge\` |
 
-Galat dapat diperiksa dengan `errors.Is` tanpa bergantung pada teks pesan.
+Galat dapat diperiksa dengan \`errors.Is\` tanpa bergantung pada teks pesan.
 
 ## Pengujian
 
-Pengujian menggunakan `httptest` dan tidak mengunduh model atau menghubungi layanan eksternal. Integrasi runtime model sungguhan ditangani pada #85.
+Pengujian menggunakan \`httptest\` dan tidak mengunduh model atau menghubungi layanan eksternal. Probe diuji untuk status siap, tidak tersedia, respons tidak sah, JSON tidak sah, dan memastikan tidak ada prompt yang dikirim.
+
+Integrasi runtime model sungguhan tetap menjadi pengujian manual pada fase integrasi.
 
 ## Batas fase
 
@@ -86,5 +124,3 @@ Fase ini tidak:
 - mewajibkan embeddings;
 - mewajibkan streaming;
 - menambahkan tool calling.
-
-Pemilihan dan pengukuran runtime lokal dilakukan pada #85.
