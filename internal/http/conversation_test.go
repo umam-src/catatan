@@ -62,7 +62,7 @@ func TestConversationContextAndCitation(t *testing.T) {
 	h := conversationHandler(t, p)
 	c := buatPercakapanUji(t, h)
 
-	s := permintaanSumber(t, h, "default", "bahan.txt", "Bahan", "baris satu\\nbaris dua\\nbaris tiga")
+	s := permintaanSumber(t, h, "default", "bahan.txt", "Bahan", "baris satu\nbaris dua\nbaris tiga")
 	if s.Code != http.StatusCreated { t.Fatalf("sumber: %d", s.Code) }
 	var src Source
 	if err := json.NewDecoder(s.Body).Decode(&src); err != nil { t.Fatal(err) }
