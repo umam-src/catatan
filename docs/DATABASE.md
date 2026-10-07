@@ -152,6 +152,20 @@ Pesan dalam percakapan.
 
 Pesan ikut terhapus ketika percakapannya dihapus.
 
+### `search_documents`
+
+Cermin lokal untuk kebutuhan pencarian. Data utama tetap berada pada `notes` dan `sources`; tabel ini hanya menjaga satu sumber dokumen untuk indeks pencarian dan diperbarui otomatis melalui pemicu basis data.
+
+| Kolom | Tipe | Aturan | Keterangan |
+|---|---|---|---|
+| `id` | TEXT | PRIMARY KEY | ID gabungan sumber pencarian. |
+| `notebook_id` | TEXT | NOT NULL, FK → `notebooks.id` | Buku pemilik dokumen. |
+| `kind` | TEXT | NOT NULL | `note` atau `source`. |
+| `title` | TEXT | NOT NULL | Judul yang dicari. |
+| `content` | TEXT | NOT NULL | Isi yang dicari. |
+
+Indeks FTS5 menggunakan tabel ini untuk pencarian lokal. Pengguna tidak mengakses tabel ini secara langsung.
+
 ### `source_locations`
 
 Penanda rentang baris pada sumber teks.
@@ -199,6 +213,7 @@ Indeks saat ini mendukung daftar data berdasarkan waktu dan pemeriksaan kepemili
 - `idx_notes_notebook_updated_active`
 - `idx_notes_notebook_deleted_updated`
 - `idx_source_locations_source`
+- `idx_search_documents_notebook`
 
 Jangan menambah indeks hanya berdasarkan perkiraan. Ukur jalur baca yang nyata terlebih dahulu dan pastikan biaya penyimpanan serta perubahan tulis sepadan dengan manfaatnya.
 
@@ -215,6 +230,7 @@ Urutan yang tercatat pada pengembangan saat ini:
 | 003 | `003_auth.sql` | Identitas, kredensial, sesi, serta kepemilikan buku. |
 | 004 | `004_note_list_index.sql` | Indeks daftar catatan. |
 | 005 | `005_source_locations.sql` | Penanda lokasi pada sumber. |
+| 006 | `006_search.sql` | Indeks pencarian lokal FTS5 dan sinkronisasi catatan/sumber. |
 
 Pada pengembangan sebelum `v1.0.0`, migrasi dapat dirapikan jika riwayat pengembangan memang mengandung kesalahan. Namun setiap perubahan nomor harus disertai pengujian migrasi dari basis data kosong dan basis data yang sudah memiliki migrasi sebelumnya.
 
