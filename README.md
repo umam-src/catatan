@@ -71,7 +71,7 @@ AI bersifat opsional. Untuk menggunakan server AI lokal seperti Ollama, buat ber
 }
 ```
 
-Tidak perlu Docker atau layanan awan untuk penggunaan ini. Kunci API, jika memang diperlukan server yang digunakan, tetap diberikan melalui pengaturan lingkungan dan tidak disimpan oleh Catatan.
+Untuk server OpenAI-compatible yang memiliki jalur dasar, jalur tersebut boleh disertakan. Contoh Google Gemini: `https://generativelanguage.googleapis.com/v1beta/openai/`. Kunci API, jika memang diperlukan server yang digunakan, tetap diberikan melalui pengaturan lingkungan dan tidak disimpan oleh Catatan.
 
 ## Menguji
 
