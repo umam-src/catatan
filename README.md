@@ -23,7 +23,7 @@ Struktur konsep mengikuti model **buku → sumber → catatan → percakapan**. 
 
 ## Status
 
-Tahap saat ini: **fondasi aplikasi**.
+Tahap saat ini: **Fase 2 — Sumber**.
 
 Fitur awal:
 
@@ -31,7 +31,9 @@ Fitur awal:
 - membuat dan mengubah catatan teks;
 - penyimpanan lokal;
 - migrasi data berurutan;
-- layanan lokal untuk pengembangan berikutnya;
+- sumber teks lokal dengan checksum dan penanda lokasi;
+- ekspor buku dan cadangan/pemulihan lokal;
+- isolasi data berdasarkan pengguna;
 - antarmuka responsif.
 
 ## Menjalankan dari sumber
@@ -109,6 +111,9 @@ Ukuran program tidak menghitung basis data pengguna atau model AI.
 - [Arsitektur](docs/ARSITEKTUR.md)
 - [Skema data](docs/SKEMA-DATA.md)
 - [Roadmap](ROADMAP.md)
+- [Format ekspor](docs/EXPORT.md)
+- [Hubungan sumber dan catatan](docs/SOURCE-NOTE-RELATION.md)
+- [Lokasi sumber](docs/SOURCE-LOCATIONS.md)
 - [Keputusan desain](docs/KEPUTUSAN-DESAIN.md)
 
 ## Lisensi
