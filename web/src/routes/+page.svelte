@@ -3,6 +3,7 @@
   type Notebook = { id: string; title: string; description: string };
   type Note = { id: string; title: string; content: string; updated_at: string };
   type Source = { id: string; title: string; kind: string; content?: string; locator: string; checksum: string; metadata_json: string };
+  type SearchResult = { id: string; kind: 'note' | 'source'; notebook_id: string; title: string; relevance: number };
 
   type Panel = 'sumber' | 'artefak';
   type View = 'catatan' | 'chat' | 'pratinjau';
@@ -39,6 +40,13 @@
   let bukuTerbuka = true;
   let konteksTerbuka = true;
   let menuKonteksAktif = '';
+  let kueriPencarian = '';
+  let hasilPencarian: SearchResult[] = [];
+  let pencarianMemuat = false;
+  let galatPencarian = '';
+  let pencarianAktif = false;
+  let timerPencarian: ReturnType<typeof setTimeout> | undefined;
+  let pengendaliPencarian: AbortController | undefined;
 
   let statusSimpan: 'tersimpan' | 'menyimpan' | 'gagal' = 'tersimpan';
   let timerSimpan: ReturnType<typeof setTimeout> | undefined;
@@ -289,6 +297,7 @@
       menuPenggunaTerbuka = false;
       user = null;
       siap = false;
+      bersihkanPencarian();
       notebooks = [];
       notes = [];
       sources = [];
@@ -303,6 +312,72 @@
     } catch (error) {
       galat = error instanceof Error ? error.message : 'Gagal keluar.';
     }
+  }
+
+  function bersihkanPencarian() {
+    if (timerPencarian) clearTimeout(timerPencarian);
+    pengendaliPencarian?.abort();
+    timerPencarian = undefined;
+    pengendaliPencarian = undefined;
+    kueriPencarian = '';
+    hasilPencarian = [];
+    pencarianMemuat = false;
+    galatPencarian = '';
+    pencarianAktif = false;
+  }
+
+  function jadwalkanPencarian() {
+    pencarianAktif = true;
+    galatPencarian = '';
+    if (timerPencarian) clearTimeout(timerPencarian);
+    pengendaliPencarian?.abort();
+    if (!kueriPencarian.trim()) {
+      hasilPencarian = [];
+      pencarianMemuat = false;
+      pencarianAktif = false;
+      return;
+    }
+    pencarianMemuat = true;
+    timerPencarian = setTimeout(() => void cariLokal(), 250);
+  }
+
+  async function cariLokal() {
+    const kueri = kueriPencarian.trim();
+    if (!kueri) return;
+    const pengendali = new AbortController();
+    pengendaliPencarian = pengendali;
+    try {
+      const parameter = new URLSearchParams({ q: kueri, limit: '20' });
+      if (notebookID) parameter.set('notebook_id', notebookID);
+      const response = await fetch('/api/search?' + parameter.toString(), { signal: pengendali.signal });
+      if (!response.ok) throw new Error((await response.text()) || 'Pencarian gagal.');
+      const data = await response.json();
+      if (pengendaliPencarian !== pengendali) return;
+      hasilPencarian = Array.isArray(data.results) ? data.results : [];
+      galatPencarian = '';
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      if (pengendaliPencarian !== pengendali) return;
+      hasilPencarian = [];
+      galatPencarian = error instanceof Error ? error.message : 'Pencarian gagal.';
+    } finally {
+      if (pengendaliPencarian === pengendali) {
+        pencarianMemuat = false;
+        pengendaliPencarian = undefined;
+      }
+    }
+  }
+
+  function pilihHasilPencarian(hasil: SearchResult) {
+    if (hasil.notebook_id !== notebookID) return;
+    pencarianAktif = false;
+    if (hasil.kind === 'note') {
+      const note = notes.find((item) => item.id === hasil.id);
+      if (note) pilihCatatan(note);
+      return;
+    }
+    const source = sources.find((item) => item.id === hasil.id);
+    if (source) void pilihSumber(source);
   }
 
   async function muatBuku() {
@@ -346,6 +421,7 @@
     nomorSimpan++;
     menuKonteksAktif = '';
     notebookID = id;
+    bersihkanPencarian();
     galat = '';
     try {
       await muatIsiBuku();
@@ -767,6 +843,47 @@
         <div class="identitas-buku">
           <h1>{bukuAktif?.title || 'Belum ada buku'}</h1>
         </div>
+        <div class="pencarian" class:aktif={pencarianAktif}>
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" /></svg>
+          <input
+            value={kueriPencarian}
+            oninput={(event) => {
+              const input = event.currentTarget as HTMLInputElement;
+              kueriPencarian = input.value;
+              jadwalkanPencarian();
+            }}
+            onfocus={() => { if (kueriPencarian.trim()) pencarianAktif = true; }}
+            aria-label="Cari catatan dan sumber"
+            placeholder="Cari catatan dan sumber…"
+            autocomplete="off"
+          />
+          {#if kueriPencarian}
+            <button type="button" aria-label="Bersihkan pencarian" title="Bersihkan pencarian" onclick={bersihkanPencarian}>×</button>
+          {/if}
+          {#if pencarianAktif}
+            <div class="hasil-pencarian" role="status" aria-live="polite">
+              {#if pencarianMemuat}
+                <div class="status-pencarian">Mencari…</div>
+              {:else if galatPencarian}
+                <div class="status-pencarian galat-pencarian" role="alert">{galatPencarian}</div>
+              {:else if !kueriPencarian.trim()}
+                <div class="status-pencarian">Ketik kata untuk mencari.</div>
+              {:else if !hasilPencarian.length}
+                <div class="status-pencarian">Tidak ada hasil di buku ini.</div>
+              {:else}
+                {#each hasilPencarian as hasil}
+                  <button class="hasil-pencarian-item" type="button" onclick={() => pilihHasilPencarian(hasil)}>
+                    <span class="hasil-pencarian-ikon">{hasil.kind === 'note' ? 'C' : 'S'}</span>
+                    <span class="hasil-pencarian-teks">
+                      <strong>{hasil.title || (hasil.kind === 'note' ? 'Tanpa judul' : 'Tanpa nama')}</strong>
+                      <small>{hasil.kind === 'note' ? 'Catatan' : 'Sumber'} · {bukuAktif?.title || 'Buku aktif'}</small>
+                    </span>
+                  </button>
+                {/each}
+              {/if}
+            </div>
+          {/if}
+        </div>
         <div class="aksi-atas">
           <div class="menu-pengguna">
             <button
@@ -1040,6 +1157,27 @@
 {/if}
 
 <style>
+  .pencarian { position: relative; flex: 1 1 360px; max-width: 520px; min-width: 180px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid var(--garis); border-radius: var(--radius); background: var(--permukaan); color: var(--teks-2); }
+  .pencarian:focus-within, .pencarian.aktif { border-color: var(--teks-3); }
+  .pencarian > svg { width: 18px; height: 18px; flex: 0 0 auto; }
+  .pencarian input { width: 100%; min-width: 0; height: 42px; padding: 0; border: 0; outline: 0; background: transparent; color: var(--teks); }
+  .pencarian input::placeholder { color: var(--teks-3); }
+  .pencarian > button { width: 30px; height: 30px; flex: 0 0 auto; border: 0; border-radius: 50%; background: transparent; color: var(--teks-2); cursor: pointer; font-size: 1.15rem; }
+  .pencarian > button:hover { background: var(--permukaan-hover); color: var(--teks); }
+  .hasil-pencarian { position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 50; overflow: hidden; border: 1px solid var(--garis); border-radius: var(--radius); background: var(--permukaan); box-shadow: var(--bayangan-dialog); }
+  .status-pencarian { padding: 14px 16px; color: var(--teks-2); font-size: .9rem; }
+  .galat-pencarian { color: var(--bahaya); }
+  .hasil-pencarian-item { display: flex; width: 100%; gap: 10px; align-items: center; padding: 11px 12px; border: 0; background: transparent; color: var(--teks); text-align: left; cursor: pointer; }
+  .hasil-pencarian-item:hover, .hasil-pencarian-item:focus-visible { background: var(--permukaan-hover); }
+  .hasil-pencarian-ikon { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border-radius: 8px; background: var(--permukaan-lembut); color: var(--teks-2); font-size: .75rem; font-weight: 700; }
+  .hasil-pencarian-teks { min-width: 0; display: grid; gap: 2px; }
+  .hasil-pencarian-teks strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hasil-pencarian-teks small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--teks-2); }
+  @media (max-width: 760px) {
+    .pencarian { order: 3; flex-basis: 100%; max-width: none; }
+    .hasil-pencarian { position: fixed; top: calc(var(--tinggi-bar) + 8px); left: 12px; right: 12px; }
+  }
+
   .item-buku-bar,
   .item-catatan-bar { position: relative; display: flex; align-items: stretch; min-width: 0; }
   .item-buku-bar.menu-terbuka,
