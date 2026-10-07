@@ -192,55 +192,69 @@
 
 ## Fase 2 — Sumber → `0.3.0`
 
-### 2.0 UI dan identitas versi
-- [ ] Buat ulang UI dasar berdasarkan sketsa yang telah disetujui, dengan mempertahankan perilaku API dan alur data yang sudah benar.
-- [ ] Jadikan struktur UI baru sebagai fondasi yang dapat digunakan ulang untuk Catatan dan Sumber.
-- [ ] Pastikan keadaan loading, kosong, galat, dan berhasil konsisten pada UI baru.
-- [ ] Pastikan UI tetap responsif dan offline-first tanpa menambah dependensi berat tanpa kebutuhan yang jelas.
-- [ ] Tambahkan flag versi pada CLI, misalnya `catatan --version`.
-- [ ] Tampilkan versi aplikasi pada halaman web.
-- [ ] Gunakan satu sumber versi agar versi CLI, web, dan artefak rilis tetap selaras.
-- [ ] Uji versi yang ditampilkan pada CLI dan halaman web setelah proses build tertanam.
+Status implementasi sumber: **selesai**. Issue Fase 2 #33–#39 telah diselesaikan; #40 menjadi pemeriksaan akhir fase.
 
-### 2.1 Model sumber
-- [ ] Tentukan entitas sumber.
-- [ ] Tentukan hubungan sumber dengan buku.
-- [ ] Tentukan hubungan sumber dengan catatan.
-- [ ] Tentukan metadata minimum.
-- [ ] Tentukan identitas sumber yang stabil.
-- [ ] Tambahkan pengujian model dan migrasi.
+### 2.0 Antarmuka dan identitas
+- [x] Antarmuka sumber tersedia dan dapat digunakan tanpa jaringan.
+- [x] Keadaan kosong, galat, dan berhasil pada alur sumber ditangani.
+- [x] Panel Sumber dan Artefak dapat dilipat.
+- [x] Tampilan responsif desktop dan ponsel.
+- [ ] Gunakan satu sumber versi untuk seluruh artefak rilis.
+- [ ] Uji versi CLI dan halaman web setelah build tertanam.
 
-### 2.2 Sumber lokal
-- [ ] Dukungan sumber URL sebagai fitur opsional setelah kebutuhan dan batas keamanan ditetapkan.
-- [ ] Tambahkan sumber teks lokal.
-- [ ] Impor berkas ringan yang relevan.
-- [ ] Validasi tipe berkas.
-- [ ] Batasi ukuran impor.
-- [ ] Tampilkan pratinjau.
-- [ ] Simpan metadata yang diperlukan.
+### 2.1 Model dan sumber lokal
+- [x] Entitas sumber dan hubungan sumber dengan buku.
+- [x] Metadata minimum sumber.
+- [x] Identitas sumber yang stabil.
+- [x] Impor sumber teks lokal UTF-8.
+- [x] Validasi tipe, ukuran, isi, metadata, dan checksum.
+- [x] Isolasi akses berdasarkan pemilik buku.
+- [x] Pengujian impor, daftar, detail, integritas, dan akses.
 
-### 2.3 Pengelolaan sumber
-- [ ] Ubah metadata sumber.
-- [ ] Hapus sumber.
-- [ ] Tangani sumber yang hilang atau rusak.
-- [ ] Tambahkan checksum bila benar-benar diperlukan.
-- [ ] Uji pemulihan sumber dari cadangan.
+### 2.2 Pengelolaan sumber
+- [x] Ubah metadata sumber yang dapat diubah pengguna.
+- [x] Validasi perubahan dengan aturan yang sama seperti impor.
+- [x] Perbarui `updated_at` secara konsisten.
+- [x] Hapus sumber secara aman.
+- [x] Tolak akses lintas pengguna dan sumber yang tidak ditemukan.
+- [x] Uji pengubahan, penghapusan, validasi, isolasi, dan data tidak ditemukan.
 
-### 2.4 Kutipan dan ekspor
-- [ ] Simpan penanda lokasi sumber untuk kutipan.
-- [ ] Tautkan kutipan ke sumber.
-- [ ] Ekspor data buku beserta sumber.
-- [ ] Cadangkan dan pulihkan sumber.
+### 2.3 Integritas dan lokasi sumber
+- [x] Verifikasi checksum saat isi sumber dibaca atau diekspor.
+- [x] Bedakan sumber tidak ditemukan dan isi sumber rusak.
+- [x] Tolak isi sumber yang tidak dapat diverifikasi.
+- [x] Simpan penanda lokasi baris yang dapat diverifikasi.
+- [x] Validasi lokasi terhadap checksum sumber.
+- [x] Dokumentasikan batas kestabilan penanda setelah isi berubah.
 
-### 2.5 Gerbang `0.3.0`
-- [ ] Seluruh pekerjaan sumber selesai.
-- [ ] Pengujian migrasi dan API lulus.
-- [ ] CI hijau.
-- [ ] Ukuran rilis diverifikasi.
-- [ ] CHANGELOG diperbarui.
-- [ ] Rilis `0.3.0` terverifikasi.
+### 2.4 Hubungan sumber dan catatan
+- [x] Evaluasi kebutuhan relasi sumber-catatan.
+- [x] Tidak menambah tabel relasi langsung karena kebutuhan belum terbukti.
+- [x] Dokumentasikan keputusan dan batas peninjauan kembali.
+- [x] Pertahankan isolasi kepemilikan buku tanpa menduplikasi sumber.
 
----
+### 2.5 Ekspor, cadangan, dan pemulihan
+- [x] Ekspor buku beserta catatan, sumber, metadata, checksum, dan lokasi.
+- [x] Ekspor deterministik dan sepenuhnya luring.
+- [x] Cadangan menggunakan format terverifikasi.
+- [x] Pemulihan dilakukan dalam transaksi sehingga kegagalan dapat dibatalkan.
+- [x] Cadangan rusak atau tidak sesuai checksum ditolak sebelum perubahan data.
+- [x] Uji round-trip cadangan dan pemulihan sumber.
+- [x] Dokumentasikan batas kompatibilitas format sebelum `v1.0.0`.
+
+### 2.6 Evaluasi format tambahan
+- [x] URL ditunda pada Fase 2 karena belum ada kebutuhan terverifikasi.
+- [x] Berkas ringan selain teks ditunda untuk menjaga ukuran dan pemeliharaan.
+- [x] PDF/OCR, audio, video, ekstraksi berat, dan layanan AI tetap di fase berikutnya.
+
+### 2.7 Gerbang `0.3.0`
+- [x] Issue #33–#39 selesai.
+- [ ] Pemeriksaan terpadu #40 selesai.
+- [ ] CI hijau pada perubahan terakhir.
+- [ ] Ukuran rilis diverifikasi pada perubahan terakhir.
+- [ ] CHANGELOG dan dokumentasi akhir diselaraskan.
+- [ ] Gerbang rilis #12 diverifikasi sebelum tag `v0.3.0`.
+
 
 ## Fase 3 — Pencarian dan AI Lokal → `0.4.0`
 
