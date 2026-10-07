@@ -88,56 +88,94 @@ func NewClient(cfg Config) (*Client, error) {
 	}, nil
 }
 
-// Probe memeriksa kesiapan server tanpa mengirim isi catatan atau menjalankan model.
-func (c *Client) Probe(ctx context.Context) ProviderStatus {
-	probeCtx, cancel := context.WithTimeout(ctx, defaultProbeTimeout)
+// endpoint membuat alamat API tanpa menggandakan awalan /v1 jika URL dasar
+// pengguna sudah menyertakannya.
+func (c *Client) endpoint(path string) *url.URL {
+	endpoint := *c.baseURL
+	basePath := strings.TrimRight(endpoint.Path, "/")
+	if strings.HasPrefix(path, "/v1/") && strings.HasSuffix(basePath, "/v1") {
+		path = strings.TrimPrefix(path, "/v1")
+	}
+	endpoint.Path = basePath + path
+	return &endpoint
+}
+
+// Models mengambil daftar model yang tersedia dari penyedia OpenAI-compatible.
+func (c *Client) Models(ctx context.Context) ([]string, error) {
+	reqCtx, cancel := context.WithTimeout(ctx, defaultProbeTimeout)
 	defer cancel()
 
-	endpoint := *c.baseURL
-	endpoint.Path = strings.TrimRight(endpoint.Path, "/") + "/v1/models"
-	req, err := http.NewRequestWithContext(probeCtx, http.MethodGet, endpoint.String(), nil)
+	endpoint := c.endpoint("/v1/models")
+	req, err := http.NewRequestWithContext(reqCtx, http.MethodGet, endpoint.String(), nil)
 	if err != nil {
-		return ProviderInvalid
+		return nil, fmt.Errorf("%w: %v", ErrProviderUnavailable, err)
 	}
 	if c.apiKey != "" {
 		req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	}
-
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return ProviderUnavailable
+		if errors.Is(reqCtx.Err(), context.DeadlineExceeded) || errors.Is(err, context.DeadlineExceeded) {
+			return nil, ErrTimeout
+		}
+		return nil, fmt.Errorf("%w: %v", ErrProviderUnavailable, err)
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
 		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, c.maxResponseBytes))
 		if resp.StatusCode >= 500 {
-			return ProviderUnavailable
+			return nil, fmt.Errorf("%w: HTTP %d", ErrProviderUnavailable, resp.StatusCode)
 		}
-		return ProviderInvalid
+		return nil, fmt.Errorf("%w: HTTP %d", ErrProviderRejected, resp.StatusCode)
 	}
 	if resp.ContentLength > c.maxResponseBytes {
-		return ProviderInvalid
+		return nil, ErrResponseTooLarge
 	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, c.maxResponseBytes+1))
-	if err != nil || int64(len(body)) > c.maxResponseBytes {
-		return ProviderInvalid
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrProviderUnavailable, err)
 	}
-
+	if int64(len(body)) > c.maxResponseBytes {
+		return nil, ErrResponseTooLarge
+	}
 	var out struct {
-		Data []struct {
-			ID string `json:"id"`
-		} `json:"data"`
+		Data []struct { ID string `json:"id"` } `json:"data"`
 	}
 	if err := json.Unmarshal(body, &out); err != nil {
-		return ProviderInvalid
+		return nil, fmt.Errorf("%w: JSON model tidak valid", ErrInvalidResponse)
 	}
-	return ProviderReady
+	models := make([]string, 0, len(out.Data))
+	for _, item := range out.Data {
+		if id := strings.TrimSpace(item.ID); id != "" {
+			models = append(models, id)
+		}
+	}
+	if len(models) == 0 {
+		return nil, fmt.Errorf("%w: model tidak ditemukan", ErrProviderRejected)
+	}
+	return models, nil
+}
+
+// Probe memeriksa kesiapan server dan memastikan setidaknya satu model tersedia.
+func (c *Client) Probe(ctx context.Context) ProviderStatus {
+	_, err := c.Models(ctx)
+	if err == nil {
+		return ProviderReady
+	}
+	if errors.Is(err, ErrProviderUnavailable) || errors.Is(err, ErrTimeout) {
+		return ProviderUnavailable
+	}
+	return ProviderInvalid
 }
 
 func (c *Client) Generate(ctx context.Context, in Request) (Response, error) {
-	if strings.TrimSpace(in.Model) == "" {
-		return Response{}, fmt.Errorf("%w: model wajib diisi", ErrProviderRejected)
+	model := strings.TrimSpace(in.Model)
+	if model == "" {
+		models, err := c.Models(ctx)
+		if err != nil {
+			return Response{}, err
+		}
+		model = models[0]
 	}
 	if len(in.Messages) == 0 {
 		return Response{}, fmt.Errorf("%w: pesan wajib diisi", ErrProviderRejected)
@@ -162,8 +200,7 @@ func (c *Client) Generate(ctx context.Context, in Request) (Response, error) {
 		return Response{}, ErrRequestTooLarge
 	}
 
-	endpoint := *c.baseURL
-	endpoint.Path = strings.TrimRight(endpoint.Path, "/") + "/v1/chat/completions"
+	endpoint := c.endpoint("/v1/chat/completions")
 	reqCtx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(reqCtx, http.MethodPost, endpoint.String(), bytes.NewReader(body))
