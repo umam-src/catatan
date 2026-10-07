@@ -42,12 +42,13 @@
 
 ### 3.3 Integrasi model lokal
 **Issue:** #85
-- [ ] Pilih integrasi awal berdasarkan manfaat dan biaya pemeliharaan.
-- [ ] Dukungan server yang kompatibel dengan OpenAI.
-- [ ] Evaluasi integrasi opsional llama-server.
-- [ ] Evaluasi integrasi opsional Ollama.
-- [ ] Tangani penyedia tidak tersedia tanpa merusak alur non-AI.
-- [ ] Uji setidaknya satu jalur model lokal secara menyeluruh.
+- [x] Pilih integrasi awal berdasarkan manfaat dan biaya pemeliharaan: gunakan satu client OpenAI-compatible.
+- [x] Dukungan server yang kompatibel dengan OpenAI.
+- [x] Evaluasi integrasi opsional llama-server: gunakan endpoint kompatibel tanpa adapter khusus.
+- [x] Evaluasi integrasi opsional Ollama: gunakan endpoint kompatibel tanpa adapter khusus.
+- [x] Tambahkan probe kesiapan tanpa mengirim isi catatan.
+- [x] Tangani penyedia tidak tersedia tanpa merusak alur non-AI.
+- [x] Uji jalur OpenAI-compatible dengan server tiruan lokal di CI.
 - [ ] Ukur dampak ukuran program, waktu mulai, dan penggunaan memori.
 - [ ] Jangan menjadikan model tertentu sebagai ketergantungan wajib.
 
