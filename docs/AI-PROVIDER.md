@@ -83,12 +83,23 @@ Pengujian dengan runtime sungguhan dilakukan di lingkungan pengembangan, bukan s
 
 ## Konfigurasi dan rahasia
 
-Konfigurasi provider dipisahkan dari logika domain. Kunci API, bila diperlukan oleh server yang dipakai, hanya diberikan ke client saat runtime.
+Untuk penggunaan biasa, alamat server dan nama model dapat disimpan di `config.json` pada folder data Catatan:
+
+```json
+{
+  "ai": {
+    "url": "http://127.0.0.1:11434/v1",
+    "model": "llama3.2"
+  }
+}
+```
+
+Environment variable tetap tersedia untuk pengembangan dan CI. `CATATAN_AI_URL` dan `CATATAN_AI_MODEL` menimpa nilai dari berkas jika diisi. `CATATAN_AI_API_KEY` hanya dibaca dari lingkungan proses.
 
 Kunci API:
 
 - tidak disimpan di SQLite;
-- tidak ditulis ke berkas konfigurasi oleh paket provider;
+- tidak disimpan di `config.json`;
 - tidak ditulis ke log;
 - tidak dimasukkan ke model data aplikasi.
 
