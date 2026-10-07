@@ -97,3 +97,14 @@ Pesan menggunakan Bahasa Indonesia yang singkat dan tidak menyalahkan pengguna.
 ## Batasan
 
 Pekerjaan ini hanya membangun ulang antarmuka. API dan penyimpanan yang sudah benar dipertahankan. Chat dan Artefak belum menambahkan mesin backend baru.
+
+## Pencarian lokal
+
+Antarmuka utama menyediakan pencarian catatan dan sumber dari buku yang sedang aktif. Kueri dikirim ke API lokal setelah penundaan singkat agar perubahan setiap karakter tidak langsung menghasilkan permintaan baru.
+
+- Hasil selalu dibatasi pada buku aktif.
+- Permintaan pencarian lama dibatalkan ketika kueri berubah.
+- Kueri tidak disimpan sebagai data pengguna.
+- Daftar hasil hanya menampilkan judul, jenis, dan buku; isi catatan atau sumber tidak dikirim ke antarmuka pencarian.
+- Antarmuka menampilkan keadaan memuat, tidak ada hasil, dan kesalahan.
+- Pemilihan hasil membuka catatan atau sumber yang sudah dimuat pada buku aktif.
