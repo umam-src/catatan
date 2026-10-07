@@ -4,6 +4,7 @@
 
 ### Ditambahkan
 
+- Antarmuka chat dengan pemilihan sumber eksplisit dan kutipan yang dapat dibuka kembali.
 - API percakapan berbasis buku dengan riwayat pesan dan konteks sumber terpilih.
 - Batas konteks dan kutipan sumber yang diverifikasi sebelum jawaban disimpan.
 - Kontrak penyedia model lokal yang kompatibel dengan pola OpenAI.

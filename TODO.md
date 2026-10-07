@@ -64,8 +64,8 @@
 - [x] Uji isolasi dan ketepatan kutipan dengan provider tiruan.
 - [x] Mode tanpa AI tetap lengkap pada alur non-percakapan.
 
-- [ ] Tambahkan antarmuka percakapan dan pemilihan sumber.
-- [ ] Uji end-to-end dengan runtime model nyata.
+- [x] Tambahkan antarmuka percakapan dan pemilihan sumber.
+- [ ] Uji end-to-end dengan runtime model nyata (ditangani bersama #85).
 
 ### 3.5 Gerbang `0.4.0`
 - [ ] #83–#86 selesai.

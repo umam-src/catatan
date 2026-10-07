@@ -108,3 +108,11 @@ Antarmuka utama menyediakan pencarian catatan dan sumber dari buku yang sedang a
 - Daftar hasil hanya menampilkan judul, jenis, dan buku; isi catatan atau sumber tidak dikirim ke antarmuka pencarian.
 - Antarmuka menampilkan keadaan memuat, tidak ada hasil, dan kesalahan.
 - Pemilihan hasil membuka catatan atau sumber yang sudah dimuat pada buku aktif.
+
+## Percakapan
+
+Ruang kerja menyediakan tombol **Chat** dari editor catatan. Chat menggunakan percakapan yang terikat pada buku dan dapat memakai beberapa sumber yang dipilih pengguna sebagai konteks.
+
+Sumber tidak dikirim hanya karena berada di buku. Saat Chat dibuka, sumber harus dicentang pada panel Sumber. Jawaban yang memakai sumber menampilkan kutipan seperti `S1 · L1–L3`; kutipan dapat dibuka kembali ke sumber asal.
+
+Jika penyedia model belum aktif atau tidak tersedia, tombol kirim dinonaktifkan dan fungsi catatan, sumber, serta pencarian tetap dapat digunakan.
