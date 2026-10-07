@@ -49,9 +49,26 @@ func main() {
 	}
 	defer database.Close()
 
-	aiConfig, aiConfigured, err := ai.ConfigFromEnv()
+	configPath := filepath.Join(dir, "config.json")
+	aiConfig, aiModel, aiConfigured, err := ai.ConfigFromFile(configPath)
 	if err != nil {
 		log.Fatal(err)
+	}
+	if envURL := os.Getenv("CATATAN_AI_URL"); envURL != "" {
+		envConfig, envConfigured, envErr := ai.ConfigFromEnv()
+		if envErr != nil {
+			log.Fatal(envErr)
+		}
+		if envConfigured {
+			aiConfig = envConfig
+			aiConfigured = true
+		}
+	}
+	if envKey := os.Getenv("CATATAN_AI_API_KEY"); envKey != "" && aiConfig != nil {
+		aiConfig.APIKey = envKey
+	}
+	if envModel := ai.ModelFromEnv(); envModel != "" {
+		aiModel = envModel
 	}
 	var aiProvider *ai.Client
 	if aiConfigured {
@@ -62,7 +79,7 @@ func main() {
 		log.Printf("penyedia model lokal aktif: %s", aiConfig.BaseURL)
 	}
 
-	server := &http.Server{Addr: *addr, Handler: apphttp.NewWithAI(database, aiProvider)}
+	server := &http.Server{Addr: *addr, Handler: apphttp.NewWithAIModel(database, aiProvider, aiModel)}
 	go func() {
 		log.Printf("Buku Catatan: http://%s", *addr)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
