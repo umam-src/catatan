@@ -53,7 +53,7 @@ func NewClient(cfg Config) (*Client, error) {
 		return nil, fmt.Errorf("alamat penyedia model wajib diisi")
 	}
 	u, err := url.Parse(base)
-	if err != nil || u.Scheme == "" || u.Host == "" || u.User != nil || u.Path != "" || u.RawQuery != "" || u.Fragment != "" {
+	if err != nil || u.Scheme == "" || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
 		return nil, fmt.Errorf("alamat penyedia model tidak valid")
 	}
 	if u.Scheme != "http" && u.Scheme != "https" {
@@ -90,7 +90,11 @@ func NewClient(cfg Config) (*Client, error) {
 
 func (c *Client) endpoint(path string) *url.URL {
 	endpoint := *c.baseURL
-	endpoint.Path = strings.TrimRight(endpoint.Path, "/") + path
+	basePath := strings.TrimRight(endpoint.Path, "/")
+	if basePath == "" {
+		basePath = "/v1"
+	}
+	endpoint.Path = basePath + path
 	return &endpoint
 }
 
