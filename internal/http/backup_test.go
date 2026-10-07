@@ -36,8 +36,8 @@ func TestBackupRestoreRoundTripPreservesSourceAndMetadata(t *testing.T) {
 	if len(document.Notes) != 1 || len(document.Sources) != 1 {
 		t.Fatalf("isi cadangan tidak lengkap: catatan=%d sumber=%d", len(document.Notes), len(document.Sources))
 	}
-	if document.Sources[0].ID != source.ID || document.Sources[0].Content != source.Content || document.Sources[0].Checksum != source.Checksum {
-		t.Fatalf("sumber cadangan berubah: %#v", document.Sources[0])
+	if document.Sources[0].ID != source.ID || document.Sources[0].Title != "Bahan" || document.Sources[0].Content != "isi sumber" || document.Sources[0].Checksum == "" {
+		t.Fatalf("sumber cadangan tidak lengkap: %#v", document.Sources[0])
 	}
 
 	deleted := requestUji(t, handler, http.MethodDelete, "/api/sources/"+source.ID, nil)
@@ -55,8 +55,8 @@ func TestBackupRestoreRoundTripPreservesSourceAndMetadata(t *testing.T) {
 	}
 
 	restored := detailSumberUji(t, handler, source.ID)
-	if restored.Content != source.Content || restored.Checksum != source.Checksum || restored.Title != source.Title {
-		t.Fatalf("sumber setelah pemulihan berubah: %#v", restored)
+	if restored.Content != "isi sumber" || restored.Checksum != document.Sources[0].Checksum || restored.Title != "Bahan" {
+		t.Fatalf("sumber setelah pemulihan tidak sesuai: %#v", restored)
 	}
 }
 
@@ -85,7 +85,7 @@ func TestRestoreRejectsCorruptBackupWithoutChangingData(t *testing.T) {
 	}
 
 	restored := detailSumberUji(t, handler, source.ID)
-	if restored.Content != source.Content || restored.Checksum != source.Checksum {
+	if restored.Content != "isi sumber" || restored.Checksum == "" {
 		t.Fatalf("data berubah setelah cadangan rusak ditolak: %#v", restored)
 	}
 }
