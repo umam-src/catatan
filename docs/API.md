@@ -77,9 +77,19 @@ Variabel yang didukung:
 | Variabel | Wajib | Keterangan |
 |---|---|---|
 | `CATATAN_AI_URL` | Ya untuk mengaktifkan | Alamat dasar server kompatibel OpenAI |
+| `CATATAN_AI_MODEL` | Tidak | Nama model yang digunakan percakapan |
 | `CATATAN_AI_API_KEY` | Tidak | Kunci runtime bila server membutuhkannya |
 
-Contoh Ollama: `CATATAN_AI_URL=http://127.0.0.1:11434/v1`.
+Contoh Ollama:
+
+```env
+CATATAN_AI_URL=http://127.0.0.1:11434/v1
+CATATAN_AI_MODEL=llama3.2
+
+# Hanya jika provider membutuhkan autentikasi.
+# Jangan commit nilai rahasia ke Git.
+# CATATAN_AI_API_KEY=
+```
 
 Kunci API hanya dibaca dari lingkungan proses dan tidak disimpan oleh aplikasi.
 
@@ -90,6 +100,4 @@ Kunci API hanya dibaca dari lingkungan proses dan tidak disimpan oleh aplikasi.
 - GET /api/conversations/{id}/messages — membaca riwayat percakapan.
 - POST /api/conversations/{id}/messages — mengirim pesan dengan content dan daftar source_ids yang dipilih.
 
-Batas konteks: maksimal 8 sumber dan 64 KiB isi sumber gabungan. Sumber harus dimiliki buku percakapan dan checksum harus cocok sebelum dikirim ke provider. Jika sumber dipilih, jawaban wajib memiliki kutipan yang dapat diverifikasi seperti [S1:L1-L3].
-
-Model percakapan dibaca dari CATATAN_AI_MODEL. Provider, model, dan percakapan AI tetap opsional; tanpa AI, buku, catatan, sumber, dan pencarian tetap berjalan.
+Batas konteks: maksimal 8 sumber dan 64 KiB isi sumber gabungan. Sumber harus dimiliki buku percakapan dan checksum harus cocok sebelum dikirim ke provider. Jika sumber dipilih, jawaban wajib memiliki kutipan yang dapat diverifikasi seperti [S1:L1-L3]. Model percakapan dibaca dari CATATAN_AI_MODEL. Provider, model, dan percakapan AI tetap opsional; tanpa AI, buku, catatan, sumber, dan pencarian tetap berjalan.

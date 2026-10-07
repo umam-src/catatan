@@ -1,6 +1,6 @@
 # Changelog
 
-## [Belum dirilis]
+## [0.3.1] - 2026-10-07
 
 ### Ditambahkan
 
@@ -12,7 +12,7 @@
 - Client HTTP standar Go dengan timeout, batas ukuran, dan galat terklasifikasi.
 - Pengujian provider tanpa jaringan eksternal atau model sungguhan.
 - Dokumentasi batas dan konfigurasi provider lokal.
-
+- Contoh konfigurasi environment variable untuk provider AI lokal.
 
 ## [0.3.0] - 2026-10-07
 
@@ -107,7 +107,6 @@
 - Kontrol daftar buku dipindahkan ke bagian atas agar posisi tombol lipat dan buka konsisten.
 - Daftar buku yang dilipat kini benar-benar disembunyikan sehingga ruang kerja tidak terdorong ke bawah.
 - Tombol untuk membuka kembali daftar buku tetap tersedia di bagian atas.
-
 
 Semua perubahan penting pada proyek ini dicatat di sini.
 
