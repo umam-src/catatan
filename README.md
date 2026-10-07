@@ -65,7 +65,7 @@ AI bersifat opsional. Untuk menggunakan server AI lokal seperti Ollama, buat ber
 ```json
 {
   "ai": {
-    "url": "http://127.0.0.1:11434/v1",
+    "url": "http://127.0.0.1:11434",
     "model": "llama3.2"
   }
 }
