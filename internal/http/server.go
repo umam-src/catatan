@@ -25,10 +25,21 @@ const (
 	maxDescription = 2000
 )
 
-type Server struct{ db *db.DB }
+type aiStatusProvider interface {
+	Probe(context.Context) ai.ProviderStatus
+}
+
+type Server struct {
+	db *db.DB
+	ai aiStatusProvider
+}
 
 func New(d *db.DB) http.Handler {
-	s := &Server{db: d}
+	return NewWithAI(d, nil)
+}
+
+func NewWithAI(d *db.DB, provider aiStatusProvider) http.Handler {
+	s := &Server{db: d, ai: provider}
 	auth := newAuthServer(d)
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/auth/setup", auth.setup)
@@ -36,6 +47,7 @@ func New(d *db.DB) http.Handler {
 	mux.HandleFunc("POST /api/auth/logout", auth.logout)
 	mux.HandleFunc("GET /api/auth/me", auth.me)
 	mux.HandleFunc("GET /api/search", s.search)
+	mux.HandleFunc("GET /api/ai/status", s.aiStatus)
 	mux.HandleFunc("GET /api/notebooks", s.listNotebooks)
 	mux.HandleFunc("POST /api/notebooks", s.createNotebook)
 	mux.HandleFunc("PUT /api/notebooks/{id}", s.updateNotebook)
@@ -91,6 +103,14 @@ func New(d *db.DB) http.Handler {
 		http.ServeContent(w, r, "index.html", time.Time{}, bytes.NewReader(index))
 	})
 	return withHeaders(withAuth(auth, mux))
+}
+
+func (s *Server) aiStatus(w http.ResponseWriter, r *http.Request) {
+	if s.ai == nil {
+		writeJSON(w, http.StatusOK, map[string]any{"enabled": false, "status": "disabled"})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"enabled": true, "status": s.ai.Probe(r.Context())})
 }
 
 func (s *Server) listNotebooks(w http.ResponseWriter, r *http.Request) {
@@ -241,7 +261,7 @@ func allowedMethods(path string) string {
 	switch {
 	case path == "/api/auth/setup" || path == "/api/auth/login" || path == "/api/auth/logout": return http.MethodPost
 	case path == "/api/auth/me": return http.MethodGet
-	case path == "/api/search": return http.MethodGet
+	case path == "/api/search" || path == "/api/ai/status": return http.MethodGet
 	case path == "/api/health": return http.MethodGet
 	case path == "/api/notebooks": return http.MethodGet + ", " + http.MethodPost
 	case strings.HasPrefix(path, "/api/notebooks/") && strings.HasSuffix(path, "/notes"): return http.MethodGet + ", " + http.MethodPost
