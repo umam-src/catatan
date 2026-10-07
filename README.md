@@ -23,7 +23,7 @@ Struktur konsep mengikuti model **buku → sumber → catatan → percakapan**. 
 
 ## Status
 
-Tahap saat ini: **Fase 2 — Sumber**.
+Tahap saat ini: **Fase 3 — Pencarian dan AI Lokal**.
 
 Fitur awal:
 
@@ -109,6 +109,7 @@ Ukuran program tidak menghitung basis data pengguna atau model AI.
 - [CHANGELOG](CHANGELOG.md)
 - [CONTRIBUTING](CONTRIBUTING.md)
 - [Arsitektur](docs/ARSITEKTUR.md)
+- [API lokal](docs/API.md)
 - [Skema data](docs/SKEMA-DATA.md)
 - [Roadmap](ROADMAP.md)
 - [Format ekspor](docs/EXPORT.md)

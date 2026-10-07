@@ -7,7 +7,7 @@
 ## Aturan kerja
 
 - Kerjakan dari fase aktif sebelum membuka pekerjaan fase berikutnya.
-- Setiap pekerjaan besar memiliki issue; implementasi dilakukan melalui PR.
+- Setiap pekerjaan besar memiliki issue; implementasi dilakukan secara langsung di `main` untuk perubahan pengembangan yang disepakati.
 - Perpindahan fase adalah blocker sampai rilis minor fase tersebut selesai.
 - Perubahan kode yang dirilis dalam fase berjalan → patch.
 - Penyelesaian fase → minor.
@@ -23,7 +23,7 @@
 
 ### 3.1 Pencarian lokal
 **Issue:** #83
-- [ ] Tambahkan API pencarian dan alur pemanggilan dari antarmuka.
+- [x] Tambahkan API pencarian dan alur pemanggilan dari antarmuka. (#88)
 - [ ] Uji data lebih besar.
 - [ ] Catat waktu pencarian dan dampak penyimpanan.
 - [ ] Evaluasi optimasi tambahan hanya jika pengukuran membuktikan perlu.
