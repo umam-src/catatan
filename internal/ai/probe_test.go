@@ -15,7 +15,7 @@ func TestOpenAICompatibleProviderProbe(t *testing.T) {
 		want       ProviderStatus
 	}{
 		{name: "siap", statusCode: http.StatusOK, body: `{"data":[{"id":"uji-model"}]}`, want: ProviderReady},
-		{name: "tidak tersedia", statusCode: http.StatusServiceUnavailable, body: `{}, want: ProviderUnavailable},
+		{name: "tidak tersedia", statusCode: http.StatusServiceUnavailable, body: `{}`, want: ProviderUnavailable},
 		{name: "respons tidak sah", statusCode: http.StatusOK, body: `{"data":"salah"}`, want: ProviderInvalid},
 		{name: "json tidak sah", statusCode: http.StatusOK, body: `bukan-json`, want: ProviderInvalid},
 	}
