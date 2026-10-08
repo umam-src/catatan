@@ -9,6 +9,7 @@
 *.db-shm
 *.db-wal
 /data/
+/obsidian/
 config.json
 
 # Berkas sistem
