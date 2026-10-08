@@ -103,7 +103,7 @@ func (c *Client) Models(ctx context.Context) ([]string, error) {
 	reqCtx, cancel := context.WithTimeout(ctx, defaultProbeTimeout)
 	defer cancel()
 
-	endpoint := c.endpoint("/v1/models")
+	endpoint := c.endpoint("/models")
 	req, err := http.NewRequestWithContext(reqCtx, http.MethodGet, endpoint.String(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrProviderUnavailable, err)
@@ -198,7 +198,7 @@ func (c *Client) Generate(ctx context.Context, in Request) (Response, error) {
 		return Response{}, ErrRequestTooLarge
 	}
 
-	endpoint := c.endpoint("/v1/chat/completions")
+	endpoint := c.endpoint("/chat/completions")
 	reqCtx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(reqCtx, http.MethodPost, endpoint.String(), bytes.NewReader(body))
