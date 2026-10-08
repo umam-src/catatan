@@ -81,6 +81,10 @@ func TestConversationContextAndCitation(t *testing.T) {
 	if !strings.Contains(prompt, "baris satu") || !strings.Contains(prompt, "[L2] baris dua") {
 		t.Fatal("konteks tidak terkirim")
 	}
+	last := p.requests[0].Messages[len(p.requests[0].Messages)-1]
+	if last.Role != ai.RoleUser || !strings.Contains(last.Content, "KONTEKS SUMBER:") || !strings.Contains(last.Content, "PERTANYAAN PENGGUNA:") {
+		t.Fatalf("konteks harus menyertai pertanyaan pengguna: %#v", last)
+	}
 }
 
 func TestConversationRejectsInvalidCitationAndUnselectedSource(t *testing.T) {
