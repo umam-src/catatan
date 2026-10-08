@@ -32,8 +32,9 @@ type aiStatusProvider interface {
 }
 
 type Server struct {
-	db *db.DB
-	ai aiStatusProvider
+	db    *db.DB
+	ai    aiStatusProvider
+	model string
 }
 
 func New(d *db.DB) http.Handler {
@@ -41,7 +42,11 @@ func New(d *db.DB) http.Handler {
 }
 
 func NewWithAI(d *db.DB, provider aiStatusProvider) http.Handler {
-	s := &Server{db: d, ai: provider}
+	return NewWithAIModel(d, provider, ai.ModelFromEnv())
+}
+
+func NewWithAIModel(d *db.DB, provider aiStatusProvider, model string) http.Handler {
+	s := &Server{db: d, ai: provider, model: strings.TrimSpace(model)}
 	auth := newAuthServer(d)
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/auth/setup", auth.setup)

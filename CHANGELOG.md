@@ -1,6 +1,27 @@
 # Changelog
 
-## [Belum dirilis]
+## [0.3.3] - 2026-10-07
+
+### Diperbaiki
+
+- Menstandarkan alamat dasar penyedia AI lokal menjadi `http://127.0.0.1:8080`.
+- Model AI kini dapat dipilih otomatis dari `/v1/models` saat nama model tidak dikonfigurasi.
+- Alamat provider yang sudah menyertakan `/v1` ditolak agar format konfigurasi konsisten.
+
+## [0.3.2] - 2026-10-07
+
+### Ditambahkan
+
+- Konfigurasi AI pengguna melalui `config.json` pada folder data Catatan.
+- Environment variable tetap tersedia sebagai pengganti untuk pengembangan dan CI.
+
+### Diubah
+
+- URL dan nama model dari `config.json` dapat ditimpa oleh environment variable.
+- Kunci API tetap hanya dibaca dari lingkungan proses dan tidak disimpan di berkas konfigurasi.
+- Versi program diselaraskan dengan rilis `0.3.2`.
+
+## [0.3.1] - 2026-10-07
 
 ### Ditambahkan
 
@@ -12,7 +33,7 @@
 - Client HTTP standar Go dengan timeout, batas ukuran, dan galat terklasifikasi.
 - Pengujian provider tanpa jaringan eksternal atau model sungguhan.
 - Dokumentasi batas dan konfigurasi provider lokal.
-
+- Contoh konfigurasi environment variable untuk provider AI lokal.
 
 ## [0.3.0] - 2026-10-07
 
@@ -107,7 +128,6 @@
 - Kontrol daftar buku dipindahkan ke bagian atas agar posisi tombol lipat dan buka konsisten.
 - Daftar buku yang dilipat kini benar-benar disembunyikan sehingga ruang kerja tidak terdorong ke bawah.
 - Tombol untuk membuka kembali daftar buku tetap tersedia di bagian atas.
-
 
 Semua perubahan penting pada proyek ini dicatat di sini.
 

@@ -58,6 +58,21 @@ npm run build
 npm run check
 ```
 
+## Pengaturan AI lokal
+
+AI bersifat opsional. Untuk menggunakan server AI lokal seperti Ollama, buat berkas `config.json` di folder data Catatan:
+
+```json
+{
+  "ai": {
+    "url": "http://127.0.0.1:11434",
+    "model": "llama3.2"
+  }
+}
+```
+
+Untuk server OpenAI-compatible yang memiliki jalur dasar, jalur tersebut boleh disertakan. Contoh Google Gemini: `https://generativelanguage.googleapis.com/v1beta/openai/`. Kunci API, jika memang diperlukan server yang digunakan, tetap diberikan melalui pengaturan lingkungan dan tidak disimpan oleh Catatan.
+
 ## Menguji
 
 Pengujian Go mencakup basis data, migrasi, API, autentikasi, session, isolasi data, dan validasi masukan.

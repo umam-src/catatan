@@ -2,6 +2,7 @@ package ai
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -40,6 +41,57 @@ func TestOpenAICompatibleProviderGeneratesWithoutExternalNetwork(t *testing.T) {
 		t.Fatalf("authorization = %q", gotAuthorization)
 	}
 }
+
+
+func TestOpenAICompatibleProviderDiscoversModelFromModels(t *testing.T) {
+	var chatModel string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/v1/models":
+			_, _ = w.Write([]byte(`{"data":[{"id":"llama-uji"}]}`))
+		case "/v1/chat/completions":
+			var in struct { Model string `json:"model"` }
+			if err := json.NewDecoder(r.Body).Decode(&in); err != nil { t.Fatal(err) }
+			chatModel = in.Model
+			_, _ = w.Write([]byte(`{"model":"llama-uji","choices":[{"message":{"content":"jawaban lokal"}}]}`))
+		default:
+			t.Fatalf("path = %q", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	provider, err := NewClient(Config{BaseURL: server.URL})
+	if err != nil { t.Fatal(err) }
+	if got, err := provider.Models(context.Background()); err != nil || len(got) != 1 || got[0] != "llama-uji" {
+		t.Fatalf("models = %#v, err = %v", got, err)
+	}
+	response, err := provider.Generate(context.Background(), Request{
+		Messages: []Message{{Role: RoleUser, Content: "Halo"}},
+	})
+	if err != nil { t.Fatal(err) }
+	if chatModel != "llama-uji" || response.Model != "llama-uji" {
+		t.Fatalf("model = %q, response = %#v", chatModel, response)
+	}
+}
+
+func TestOpenAICompatibleProviderSupportsProviderBasePath(t *testing.T) {
+	var gotPath string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"data":[{"id":"gemini-2.5-flash"}]}`))
+	}))
+	defer server.Close()
+
+	provider, err := NewClient(Config{BaseURL: server.URL + "/v1beta/openai/"})
+	if err != nil { t.Fatal(err) }
+	models, err := provider.Models(context.Background())
+	if err != nil { t.Fatal(err) }
+	if gotPath != "/v1beta/openai/models" { t.Fatalf("path = %q", gotPath) }
+	if len(models) != 1 || models[0] != "gemini-2.5-flash" { t.Fatalf("models = %#v", models) }
+}
+
 
 func TestOpenAICompatibleProviderRejectsInvalidResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

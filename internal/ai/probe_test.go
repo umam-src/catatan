@@ -42,7 +42,7 @@ func TestOpenAICompatibleProviderProbe(t *testing.T) {
 	}
 }
 
-func TestOpenAICompatibleProviderProbeDoesNotSendPrompt(t *testing.T) {
+func TestOpenAICompatibleProviderProbeRejectsEmptyModels(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet || r.URL.Path != "/v1/models" {
 			t.Fatalf("request = %s %s", r.Method, r.URL.Path)
@@ -59,7 +59,7 @@ func TestOpenAICompatibleProviderProbeDoesNotSendPrompt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := provider.Probe(context.Background()); got != ProviderReady {
+	if got := provider.Probe(context.Background()); got != ProviderInvalid {
 		t.Fatalf("status = %q, ingin %q", got, ProviderReady)
 	}
 }

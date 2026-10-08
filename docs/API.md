@@ -70,18 +70,30 @@ Pemeriksaan menggunakan `GET /v1/models` dan tidak mengirim isi catatan.
 
 ### Konfigurasi lokal
 
-Provider diaktifkan hanya jika lingkungan proses memiliki `CATATAN_AI_URL`.
+Untuk penggunaan biasa, konfigurasi AI disimpan di `config.json` pada folder data Catatan. Berkas ini tidak dibuat otomatis; pengguna dapat membuatnya sendiri saat ingin mengaktifkan AI.
 
-Variabel yang didukung:
+Contoh Ollama:
 
-| Variabel | Wajib | Keterangan |
-|---|---|---|
-| `CATATAN_AI_URL` | Ya untuk mengaktifkan | Alamat dasar server kompatibel OpenAI |
-| `CATATAN_AI_API_KEY` | Tidak | Kunci runtime bila server membutuhkannya |
+```json
+{
+  "ai": {
+    "url": "http://127.0.0.1:11434/v1",
+    "model": "llama3.2"
+  }
+}
+```
 
-Contoh Ollama: `CATATAN_AI_URL=http://127.0.0.1:11434/v1`.
+Lokasi berkas mengikuti folder data aplikasi. Jika aplikasi dijalankan dengan opsi `-data`, berkas konfigurasi berada di folder tersebut.
 
-Kunci API hanya dibaca dari lingkungan proses dan tidak disimpan oleh aplikasi.
+Environment variable tetap didukung sebagai pengganti untuk pengembangan dan CI. Jika diisi, nilainya menimpa konfigurasi berkas:
+
+| Variabel | Keterangan |
+|---|---|
+| `CATATAN_AI_URL` | Menimpa alamat server |
+| `CATATAN_AI_MODEL` | Menimpa nama model |
+| `CATATAN_AI_API_KEY` | Kunci runtime bila server membutuhkannya |
+
+Kunci API hanya dibaca dari lingkungan proses dan tidak disimpan di `config.json`, SQLite, atau log.
 
 ## Percakapan
 
@@ -90,6 +102,4 @@ Kunci API hanya dibaca dari lingkungan proses dan tidak disimpan oleh aplikasi.
 - GET /api/conversations/{id}/messages — membaca riwayat percakapan.
 - POST /api/conversations/{id}/messages — mengirim pesan dengan content dan daftar source_ids yang dipilih.
 
-Batas konteks: maksimal 8 sumber dan 64 KiB isi sumber gabungan. Sumber harus dimiliki buku percakapan dan checksum harus cocok sebelum dikirim ke provider. Jika sumber dipilih, jawaban wajib memiliki kutipan yang dapat diverifikasi seperti [S1:L1-L3].
-
-Model percakapan dibaca dari CATATAN_AI_MODEL. Provider, model, dan percakapan AI tetap opsional; tanpa AI, buku, catatan, sumber, dan pencarian tetap berjalan.
+Batas konteks: maksimal 8 sumber dan 64 KiB isi sumber gabungan. Sumber harus dimiliki buku percakapan dan checksum harus cocok sebelum dikirim ke provider. Jika sumber dipilih, jawaban wajib memiliki kutipan yang dapat diverifikasi seperti [S1:L1-L3]. Model percakapan dibaca dari CATATAN_AI_MODEL. Provider, model, dan percakapan AI tetap opsional; tanpa AI, buku, catatan, sumber, dan pencarian tetap berjalan.

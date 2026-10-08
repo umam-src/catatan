@@ -6,8 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
-	"regexp"
+		"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -45,7 +44,7 @@ func (s *Server) listConversationMessages(w http.ResponseWriter,r *http.Request)
 func (s *Server) createConversationMessage(w http.ResponseWriter,r *http.Request){
 	id:=r.PathValue("id");if !validID(id){http.Error(w,"ID percakapan tidak valid",400);return};if !s.conversationOwnedBy(r,id){http.NotFound(w,r);return}
 	var in struct{Content string `json:"content"`;SourceIDs []string `json:"source_ids"`};if !decode(w,r,&in){return};in.Content=strings.TrimSpace(in.Content);if err:=validateLength(in.Content,1,maxMessageContent,"Pesan");err!=nil{http.Error(w,err.Error(),400);return};if len(in.SourceIDs)>maxContextSources{http.Error(w,"Terlalu banyak sumber konteks",400);return}
-	sources,err:=s.loadConversationSources(r,id,in.SourceIDs);if err!=nil{if e,ok:=err.(*httpError);ok{http.Error(w,e.message,e.status);return};serverError(w,err);return};provider,ok:=s.ai.(ai.Provider);if !ok||provider==nil{http.Error(w,"Penyedia model tidak tersedia",503);return};model:=strings.TrimSpace(os.Getenv("CATATAN_AI_MODEL"));if model==""{http.Error(w,"Model AI belum dikonfigurasi",503);return}
+	sources,err:=s.loadConversationSources(r,id,in.SourceIDs);if err!=nil{if e,ok:=err.(*httpError);ok{http.Error(w,e.message,e.status);return};serverError(w,err);return};provider,ok:=s.ai.(ai.Provider);if !ok||provider==nil{http.Error(w,"Penyedia model tidak tersedia",503);return};model:=s.model
 	history,err:=s.loadConversationHistory(r,id);if err!=nil{serverError(w,err);return};messages,refs:=buildConversationPrompt(in.Content,sources,history);response,err:=provider.Generate(r.Context(),ai.Request{Model:model,Messages:messages});if err!=nil{if errors.Is(err,ai.ErrTimeout){http.Error(w,"Penyedia model melewati batas waktu",504);return};if errors.Is(err,ai.ErrProviderUnavailable){http.Error(w,"Penyedia model tidak tersedia",503);return};if errors.Is(err,ai.ErrRequestTooLarge){http.Error(w,"Konteks percakapan terlalu besar",413);return};http.Error(w,"Penyedia model menolak permintaan",502);return}
 	matches,valid:=validateCitations(response.Text,refs);if len(sources)>0&&!valid{http.Error(w,"Jawaban model memiliki kutipan yang tidak dapat diverifikasi",422);return};citations:=make([]Citation,0,len(matches));for _,m:=range matches{ref:=refs[m.SourceRef];citations=append(citations,Citation{SourceID:ref.SourceID,SourceRef:m.SourceRef,StartLine:m.StartLine,EndLine:m.EndLine})}
 	now:=time.Now().UTC().Format(time.RFC3339Nano);um,_:=json.Marshal(map[string]any{"source_ids":in.SourceIDs});am,_:=json.Marshal(map[string]any{"model":response.Model,"citations":citations});uid,aid:=newID(),newID();tx,err:=s.db.BeginTx(r.Context(),nil);if err!=nil{serverError(w,err);return};if _,err=tx.ExecContext(r.Context(),`INSERT INTO messages(id,conversation_id,role,content,metadata_json,created_at) VALUES(?,?,?,?,?,?)`,uid,id,"user",in.Content,string(um),now);err!=nil{_ = tx.Rollback();serverError(w,err);return};if _,err=tx.ExecContext(r.Context(),`INSERT INTO messages(id,conversation_id,role,content,metadata_json,created_at) VALUES(?,?,?,?,?,?)`,aid,id,"assistant",response.Text,string(am),now);err!=nil{_ = tx.Rollback();serverError(w,err);return};if _,err=tx.ExecContext(r.Context(),`UPDATE conversations SET updated_at=? WHERE id=?`,now,id);err!=nil{_ = tx.Rollback();serverError(w,err);return};if err=tx.Commit();err!=nil{serverError(w,err);return};writeJSON(w,201,map[string]any{"user_message":ConversationMessage{ID:uid,Role:"user",Content:in.Content,SourceIDs:in.SourceIDs,CreatedAt:now},"assistant_message":ConversationMessage{ID:aid,Role:"assistant",Content:response.Text,Citations:citations,CreatedAt:now}})

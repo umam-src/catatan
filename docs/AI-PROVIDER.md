@@ -72,7 +72,7 @@ Nilai tersebut dapat diubah oleh pemanggil saat diperlukan. Batas diterapkan seb
 
 Catatan tidak membundel runtime inference atau model.
 
-Runtime seperti llama-server dan Ollama dapat digunakan melalui kontrak OpenAI-compatible yang sama. Catatan cukup mengetahui alamat dasar dan model yang dipilih; tidak perlu adapter atau SDK khusus runtime.
+Runtime seperti llama-server dan Ollama dapat digunakan melalui kontrak OpenAI-compatible yang sama. Catatan cukup mengetahui alamat dasar server; nama model dapat dipilih dari konfigurasi atau, jika dikosongkan, diambil dari model pertama pada `/v1/models`.
 
 Contoh alamat lokal:
 
@@ -83,12 +83,23 @@ Pengujian dengan runtime sungguhan dilakukan di lingkungan pengembangan, bukan s
 
 ## Konfigurasi dan rahasia
 
-Konfigurasi provider dipisahkan dari logika domain. Kunci API, bila diperlukan oleh server yang dipakai, hanya diberikan ke client saat runtime.
+Untuk penggunaan biasa, alamat server dan nama model dapat disimpan di `config.json` pada folder data Catatan:
+
+```json
+{
+  "ai": {
+    "url": "http://127.0.0.1:8080",
+    "model": ""
+  }
+}
+```
+
+Environment variable tetap tersedia untuk pengembangan dan CI. `CATATAN_AI_URL` dan `CATATAN_AI_MODEL` menimpa nilai dari berkas jika diisi. `CATATAN_AI_API_KEY` hanya dibaca dari lingkungan proses.
 
 Kunci API:
 
 - tidak disimpan di SQLite;
-- tidak ditulis ke berkas konfigurasi oleh paket provider;
+- tidak disimpan di `config.json`;
 - tidak ditulis ke log;
 - tidak dimasukkan ke model data aplikasi.
 
@@ -110,7 +121,7 @@ Galat dapat diperiksa dengan \`errors.Is\` tanpa bergantung pada teks pesan.
 
 ## Pengujian
 
-Pengujian menggunakan \`httptest\` dan tidak mengunduh model atau menghubungi layanan eksternal. Probe diuji untuk status siap, tidak tersedia, respons tidak sah, JSON tidak sah, dan memastikan tidak ada prompt yang dikirim.
+Pengujian menggunakan \`httptest\` dan tidak mengunduh model atau menghubungi layanan eksternal. Probe diuji untuk status siap, tidak tersedia, respons tidak sah, JSON tidak sah, model kosong, dan memastikan tidak ada prompt yang dikirim.
 
 Integrasi runtime model sungguhan tetap menjadi pengujian manual pada fase integrasi.
 
