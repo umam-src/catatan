@@ -32,3 +32,14 @@ Hasil pengujian menentukan apakah masalah berada pada integrasi Catatan atau kem
 ## Referensi
 
 - GitHub Issue #94: https://github.com/umam-src/catatan/issues/94
+
+## Verifikasi 2026-10-08
+
+Lingkungan kerja agen diperiksa untuk runtime model lokal:
+
+- ollama tidak tersedia.
+- llama-server tidak tersedia.
+- http://127.0.0.1:11434/v1/models tidak dapat diakses.
+- http://127.0.0.1:8080/v1/models merespons HTTP 404, sehingga bukan endpoint provider Catatan yang siap diuji.
+
+**Kesimpulan:** pengujian model Catatan Jaga end-to-end belum dapat dilakukan dari lingkungan ini. Issue #94 tetap terbuka dan tidak boleh dianggap lulus.
