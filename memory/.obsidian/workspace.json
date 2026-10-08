@@ -39,13 +39,14 @@
             "id": "4d45d69d56483644",
             "type": "leaf",
             "state": {
-              "type": "bases",
+              "type": "markdown",
               "state": {
-                "file": "Index.base",
-                "viewName": "Tampilan"
+                "file": "AGENTS.md",
+                "mode": "source",
+                "source": false
               },
-              "icon": "lucide-table",
-              "title": "Index"
+              "icon": "lucide-file",
+              "title": "AGENTS"
             }
           }
         ],
@@ -234,9 +235,9 @@
   },
   "active": "4d45d69d56483644",
   "lastOpenFiles": [
+    "Selamat datang.md",
     "Lokasi.md",
     "Index.base",
-    "AGENTS.md",
-    "Selamat datang.md"
+    "AGENTS.md"
   ]
 }
