@@ -7,9 +7,9 @@ Dokumen ini mencatat pembelajaran dari pekerjaan pengembangan Catatan agar kesal
 ## Aturan Umum
 
 - Gunakan Obsidian sebagai memori proyek.
-- Data/memory Obsidian berada di `obsidian/Catatan/` di bawah workspace Catatan, tetapi di luar source tree Git.
-- Skill/instruksi Obsidian berada di `obsidian/skills/` di bawah workspace Catatan, tetapi di luar source tree Git.
-- Folder `obsidian/` wajib diabaikan Git dan tidak boleh menjadi bagian dari commit proyek.
+- Data/memory Obsidian berada di `obsidian/Catatan/` dan menjadi bagian dari repository Git Catatan.
+- Skill/instruksi Obsidian berada di `obsidian/skills/` di bawah workspace Catatan; jangan menambahkan rahasia atau data pengguna nyata ke repository.
+- Folder `obsidian/` boleh dan memang digunakan sebagai memori proyek yang versioned di Git.
 - Gunakan Bahasa Indonesia baku.
 - Verifikasi kondisi repositori sebelum mengubah berkas.
 - Jangan menganggap perubahan berhasil sebelum diverifikasi.
@@ -90,4 +90,4 @@ Dokumen ini mencatat pembelajaran dari pekerjaan pengembangan Catatan agar kesal
 
 AGENTS.md hanya untuk pembelajaran dan aturan kerja agen/pengembang yang berasal dari pengalaman proyek. Kebijakan proyek yang sudah stabil sebaiknya ditempatkan pada dokumen yang sesuai, seperti `CONTRIBUTING.md`, `ROADMAP.md`, atau dokumentasi teknis.
 
-Data memory Obsidian dan skill Obsidian bukan bagian dari source tree Git Catatan dan tidak boleh ditambahkan ke repository hanya untuk mendukung pekerjaan agen.
+Memori Obsidian proyek berada di `obsidian/` dan versioned di Git. Jangan memasukkan rahasia, kredensial, atau data pengguna nyata.
