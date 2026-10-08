@@ -1,4 +1,5 @@
 # Hasil build
+/bin/
 /internal/ui/dist/*
 !/internal/ui/dist/index.html
 /web/node_modules/
