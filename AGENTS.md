@@ -6,7 +6,7 @@ Dokumen ini mencatat pembelajaran dari pekerjaan pengembangan Catatan agar kesal
 
 ## Aturan Umum
 
-- Gunakan docs/MEMORY sebagai memori.
+- Gunakan memory sebagai memori proyek.
 - Gunakan Bahasa Indonesia baku.
 - Verifikasi kondisi repositori sebelum mengubah berkas.
 - Jangan menganggap perubahan berhasil sebelum diverifikasi.
