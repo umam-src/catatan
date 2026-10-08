@@ -7,6 +7,8 @@ Dokumen ini mencatat pembelajaran dari pekerjaan pengembangan Catatan agar kesal
 ## Aturan Umum
 
 - Gunakan Obsidian sebagai memori proyek.
+- Data/memory Obsidian berada di folder `memory`, di luar repository Catatan.
+- Skill/instruksi Obsidian berada di folder `skills`, di luar repository Catatan.
 - Gunakan Bahasa Indonesia baku.
 - Verifikasi kondisi repositori sebelum mengubah berkas.
 - Jangan menganggap perubahan berhasil sebelum diverifikasi.
