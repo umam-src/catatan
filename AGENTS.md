@@ -7,6 +7,8 @@ Dokumen ini mencatat pembelajaran dari pekerjaan pengembangan Catatan agar kesal
 ## Aturan Umum
 
 - Gunakan memory sebagai memori proyek.
+- Gunakan Obsidian sebagai memori proyek; data Obsidian berada di folder `memory`, di luar repository Catatan.
+- Skill/instruksi Obsidian berada di folder `skills`, di luar repository Catatan.
 - Gunakan Bahasa Indonesia baku.
 - Verifikasi kondisi repositori sebelum mengubah berkas.
 - Jangan menganggap perubahan berhasil sebelum diverifikasi.
@@ -86,3 +88,5 @@ Dokumen ini mencatat pembelajaran dari pekerjaan pengembangan Catatan agar kesal
 ## Penempatan Informasi
 
 AGENTS.md hanya untuk pembelajaran dan aturan kerja agen/pengembang yang berasal dari pengalaman proyek. Kebijakan proyek yang sudah stabil sebaiknya ditempatkan pada dokumen yang sesuai, seperti `CONTRIBUTING.md`, `ROADMAP.md`, atau dokumentasi teknis.
+
+Data memory Obsidian dan skill Obsidian bukan bagian dari source tree Catatan dan tidak boleh ditambahkan ke repository hanya untuk mendukung pekerjaan agen.
