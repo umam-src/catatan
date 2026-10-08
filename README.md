@@ -120,7 +120,6 @@ Ukuran program tidak menghitung basis data pengguna atau model AI.
 ## Dokumentasi
 
 - [GLOSARIUM](GLOSARIUM.md)
-- [TODO](TODO.md)
 - [CHANGELOG](CHANGELOG.md)
 - [CONTRIBUTING](CONTRIBUTING.md)
 - [Arsitektur](docs/ARSITEKTUR.md)
