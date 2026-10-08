@@ -1,6 +1,6 @@
 # ROADMAP
 
-Roadmap ini menetapkan arah pengembangan Catatan. Rincian pekerjaan berjalan ada di `TODO.md`; pekerjaan yang cukup besar dilacak melalui issue dan implementasinya melalui PR.
+Roadmap ini menetapkan arah pengembangan Catatan. Pekerjaan berjalan dan kriteria selesai dilacak melalui issue GitHub; keputusan dan catatan kerja rinci disimpan di Obsidian.
 
 ## Prinsip
 
