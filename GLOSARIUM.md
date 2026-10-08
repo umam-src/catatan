@@ -197,7 +197,7 @@ Namun, nama yang merupakan kontrak ekosistem tidak diterjemahkan. Contoh:
 - `package-lock.json`
 - berkas khusus SvelteKit seperti `+page.svelte` dan `svelte.config.js`
 
-Untuk dokumentasi proyek, nama `TODO.md` tetap dipertahankan untuk konsistensi ekosistem, sedangkan dokumen baru menggunakan nama Indonesia bila tidak ada alasan kompatibilitas.
+Pelacakan pekerjaan tidak disimpan sebagai berkas TODO di repository. Pekerjaan berjalan dilacak melalui issue GitHub, sedangkan catatan kerja rinci disimpan di Obsidian.
 
 ## 7. Istilah teknologi yang tetap asli
 
