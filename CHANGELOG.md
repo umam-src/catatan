@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.6] - 2026-10-09
+
+### Diperbaiki
+
+- Chat menyertakan Catatan aktif sebagai konteks eksplisit.
+- Kutipan membedakan Catatan dan Sumber serta dapat membuka Catatan terkait.
+- Catatan dari buku lain ditolak sebagai konteks percakapan.
+
 ## [0.3.5] - 2026-10-09
 
 ### Diperbaiki

@@ -5,7 +5,7 @@
   type Source = { id: string; title: string; kind: string; content?: string; locator: string; checksum: string; metadata_json: string };
   type SearchResult = { id: string; kind: 'note' | 'source'; notebook_id: string; title: string; relevance: number };
   type Conversation = { id: string; notebook_id: string; title: string; created_at: string; updated_at: string };
-  type Citation = { source_id: string; source_ref: string; start_line: number; end_line: number };
+  type Citation = { kind?: 'note' | 'source'; source_id: string; source_ref: string; start_line: number; end_line: number };
   type ChatMessage = { id: string; role: 'user' | 'assistant'; content: string; citations?: Citation[]; source_ids?: string[]; created_at: string };
 
   type Panel = 'sumber' | 'artefak';
@@ -463,7 +463,7 @@
     try {
       const response = await permintaan('/api/conversations/' + conversationID + '/messages', {
         method: 'POST',
-        body: JSON.stringify({ content, source_ids: sumberKonteks })
+        body: JSON.stringify({ content, source_ids: sumberKonteks, ...(catatanAktif ? { note_id: catatanAktif.id } : {}) })
       });
       const data = await response.json();
       chatMessages = [...chatMessages, data.user_message, data.assistant_message];
@@ -476,6 +476,11 @@
   }
 
   function bukaKutipan(citation: Citation) {
+    if (citation.kind === 'note') {
+      const note = notes.find((item) => item.id === citation.source_id);
+      if (note) pilihCatatan(note);
+      return;
+    }
     const source = sources.find((item) => item.id === citation.source_id);
     if (source) void pilihSumber(source);
   }
@@ -1075,7 +1080,7 @@
                         {#if message.citations?.length}
                           <div class="chat-kutipan">
                             {#each message.citations as citation}
-                              <button type="button" onclick={() => bukaKutipan(citation)} title="Buka sumber dan lokasi kutipan">
+                              <button type="button" onclick={() => bukaKutipan(citation)} title={citation.kind === 'note' ? 'Buka catatan dan lokasi kutipan' : 'Buka sumber dan lokasi kutipan'}>
                                 {citation.source_ref} · L{citation.start_line}{citation.end_line !== citation.start_line ? `–L${citation.end_line}` : ''}
                               </button>
                             {/each}
@@ -1143,7 +1148,7 @@
               <div class="konteks-header">
                 <div>
                   <strong>Sumber</strong>
-                  <span>{sources.length} sumber{view === 'chat' ? ` · ${sumberKonteks.length} dipilih` : ''}</span>
+                  <span>{sources.length} sumber{view === 'chat' ? ` · ${sumberKonteks.length} dipilih` : ''}{view === 'chat' && catatanAktif ? ' · catatan aktif ikut konteks' : ''}</span>
                 </div>
                 <button class="ikon-tombol" type="button" onclick={bukaImpor} disabled={!notebookID} title="Tambah sumber">+</button>
               </div>
