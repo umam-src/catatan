@@ -42,10 +42,23 @@ func TestSearchIndexFollowsUpdatesAndSoftDeletion(t *testing.T) {
 	results, err = d.Search(context.Background(), "local", "", "baru", 20); if err != nil { t.Fatal(err) }; if len(results) != 0 { t.Fatalf("catatan terhapus masih ditemukan = %#v", results) }
 }
 
-func TestSearchRejectsInvalidQueryAndHandlesEmptyQuery(t *testing.T) {
+func TestSearchTreatsQueryAsPlainText(t *testing.T) {
 	d, _ := bukaDBUji(t)
-	results, err := d.Search(context.Background(), "local", "", "   ", 20); if err != nil { t.Fatal(err) }; if len(results) != 0 { t.Fatalf("query kosong = %#v", results) }
-	if _, err := d.Search(context.Background(), "local", "", `"`, 20); err == nil { t.Fatal("query FTS tidak valid seharusnya menghasilkan error") }
+	if _, err := d.Exec(`INSERT INTO notes(id, notebook_id, title, content, created_at, updated_at) VALUES (?, "default", ?, ?, datetime("now"), datetime("now"))`, "note-code", "Paket KJ-7319", `Kode pengiriman: KJ-7319 status "menunggu" di gudang`); err != nil { t.Fatal(err) }
+
+	for _, query := range []string{"KJ-7319", "KJ 7319", `"menunggu"`} {
+		results, err := d.Search(context.Background(), "local", "default", query, 20)
+		if err != nil { t.Fatalf("query %q menghasilkan galat: %v", query, err) }
+		if len(results) != 1 || results[0].ID != "note-code" { t.Fatalf("query %q: hasil = %#v", query, results) }
+	}
+
+	results, err := d.Search(context.Background(), "local", "", "   ", 20)
+	if err != nil { t.Fatal(err) }
+	if len(results) != 0 { t.Fatalf("query kosong = %#v", results) }
+
+	results, err = d.Search(context.Background(), "local", "", "---", 20)
+	if err != nil { t.Fatalf("query tanda baca saja menghasilkan galat: %v", err) }
+	if len(results) != 0 { t.Fatalf("query tanda baca saja = %#v", results) }
 }
 
 func BenchmarkSearch(b *testing.B) {
