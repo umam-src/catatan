@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.6] - 2026-10-09
+
+### Diperbaiki
+
+- Chat menyertakan Catatan aktif sebagai konteks eksplisit.
+- Kutipan membedakan Catatan dan Sumber serta dapat membuka Catatan terkait.
+- Catatan dari buku lain ditolak sebagai konteks percakapan.
+
 ## [0.3.5] - 2026-10-09
 
 ### Diperbaiki
@@ -222,9 +230,3 @@ Belum ada perubahan.
 - Perubahan kode di dalam fase dapat menaikkan versi patch.
 - Perubahan dokumentasi saja tidak menaikkan versi patch.
 - Fase 6 menjadi `v1.0.0` sebagai rilis mayor.
-
-## [0.3.6] - 2026-10-09
-
-### Diperbaiki
-
-- Chat menyertakan Catatan aktif sebagai konteks eksplisit; kutipan Catatan dapat dibuka kembali dan konteks lintas buku ditolak.
