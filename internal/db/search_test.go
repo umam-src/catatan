@@ -49,7 +49,7 @@ func TestSearchTreatsQueryAsPlainText(t *testing.T) {
 	for _, query := range []string{"KJ-7319", "KJ 7319", `"menunggu"`} {
 		results, err := d.Search(context.Background(), "local", "default", query, 20)
 		if err != nil { t.Fatalf("query %q menghasilkan galat: %v", query, err) }
-		if len(results) != 1 || results[0].ID != "note-code" { t.Fatalf("query %q: hasil = %#v", query, results) }
+		if len(results) != 1 || results[0].ID != "note:note-code" { t.Fatalf("query %q: hasil = %#v", query, results) }
 	}
 
 	results, err := d.Search(context.Background(), "local", "", "   ", 20)
