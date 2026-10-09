@@ -290,6 +290,9 @@ func TestConversationCitationDiagnosticMode(t *testing.T) {
 		if validation["required"] != true || validation["valid"] != false || validation["diagnostic_mode"] != true {
 			t.Fatalf("status validasi diagnostik salah: %#v", validation)
 		}
+		if validation["attempts"] != float64(2) || validation["initial_valid"] != false || validation["retry_attempted"] != true || validation["retry_valid"] != false || validation["retry_error"] != false {
+			t.Fatalf("diagnostik percobaan ulang salah: %#v", validation)
+		}
 		diagnostics := assistant["context_diagnostics"].(map[string]any)
 		if diagnostics["source_count"] != float64(1) || diagnostics["content_bytes"] == float64(0) {
 			t.Fatalf("diagnostik konteks sumber salah: %#v", diagnostics)
