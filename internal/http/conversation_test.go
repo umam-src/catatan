@@ -82,7 +82,7 @@ func TestConversationContextAndCitation(t *testing.T) {
 		t.Fatal("konteks tidak terkirim")
 	}
 	last := p.requests[0].Messages[len(p.requests[0].Messages)-1]
-	if last.Role != ai.RoleUser || !strings.Contains(last.Content, "KONTEKS SUMBER:") || !strings.Contains(last.Content, "PERTANYAAN PENGGUNA:") {
+	if last.Role != ai.RoleUser || !strings.Contains(last.Content, "KONTEKS TERPILIH:") || !strings.Contains(last.Content, "PERTANYAAN PENGGUNA:") {
 		t.Fatalf("konteks harus menyertai pertanyaan pengguna: %#v", last)
 	}
 	system := p.requests[0].Messages[0]
