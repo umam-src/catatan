@@ -49,12 +49,21 @@ func TestSearchEndpointFiltersNotebookAndLimit(t *testing.T) {
 	for _, result := range payload.Results { if result.NotebookID != notebook.ID { t.Fatalf("hasil buku lain: %#v", result) } }
 }
 
-func TestSearchEndpointHandlesEmptyAndInvalidQuery(t *testing.T) {
-	handler, _ := serverUjiDenganServer(t)
+func TestSearchEndpointHandlesEmptyAndSpecialCharacterQueries(t *testing.T) {
+	handler, server := serverUjiDenganServer(t)
+	if _, err := server.db.Exec(`INSERT INTO notes(id, notebook_id, title, content, created_at, updated_at) VALUES ("note-code", "default", "Paket KJ-7319", "Kode pengiriman KJ-7319", datetime("now"), datetime("now"))`); err != nil { t.Fatal(err) }
+
 	res := requestUji(t, handler, http.MethodGet, "/api/search?q=%20%20", nil)
 	if res.Code != http.StatusOK { t.Fatalf("query kosong: status = %d", res.Code) }
+
+	res = requestUji(t, handler, http.MethodGet, "/api/search?q=KJ-7319", nil)
+	if res.Code != http.StatusOK { t.Fatalf("query bertanda hubung: status = %d; body = %s", res.Code, res.Body.String()) }
+	var payload searchResponse
+	decodeJSON(t, res, &payload)
+	if len(payload.Results) != 1 || payload.Results[0].ID != "note:note-code" { t.Fatalf("hasil kode bertanda hubung = %#v", payload.Results) }
+
 	res = requestUji(t, handler, http.MethodGet, "/api/search?q=%22", nil)
-	if res.Code != http.StatusBadRequest { t.Fatalf("query tidak valid: status = %d", res.Code) }
+	if res.Code != http.StatusOK { t.Fatalf("query tanda kutip sebagai teks: status = %d; body = %s", res.Code, res.Body.String()) }
 }
 
 func TestSearchEndpointDoesNotExposeContent(t *testing.T) {
