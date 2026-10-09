@@ -184,3 +184,61 @@ func TestConversationRejectsNoteFromAnotherNotebook(t *testing.T) {
 	if response.Code != http.StatusNotFound { t.Fatalf("catatan lintas buku harus ditolak: %d %s", response.Code, response.Body.String()) }
 	if len(p.requests) != 0 { t.Fatal("provider dipanggil meski Catatan tidak diizinkan") }
 }
+
+
+func TestConversationCitationDiagnosticMode(t *testing.T) {
+	oldModel, modelSet := os.LookupEnv("CATATAN_AI_MODEL")
+	oldDiagnostic, diagnosticSet := os.LookupEnv("CATATAN_AI_CITATION_DIAGNOSTIC")
+	t.Cleanup(func() {
+		if modelSet { _ = os.Setenv("CATATAN_AI_MODEL", oldModel) } else { _ = os.Unsetenv("CATATAN_AI_MODEL") }
+		if diagnosticSet { _ = os.Setenv("CATATAN_AI_CITATION_DIAGNOSTIC", oldDiagnostic) } else { _ = os.Unsetenv("CATATAN_AI_CITATION_DIAGNOSTIC") }
+	})
+	_ = os.Setenv("CATATAN_AI_MODEL", "uji-model")
+	_ = os.Setenv("CATATAN_AI_CITATION_DIAGNOSTIC", "true")
+
+	t.Run("jawaban tanpa kutipan dikembalikan dengan status invalid", func(t *testing.T) {
+		p := &fakeConversationProvider{response: "Kode pengiriman adalah KJ-7319"}
+		h := conversationHandler(t, p)
+		c := buatPercakapanUji(t, h)
+		s := permintaanSumber(t, h, "default", "bahan.txt", "Bahan", "Kode pengiriman: KJ-7319")
+		if s.Code != http.StatusCreated { t.Fatalf("sumber: %d %s", s.Code, s.Body.String()) }
+		var src Source
+		if err := json.NewDecoder(s.Body).Decode(&src); err != nil { t.Fatal(err) }
+
+		r := requestUji(t, h, http.MethodPost, "/api/conversations/"+c.ID+"/messages", map[string]any{"content": "Apa kodenya?", "source_ids": []string{src.ID}})
+		if r.Code != http.StatusCreated { t.Fatalf("mode diagnostik harus mengembalikan jawaban: %d %s", r.Code, r.Body.String()) }
+		var out map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&out); err != nil { t.Fatal(err) }
+		assistant := out["assistant_message"].(map[string]any)
+		validation := assistant["citation_validation"].(map[string]any)
+		if validation["required"] != true || validation["valid"] != false || validation["diagnostic_mode"] != true {
+			t.Fatalf("status validasi diagnostik salah: %#v", validation)
+		}
+		diagnostics := assistant["context_diagnostics"].(map[string]any)
+		if diagnostics["source_count"] != float64(1) || diagnostics["content_bytes"] == float64(0) {
+			t.Fatalf("diagnostik konteks sumber salah: %#v", diagnostics)
+		}
+	})
+
+	t.Run("kutipan dengan referensi dan baris valid diterima", func(t *testing.T) {
+		p := &fakeConversationProvider{response: "Kode pengiriman adalah KJ-7319 [S1:L1]."}
+		h := conversationHandler(t, p)
+		c := buatPercakapanUji(t, h)
+		s := permintaanSumber(t, h, "default", "bahan.txt", "Bahan", "Kode pengiriman: KJ-7319")
+		if s.Code != http.StatusCreated { t.Fatalf("sumber: %d %s", s.Code, s.Body.String()) }
+		var src Source
+		if err := json.NewDecoder(s.Body).Decode(&src); err != nil { t.Fatal(err) }
+
+		r := requestUji(t, h, http.MethodPost, "/api/conversations/"+c.ID+"/messages", map[string]any{"content": "Apa kodenya?", "source_ids": []string{src.ID}})
+		if r.Code != http.StatusCreated { t.Fatalf("pesan: %d %s", r.Code, r.Body.String()) }
+		var out map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&out); err != nil { t.Fatal(err) }
+		assistant := out["assistant_message"].(map[string]any)
+		validation := assistant["citation_validation"].(map[string]any)
+		if validation["required"] != true || validation["valid"] != true || validation["diagnostic_mode"] != true {
+			t.Fatalf("kutipan valid tidak dikenali: %#v", validation)
+		}
+		citations := assistant["citations"].([]any)
+		if len(citations) != 1 { t.Fatalf("kutipan: %#v", citations) }
+	})
+}
