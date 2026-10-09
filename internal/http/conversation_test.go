@@ -85,6 +85,13 @@ func TestConversationContextAndCitation(t *testing.T) {
 	if last.Role != ai.RoleUser || !strings.Contains(last.Content, "KONTEKS SUMBER:") || !strings.Contains(last.Content, "PERTANYAAN PENGGUNA:") {
 		t.Fatalf("konteks harus menyertai pertanyaan pengguna: %#v", last)
 	}
+	system := p.requests[0].Messages[0]
+	if system.Role != ai.RoleSystem ||
+		!strings.Contains(system.Content, "WAJIB diikuti kutipan") ||
+		!strings.Contains(system.Content, "[S1:L1]") ||
+		!strings.Contains(system.Content, "jangan membuat klaim faktual tanpa dukungan") {
+		t.Fatalf("instruksi kutipan sumber harus eksplisit: %#v", system)
+	}
 }
 
 func TestConversationRejectsInvalidCitationAndUnselectedSource(t *testing.T) {
