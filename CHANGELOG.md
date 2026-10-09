@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.8] - 2026-10-09
+
+### Diperbaiki
+
+- Memperjelas instruksi kutipan untuk jawaban AI berbasis konteks dan menambahkan pengujian mode diagnostik untuk kutipan valid maupun tidak valid.
+
+
 ## [0.3.7] - 2026-10-09
 
 ### Ditambahkan
