@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.7] - 2026-10-09
+
+### Ditambahkan
+
+- Mode diagnostik AI yang dapat diaktifkan secara eksplisit untuk menampilkan jawaban model dan status validasi kutipan tanpa mengubah perilaku ketat secara default.
+- Ringkasan aman tentang konteks yang dikirim (jumlah Catatan/Sumber, baris, dan byte), tanpa menyimpan isi konteks ke metadata diagnostik.
+
+### Catatan
+
+- Gunakan hanya untuk pengujian. Tanpa konfigurasi mode diagnostik, kutipan yang tidak dapat diverifikasi tetap menghasilkan HTTP 422.
+
+
 ## [0.3.6] - 2026-10-09
 
 ### Diperbaiki
