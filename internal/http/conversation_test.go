@@ -96,8 +96,10 @@ func TestConversationContextAndCitation(t *testing.T) {
 
 func TestConversationRejectsInvalidCitationAndUnselectedSource(t *testing.T) {
 	old := os.Getenv("CATATAN_AI_MODEL")
-	t.Cleanup(func() { _ = os.Setenv("CATATAN_AI_MODEL", old) })
+	oldDiagnostic := os.Getenv("CATATAN_AI_CITATION_DIAGNOSTIC")
+	t.Cleanup(func() { _ = os.Setenv("CATATAN_AI_MODEL", old); _ = os.Setenv("CATATAN_AI_CITATION_DIAGNOSTIC", oldDiagnostic) })
 	_ = os.Setenv("CATATAN_AI_MODEL", "uji-model")
+	_ = os.Setenv("CATATAN_AI_CITATION_DIAGNOSTIC", "false")
 
 	p := &fakeConversationProvider{response: "Jawaban [S9:L1-L2]"}
 	h := conversationHandler(t, p)
