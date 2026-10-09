@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.4] - 2026-10-09
+
+### Diperbaiki
+
+- Navigasi hasil pencarian membuka catatan atau sumber yang sesuai.
+- Pencarian teks biasa kini menangani istilah yang mengandung tanda hubung.
+
+
 ## [0.3.3] - 2026-10-07
 
 ### Diperbaiki
