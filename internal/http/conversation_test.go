@@ -233,6 +233,35 @@ func TestConversationRetriesAnswerWhenCitationIsMissing(t *testing.T) {
 	if validation["valid"] != true { t.Fatalf("kutipan hasil retry harus valid: %#v", validation) }
 }
 
+func TestConversationRejectsAnswerWhenCitationRetryStillFails(t *testing.T) {
+	oldModel, modelSet := os.LookupEnv("CATATAN_AI_MODEL")
+	oldDiagnostic, diagnosticSet := os.LookupEnv("CATATAN_AI_CITATION_DIAGNOSTIC")
+	t.Cleanup(func() {
+		if modelSet { _ = os.Setenv("CATATAN_AI_MODEL", oldModel) } else { _ = os.Unsetenv("CATATAN_AI_MODEL") }
+		if diagnosticSet { _ = os.Setenv("CATATAN_AI_CITATION_DIAGNOSTIC", oldDiagnostic) } else { _ = os.Unsetenv("CATATAN_AI_CITATION_DIAGNOSTIC") }
+	})
+	_ = os.Setenv("CATATAN_AI_MODEL", "uji-model")
+	_ = os.Setenv("CATATAN_AI_CITATION_DIAGNOSTIC", "false")
+
+	p := &fakeConversationProvider{responses: []string{
+		"Kode pengiriman adalah KJ-7319",
+		"Kode pengiriman adalah KJ-7319 [S9:L1].",
+	}}
+	h := conversationHandler(t, p)
+	c := buatPercakapanUji(t, h)
+	s := permintaanSumber(t, h, "default", "bahan.txt", "Bahan", "Kode pengiriman: KJ-7319")
+	if s.Code != http.StatusCreated { t.Fatalf("sumber: %d %s", s.Code, s.Body.String()) }
+	var src Source
+	if err := json.NewDecoder(s.Body).Decode(&src); err != nil { t.Fatal(err) }
+
+	r := requestUji(t, h, http.MethodPost, "/api/conversations/"+c.ID+"/messages",
+		map[string]any{"content": "Apa kode pengirimannya?", "source_ids": []string{src.ID}})
+	if r.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("jawaban dengan retry tetap invalid harus ditolak: %d %s", r.Code, r.Body.String())
+	}
+	if len(p.requests) != 2 { t.Fatalf("harus mencoba ulang tepat sekali, jumlah panggilan provider: %d", len(p.requests)) }
+}
+
 func TestConversationCitationDiagnosticMode(t *testing.T) {
 	oldModel, modelSet := os.LookupEnv("CATATAN_AI_MODEL")
 	oldDiagnostic, diagnosticSet := os.LookupEnv("CATATAN_AI_CITATION_DIAGNOSTIC")
