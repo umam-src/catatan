@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.7] - 2026-10-10
+
+### Diperbaiki
+
+- Penolakan jawaban AI karena kutipan tidak valid kini menyertakan kode alasan (`tanpa_kutipan`, `referensi_tidak_dikenal`, `rentang_tidak_valid`, `rentang_terlalu_panjang`) tanpa membuka isi sumber atau jawaban (#105).
+
 ## [0.3.6] - 2026-10-09
 
 ### Diperbaiki

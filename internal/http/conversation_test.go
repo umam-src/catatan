@@ -111,6 +111,7 @@ func TestConversationRejectsInvalidCitationAndUnselectedSource(t *testing.T) {
 	r := requestUji(t, h, http.MethodPost, "/api/conversations/"+c.ID+"/messages",
 		map[string]any{"content": "Tanya", "source_ids": []string{sa.ID}})
 	if r.Code != http.StatusUnprocessableEntity { t.Fatalf("kutipan tidak sah: %d", r.Code) }
+	if !strings.Contains(r.Body.String(), "(kode: ") { t.Fatalf("kode alasan tidak ada: %s", r.Body.String()) }
 
 	p.response = "Jawaban [S1:L1]"
 	r = requestUji(t, h, http.MethodPost, "/api/conversations/"+c.ID+"/messages",
@@ -181,4 +182,39 @@ func TestConversationRejectsNoteFromAnotherNotebook(t *testing.T) {
 	response := requestUji(t, h, http.MethodPost, "/api/conversations/"+conversation.ID+"/messages", map[string]any{"content": "Tanya", "note_id": note.ID})
 	if response.Code != http.StatusNotFound { t.Fatalf("catatan lintas buku harus ditolak: %d %s", response.Code, response.Body.String()) }
 	if len(p.requests) != 0 { t.Fatal("provider dipanggil meski Catatan tidak diizinkan") }
+}
+
+func TestValidateCitationsReasonCodes(t *testing.T) {
+	refs := map[string]contextRef{
+		"S1": {Kind: "source", SourceID: "s1", LineCount: 10},
+		"S2": {Kind: "source", SourceID: "s2", LineCount: 100},
+		"N1": {Kind: "note", SourceID: "n1", LineCount: 5},
+	}
+	cases := []struct {
+		nama   string
+		teks   string
+		kode   string
+		jumlah int
+	}{
+		{"sumber valid", "Fakta [S1:L3].", "", 1},
+		{"rentang valid", "Fakta [S1:L2-L4].", "", 1},
+		{"catatan valid", "Fakta [N1:L5].", "", 1},
+		{"kutipan sama diringkas", "A [S1:L3] B [S1:L3].", "", 1},
+		{"rentang 50 baris masih valid", "Fakta [S2:L1-L51].", "", 1},
+		{"tanpa kutipan", "Informasi tidak ditemukan dalam konteks.", "tanpa_kutipan", 0},
+		{"sumber tidak dipilih", "Fakta [S3:L1].", "referensi_tidak_dikenal", 0},
+		{"catatan tidak ada", "Fakta [N2:L1].", "referensi_tidak_dikenal", 0},
+		{"satu salah menolak semua", "Benar [S1:L1] salah [S3:L1].", "referensi_tidak_dikenal", 0},
+		{"baris nol", "Fakta [S1:L0].", "rentang_tidak_valid", 0},
+		{"melewati akhir", "Fakta [S1:L11].", "rentang_tidak_valid", 0},
+		{"rentang terbalik", "Fakta [S1:L4-L2].", "rentang_tidak_valid", 0},
+		{"rentang terlalu panjang", "Fakta [S2:L1-L52].", "rentang_terlalu_panjang", 0},
+	}
+	for _, c := range cases {
+		t.Run(c.nama, func(t *testing.T) {
+			matches, kode := validateCitations(c.teks, refs)
+			if kode != c.kode { t.Fatalf("kode = %q, ingin %q", kode, c.kode) }
+			if len(matches) != c.jumlah { t.Fatalf("jumlah kutipan = %d, ingin %d", len(matches), c.jumlah) }
+		})
+	}
 }
