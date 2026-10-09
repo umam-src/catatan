@@ -71,13 +71,14 @@ Urutan yang disarankan: (1) perbaiki kontrak kutipan pada bagian 1; (2) pengambi
 
 ## 3. Evaluasi
 
-- Pengujian tabel untuk `validateCitations` yang mencakup variasi format, rentang batas, nomor sumber tidak dikenal, dan jawaban tanpa kutipan.
+- Pengujian tabel untuk `validateCitations` yang mencakup referensi Catatan (`N1`) dan Sumber (`S1..S8`): variasi format, rentang batas, referensi tidak dikenal, dan jawaban tanpa kutipan.
 - Kumpulan uji manual kecil dengan sumber sintetis (bukan data nyata) pada runtime lokal sungguhan, sesuai `AI-PROVIDER.md`. Ukuran yang dicatat: persentase jawaban lolos validasi, kebenaran kutipan, dan ketepatan jawaban "tidak ditemukan".
 - Jangan menulis isi sumber atau isi jawaban ke log (lihat bagian privasi di `KEPUTUSAN-DESAIN.md`).
 
 ## 4. Ide lain (belum dinilai)
 
-- Tandai kutipan kedaluwarsa pada antarmuka bila `source_checksum` tidak lagi sama dengan checksum sumber saat ini.
+- Tandai kutipan kedaluwarsa pada antarmuka. Untuk Sumber, bila `source_checksum` tidak lagi sama dengan checksum sumber saat ini. Untuk Catatan, yang dapat diedit, perlu dicek apakah versi atau checksum catatan tersedia sebagai pembanding.
+- Catatan (`N`) dan Sumber (`S`) tetap satu kontrak (format, validator, perintah sistem). Perbedaannya hanya pada stabilitas target kutipan, bukan pada kontrak ke model.
 - Simpan jawaban percakapan sebagai catatan beserta rujukan lokasi sumbernya.
 - Batas konteks yang dapat diatur per penyedia atau model, karena model kecil berjendela kecil.
 - Pilihan eksplisit di antarmuka: "hanya dari sumber" atau "boleh pengetahuan umum".
