@@ -380,14 +380,24 @@
   }
 
   function pilihHasilPencarian(hasil: SearchResult) {
+    // Search API IDs are namespaced (note:<id> / source:<id>), while the
+    // loaded notebook collections keep the raw database IDs.
     if (hasil.notebook_id !== notebookID) return;
     pencarianAktif = false;
+
     if (hasil.kind === 'note') {
-      const note = notes.find((item) => item.id === hasil.id);
+      const id = hasil.id.startsWith('note:')
+        ? hasil.id.slice('note:'.length)
+        : hasil.id;
+      const note = notes.find((item) => item.id === id);
       if (note) pilihCatatan(note);
       return;
     }
-    const source = sources.find((item) => item.id === hasil.id);
+
+    const id = hasil.id.startsWith('source:')
+      ? hasil.id.slice('source:'.length)
+      : hasil.id;
+    const source = sources.find((item) => item.id === id);
     if (source) void pilihSumber(source);
   }
 
