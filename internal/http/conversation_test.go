@@ -120,3 +120,65 @@ func TestConversationRejectsInvalidCitationAndUnselectedSource(t *testing.T) {
 	if strings.Contains(prompt, "rahasia-b") { t.Fatal("sumber yang tidak dipilih ikut terkirim") }
 	_ = sb
 }
+
+
+func TestConversationIncludesActiveNoteContextAndCitation(t *testing.T) {
+	old := os.Getenv("CATATAN_AI_MODEL")
+	t.Cleanup(func() { _ = os.Setenv("CATATAN_AI_MODEL", old) })
+	_ = os.Setenv("CATATAN_AI_MODEL", "uji-model")
+
+	p := &fakeConversationProvider{response: "Kode catatan KJ-7319 [N1:L1-L2]"}
+	h := conversationHandler(t, p)
+	conversation := buatPercakapanUji(t, h)
+	noteResponse := requestUji(t, h, http.MethodPost, "/api/notebooks/default/notes", map[string]string{
+		"title": "Catatan pengiriman",
+		"content": "Kode pengiriman: KJ-7319\nStatus: Menunggu pemeriksaan gudang.",
+	})
+	if noteResponse.Code != http.StatusCreated {
+		t.Fatalf("buat catatan: %d %s", noteResponse.Code, noteResponse.Body.String())
+	}
+	var note Note
+	if err := json.NewDecoder(noteResponse.Body).Decode(&note); err != nil { t.Fatal(err) }
+
+	response := requestUji(t, h, http.MethodPost, "/api/conversations/"+conversation.ID+"/messages", map[string]any{
+		"content": "Apa kode dan status pengiriman?",
+		"note_id": note.ID,
+		"source_ids": []string{},
+	})
+	if response.Code != http.StatusCreated { t.Fatalf("pesan: %d %s", response.Code, response.Body.String()) }
+	last := p.requests[0].Messages[len(p.requests[0].Messages)-1]
+	if !strings.Contains(last.Content, "[N1] Catatan: Catatan pengiriman") ||
+		!strings.Contains(last.Content, "[L1] Kode pengiriman: KJ-7319") ||
+		!strings.Contains(last.Content, "[L2] Status: Menunggu pemeriksaan gudang.") {
+		t.Fatalf("isi Catatan tidak masuk ke konteks provider: %q", last.Content)
+	}
+	var out map[string]any
+	if err := json.NewDecoder(response.Body).Decode(&out); err != nil { t.Fatal(err) }
+	assistant := out["assistant_message"].(map[string]any)
+	citations := assistant["citations"].([]any)
+	if len(citations) != 1 { t.Fatalf("kutipan: %#v", citations) }
+	citation := citations[0].(map[string]any)
+	if citation["kind"] != "note" || citation["source_id"] != note.ID || citation["source_ref"] != "N1" {
+		t.Fatalf("provenance kutipan Catatan salah: %#v", citation)
+	}
+	userMessage := out["user_message"].(map[string]any)
+	if userMessage["note_id"] != note.ID { t.Fatalf("note_id tidak dikembalikan: %#v", userMessage) }
+}
+
+func TestConversationRejectsNoteFromAnotherNotebook(t *testing.T) {
+	p := &fakeConversationProvider{response: "Jawaban [N1:L1]"}
+	h := conversationHandler(t, p)
+	conversation := buatPercakapanUji(t, h)
+	notebookResponse := requestUji(t, h, http.MethodPost, "/api/notebooks", map[string]string{"title": "Buku lain"})
+	if notebookResponse.Code != http.StatusCreated { t.Fatalf("buat buku: %d %s", notebookResponse.Code, notebookResponse.Body.String()) }
+	var notebook Notebook
+	if err := json.NewDecoder(notebookResponse.Body).Decode(&notebook); err != nil { t.Fatal(err) }
+	noteResponse := requestUji(t, h, http.MethodPost, "/api/notebooks/"+notebook.ID+"/notes", map[string]string{"title": "Catatan privat", "content": "tidak boleh ikut"})
+	if noteResponse.Code != http.StatusCreated { t.Fatalf("buat catatan: %d %s", noteResponse.Code, noteResponse.Body.String()) }
+	var note Note
+	if err := json.NewDecoder(noteResponse.Body).Decode(&note); err != nil { t.Fatal(err) }
+
+	response := requestUji(t, h, http.MethodPost, "/api/conversations/"+conversation.ID+"/messages", map[string]any{"content": "Tanya", "note_id": note.ID})
+	if response.Code != http.StatusNotFound { t.Fatalf("catatan lintas buku harus ditolak: %d %s", response.Code, response.Body.String()) }
+	if len(p.requests) != 0 { t.Fatal("provider dipanggil meski Catatan tidak diizinkan") }
+}
