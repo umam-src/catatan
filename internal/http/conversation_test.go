@@ -14,14 +14,23 @@ import (
 )
 
 type fakeConversationProvider struct {
-	response string
-	requests []ai.Request
+	response  string
+	responses []string
+	requests  []ai.Request
 }
 
 func (p *fakeConversationProvider) Probe(context.Context) ai.ProviderStatus { return ai.ProviderReady }
 func (p *fakeConversationProvider) Generate(_ context.Context, req ai.Request) (ai.Response, error) {
 	p.requests = append(p.requests, req)
-	return ai.Response{Text: p.response, Model: req.Model}, nil
+	response := p.response
+	if len(p.responses) > 0 {
+		index := len(p.requests) - 1
+		if index >= len(p.responses) {
+			index = len(p.responses) - 1
+		}
+		response = p.responses[index]
+	}
+	return ai.Response{Text: response, Model: req.Model}, nil
 }
 
 func conversationHandler(t *testing.T, provider *fakeConversationProvider) http.Handler {
@@ -185,6 +194,44 @@ func TestConversationRejectsNoteFromAnotherNotebook(t *testing.T) {
 	if len(p.requests) != 0 { t.Fatal("provider dipanggil meski Catatan tidak diizinkan") }
 }
 
+
+func TestConversationRetriesAnswerWhenCitationIsMissing(t *testing.T) {
+	oldModel, modelSet := os.LookupEnv("CATATAN_AI_MODEL")
+	oldDiagnostic, diagnosticSet := os.LookupEnv("CATATAN_AI_CITATION_DIAGNOSTIC")
+	t.Cleanup(func() {
+		if modelSet { _ = os.Setenv("CATATAN_AI_MODEL", oldModel) } else { _ = os.Unsetenv("CATATAN_AI_MODEL") }
+		if diagnosticSet { _ = os.Setenv("CATATAN_AI_CITATION_DIAGNOSTIC", oldDiagnostic) } else { _ = os.Unsetenv("CATATAN_AI_CITATION_DIAGNOSTIC") }
+	})
+	_ = os.Setenv("CATATAN_AI_MODEL", "uji-model")
+	_ = os.Setenv("CATATAN_AI_CITATION_DIAGNOSTIC", "false")
+
+	p := &fakeConversationProvider{responses: []string{
+		"Kode pengiriman adalah KJ-7319",
+		"Kode pengiriman adalah KJ-7319 [S1:L1].",
+	}}
+	h := conversationHandler(t, p)
+	c := buatPercakapanUji(t, h)
+	s := permintaanSumber(t, h, "default", "bahan.txt", "Bahan", "Kode pengiriman: KJ-7319")
+	if s.Code != http.StatusCreated { t.Fatalf("sumber: %d %s", s.Code, s.Body.String()) }
+	var src Source
+	if err := json.NewDecoder(s.Body).Decode(&src); err != nil { t.Fatal(err) }
+
+	r := requestUji(t, h, http.MethodPost, "/api/conversations/"+c.ID+"/messages",
+		map[string]any{"content": "Apa kode pengirimannya?", "source_ids": []string{src.ID}})
+	if r.Code != http.StatusCreated { t.Fatalf("jawaban setelah perbaikan kutipan harus diterima: %d %s", r.Code, r.Body.String()) }
+	if len(p.requests) != 2 { t.Fatalf("harus mencoba ulang sekali, jumlah panggilan provider: %d", len(p.requests)) }
+	if !strings.Contains(p.requests[1].Messages[len(p.requests[1].Messages)-1].Content, "Perbaiki jawaban sebelumnya") {
+		t.Fatal("percobaan ulang tidak berisi instruksi perbaikan kutipan")
+	}
+	var out map[string]any
+	if err := json.NewDecoder(r.Body).Decode(&out); err != nil { t.Fatal(err) }
+	assistant := out["assistant_message"].(map[string]any)
+	if !strings.Contains(assistant["content"].(string), "[S1:L1]") {
+		t.Fatalf("jawaban akhir tidak memakai kutipan: %#v", assistant["content"])
+	}
+	validation := assistant["citation_validation"].(map[string]any)
+	if validation["valid"] != true { t.Fatalf("kutipan hasil retry harus valid: %#v", validation) }
+}
 
 func TestConversationCitationDiagnosticMode(t *testing.T) {
 	oldModel, modelSet := os.LookupEnv("CATATAN_AI_MODEL")
