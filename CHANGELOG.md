@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.17] - 2026-10-10
+
+### Ditambahkan
+
+- Ringkasan diagnostik konteks yang disusun untuk jawaban AI (Catatan aktif, jumlah Sumber, baris, dan byte) ditampilkan di chat dan dipertahankan dalam riwayat. Diagnostik tidak menyimpan isi konteks.
+
 ## [0.3.16] - 2026-10-10
 
 ### Diperbaiki
