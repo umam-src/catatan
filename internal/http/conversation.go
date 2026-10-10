@@ -86,11 +86,11 @@ func (s *Server) createConversationMessage(w http.ResponseWriter,r *http.Request
 	history,err:=s.loadConversationHistory(r,id);if err!=nil{serverError(w,err);return};messages,refs:=buildConversationPrompt(in.Content,note,sources,history);response,err:=provider.Generate(r.Context(),ai.Request{Model:model,Messages:messages});if err!=nil{if errors.Is(err,ai.ErrTimeout){http.Error(w,"Penyedia model melewati batas waktu",504);return};if errors.Is(err,ai.ErrProviderUnavailable){http.Error(w,"Penyedia model tidak tersedia",503);return};if errors.Is(err,ai.ErrRequestTooLarge){http.Error(w,"Konteks percakapan terlalu besar",413);return};http.Error(w,"Penyedia model menolak permintaan",502);return}
 	response.Text = normalizeCitationFormat(response.Text)
 	matches, reason := validateCitations(response.Text, refs)
-	if (note != nil || len(sources) > 0) && reason != "" {
+	if reason != "" && ((note != nil || len(sources) > 0) || strings.Contains(response.Text, noInfoMarker)) {
 		http.Error(w, "Jawaban model memiliki kutipan yang tidak dapat diverifikasi (kode: "+reason+")", 422)
 		return
 	}
-	if strings.Contains(response.Text, noInfoMarker) {
+	if validNoInfoAnswer(response.Text) {
 		response.Text = stripNoInfoMarker(response.Text)
 	}
 	citations:=make([]Citation,0,len(matches));for _,m:=range matches{ref:=refs[m.SourceRef];citations=append(citations,Citation{Kind:ref.Kind,SourceID:ref.SourceID,SourceRef:m.SourceRef,StartLine:m.StartLine,EndLine:m.EndLine})}
