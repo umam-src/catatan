@@ -76,6 +76,10 @@ func TestConversationContextAndCitation(t *testing.T) {
 	if err := json.NewDecoder(r.Body).Decode(&out); err != nil { t.Fatal(err) }
 	assistant := out["assistant_message"].(map[string]any)
 	if len(assistant["citations"].([]any)) != 1 { t.Fatalf("kutipan: %#v", assistant["citations"]) }
+	diagnostics, ok := assistant["context_diagnostics"].(map[string]any)
+	if !ok || diagnostics["note_included"] != false || diagnostics["source_count"] != float64(1) || diagnostics["line_count"] != float64(3) || diagnostics["content_bytes"] != float64(len("baris satu\\nbaris dua\\nbaris tiga")) {
+		t.Fatalf("diagnostik konteks tidak sesuai dengan konteks yang disusun: %#v", assistant["context_diagnostics"])
+	}
 
 	var prompt string
 	for _, m := range p.requests[0].Messages { prompt += m.Content }
