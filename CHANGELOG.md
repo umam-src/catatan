@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.16] - 2026-10-10
+
+### Diperbaiki
+
+- Label `catatan aktif ikut konteks` dihapus dari header daftar sumber.
+- Ruang chat, pesan AI, kolom input, dan petunjuk chat memakai lebar parent, bukan batas lebar maksimum tetap.
+- Auto-save Catatan mempertahankan spasi persis seperti yang diketik; pembaruan setelah simpan tidak lagi mengganti isi editor dengan teks yang di-`trim`.
+
 ## [0.3.15] - 2026-10-10
 
 ### Diperbaiki

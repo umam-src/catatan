@@ -842,14 +842,14 @@ dialog.dialog::backdrop { background: var(--lapisan); backdrop-filter: blur(3px)
 }
 .editor:has(.chat-ruang) > .chat-atas {
   width: 100%;
-  max-width: 900px;
+  max-width: none;
   margin-inline: auto;
 }
 .chat-ruang {
   display: flex;
   flex: 1 1 auto;
   width: 100%;
-  max-width: 960px;
+  max-width: none;
   min-width: 0;
   min-height: 0;
   margin-inline: auto;
@@ -872,7 +872,7 @@ dialog.dialog::backdrop { background: var(--lapisan); backdrop-filter: blur(3px)
 .chat-pesan-item {
   align-self: flex-start;
   width: 100%;
-  max-width: 800px;
+  max-width: none;
   padding: 2px 0;
   border: 0;
   border-radius: 0;
@@ -946,9 +946,9 @@ dialog.dialog::backdrop { background: var(--lapisan); backdrop-filter: blur(3px)
   align-items: flex-end;
   gap: 10px;
   width: 100%;
-  max-width: 800px;
+  max-width: none;
   min-width: 0;
-  margin: 0 auto;
+  margin: 0;
   padding: 8px 10px 8px 18px;
   border: 1px solid var(--garis-kuat);
   border-radius: 24px;
@@ -997,8 +997,8 @@ dialog.dialog::backdrop { background: var(--lapisan); backdrop-filter: blur(3px)
 .chat-form .tombol.utama svg { width: 18px; height: 18px; }
 .chat-petunjuk {
   width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
   padding: 0 8px;
   color: var(--teks-3);
   font-size: .75rem;
