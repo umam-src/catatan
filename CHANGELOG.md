@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.12] - 2026-10-10
+
+### Diperbaiki
+
+- Chat otomatis menggulir panel pesan ke bawah setelah riwayat dimuat dan setelah jawaban AI diterima.
+
 ## [0.3.11] - 2026-10-10
 
 ### Diperbaiki
