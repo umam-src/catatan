@@ -478,7 +478,7 @@
       return;
     }
     if (typeof window === 'undefined') {
-      sumberKonteks = tersedia;
+      sumberKonteks = tersedia.slice(0, batasSumberKonteks);
       return;
     }
 
@@ -486,12 +486,12 @@
     try {
       tersimpan = window.localStorage.getItem(`${kunciPilihanSumberKonteks}.${notebookID}`);
     } catch {
-      sumberKonteks = tersedia;
+      sumberKonteks = tersedia.slice(0, batasSumberKonteks);
       return;
     }
 
     if (tersimpan === null) {
-      sumberKonteks = tersedia;
+      sumberKonteks = tersedia.slice(0, batasSumberKonteks);
       simpanPilihanSumberKonteks();
       return;
     }
@@ -499,7 +499,7 @@
     try {
       const pilihan = JSON.parse(tersimpan) as { selectedIds?: unknown; knownIds?: unknown };
       if (!Array.isArray(pilihan.selectedIds) || !Array.isArray(pilihan.knownIds)) {
-        sumberKonteks = tersedia;
+        sumberKonteks = tersedia.slice(0, batasSumberKonteks);
       } else {
         const terpilih = pilihan.selectedIds.filter(
           (id): id is string => typeof id === 'string' && tersedia.includes(id)
@@ -511,7 +511,7 @@
         sumberKonteks = [...new Set([...terpilih, ...baru])].slice(0, batasSumberKonteks);
       }
     } catch {
-      sumberKonteks = tersedia;
+      sumberKonteks = tersedia.slice(0, batasSumberKonteks);
     }
     simpanPilihanSumberKonteks();
   }
