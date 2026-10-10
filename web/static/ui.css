@@ -868,7 +868,19 @@ dialog.dialog::backdrop { background: var(--lapisan); backdrop-filter: blur(3px)
   padding: 8px 4px 20px;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
 }
+.chat-pesan:hover,
+.chat-pesan:focus-within {
+  scrollbar-color: var(--garis-kuat) transparent;
+}
+.chat-pesan::-webkit-scrollbar { width: 6px; height: 6px; }
+.chat-pesan::-webkit-scrollbar-track { background: transparent; }
+.chat-pesan::-webkit-scrollbar-thumb { border-radius: 999px; background: transparent; }
+.chat-pesan:hover::-webkit-scrollbar-thumb,
+.chat-pesan:focus-within::-webkit-scrollbar-thumb { background: var(--garis-kuat); }
+.chat-pesan::-webkit-scrollbar-thumb:hover { background: var(--teks-3); }
 .chat-pesan-item {
   align-self: flex-start;
   width: 100%;
