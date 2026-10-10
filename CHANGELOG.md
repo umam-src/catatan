@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.11] - 2026-10-10
+
+### Diperbaiki
+
+- Riwayat model dan daftar pesan kini memakai urutan penyisipan database, agar pesan pengguna dan jawaban AI tidak tertukar saat timestamp sama.
+- Label konteks yang lebih dari satu kini memiliki pemisah visual.
+
 ## [0.3.10] - 2026-10-10
 
 ### Diperbaiki

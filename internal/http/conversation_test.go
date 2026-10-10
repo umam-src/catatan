@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -309,4 +310,50 @@ func TestConversationAcceptsAnswerWithoutCitationAndPersistsContextTitle(t *test
 	list := requestUji(t, h, http.MethodGet, "/api/conversations/"+c.ID+"/messages", nil)
 	if list.Code != http.StatusOK { t.Fatalf("riwayat: %d %s", list.Code, list.Body.String()) }
 	if !strings.Contains(list.Body.String(), "Dokumen Pengiriman") { t.Fatalf("label konteks tidak tersimpan dalam riwayat: %s", list.Body.String()) }
+}
+
+
+func TestConversationHistoryUsesInsertionOrderWhenTimestampsAndIDsConflict(t *testing.T) {
+	d, err := db.Open(context.Background(), filepath.Join(t.TempDir(), "catatan.db"))
+	if err != nil { t.Fatal(err) }
+	defer d.Close()
+
+	provider := &fakeConversationProvider{response: "Jawaban pertama"}
+	handler := NewWithAI(d, provider)
+	setup := requestUji(t, handler, http.MethodPost, "/api/auth/setup", map[string]string{
+		"username": "pengguna", "email": "pengguna@lokal.invalid",
+		"display_name": "Pengguna Uji", "password": "kata-sandi-uji-aman",
+	})
+	if setup.Code != http.StatusCreated { t.Fatalf("setup: %d %s", setup.Code, setup.Body.String()) }
+	cookie := setup.Result().Cookies()[0]
+	authenticated := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r = r.Clone(r.Context())
+		r.AddCookie(cookie)
+		handler.ServeHTTP(w, r)
+	})
+	conversation := buatPercakapanUji(t, authenticated)
+	response := requestUji(t, authenticated, http.MethodPost, "/api/conversations/"+conversation.ID+"/messages", map[string]any{
+		"content": "Pertanyaan pertama",
+	})
+	if response.Code != http.StatusCreated { t.Fatalf("pesan: %d %s", response.Code, response.Body.String()) }
+
+	// Simulasikan kondisi ketika timestamp pesan sama dan ID acak berlawanan
+	// dengan urutan percakapan: pengurutan berdasarkan ID akan membalik peran.
+	if _, err := d.ExecContext(context.Background(), `UPDATE messages SET id = CASE role WHEN 'user' THEN 'z-user' ELSE 'a-assistant' END WHERE conversation_id=?`, conversation.ID); err != nil {
+		t.Fatalf("atur ID uji: %v", err)
+	}
+	server := &Server{db: d}
+	history, err := server.loadConversationHistory(httptest.NewRequest(http.MethodGet, "/", nil), conversation.ID)
+	if err != nil { t.Fatal(err) }
+	if len(history) != 2 || history[0].Role != ai.RoleUser || history[1].Role != ai.RoleAssistant {
+		t.Fatalf("riwayat harus mempertahankan urutan penyisipan user lalu assistant: %#v", history)
+	}
+
+	list := requestUji(t, authenticated, http.MethodGet, "/api/conversations/"+conversation.ID+"/messages", nil)
+	if list.Code != http.StatusOK { t.Fatalf("daftar pesan: %d %s", list.Code, list.Body.String()) }
+	var messages []ConversationMessage
+	if err := json.NewDecoder(list.Body).Decode(&messages); err != nil { t.Fatal(err) }
+	if len(messages) != 2 || messages[0].Role != "user" || messages[1].Role != "assistant" {
+		t.Fatalf("daftar pesan harus mempertahankan urutan penyisipan: %#v", messages)
+	}
 }

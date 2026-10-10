@@ -910,7 +910,7 @@ dialog.dialog::backdrop { background: var(--lapisan); backdrop-filter: blur(3px)
   color: var(--teks-3);
   font-size: .8125rem;
 }
-.chat-konteks span:not(:first-child) {
+.chat-konteks span:not(:first-child):not(.chat-konteks-pemisah) {
   max-width: 100%;
   overflow: hidden;
   padding: 3px 9px;
@@ -919,6 +919,11 @@ dialog.dialog::backdrop { background: var(--lapisan); backdrop-filter: blur(3px)
   color: var(--teks-2);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.chat-konteks .chat-konteks-pemisah {
+  padding: 0;
+  border: 0;
+  color: var(--teks-3);
 }
 .chat-kutipan {
   display: flex;
