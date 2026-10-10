@@ -4,8 +4,8 @@
 
 ### Diperbaiki
 
-- Daftar dokumen konteks percakapan menampilkan nama file dengan jelas; semua sumber dipilih pada penggunaan pertama dan pilihan disimpan per buku di perangkat.
-- Dokumen baru otomatis ikut terpilih tanpa mengubah pilihan dokumen lama.
+- Daftar dokumen konteks percakapan menampilkan nama file dengan jelas; semua sumber dipilih pada penggunaan pertama sampai batas 8 dokumen per permintaan, dan pilihan disimpan per buku di perangkat.
+- Dokumen baru otomatis ikut terpilih jika masih ada slot; pilihan lama tetap dihormati dan batas 8 dokumen dijelaskan di UI.
 
 ## [0.3.11] - 2026-10-10
 
