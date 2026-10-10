@@ -31,6 +31,7 @@
   const kunciPendaftaran = 'catatan.pendaftaranDiizinkan';
   const kunciStatusDrawer = 'catatan.bukuTerbuka';
   const kunciStatusDrawerKonteks = 'catatan.konteksTerbuka';
+  const kunciPanelKonteks = 'catatan.panelKonteks';
   const kunciPilihanSumberKonteks = 'catatan.pilihanSumberKonteks';
   const batasSumberKonteks = 8;
 
@@ -211,7 +212,16 @@
     try {
       window.localStorage.setItem(kunciStatusDrawerKonteks, String(terbuka));
     } catch {
-      galat = 'Status drawer Artefak tidak dapat disimpan pada perangkat ini.';
+      galat = 'Status drawer konteks tidak dapat disimpan pada perangkat ini.';
+    }
+  }
+
+  function ubahPanelKonteks(panelBaru: Panel) {
+    panel = panelBaru;
+    try {
+      window.localStorage.setItem(kunciPanelKonteks, panelBaru);
+    } catch {
+      galat = 'Tab panel konteks tidak dapat disimpan pada perangkat ini.';
     }
   }
 
@@ -249,21 +259,25 @@
           if (nilaiDrawer === 'true' || nilaiDrawer === 'false') bukuTerbuka = nilaiDrawer === 'true';
           else if (nilaiDrawer === null && window.matchMedia('(max-width: 760px)').matches) bukuTerbuka = false;
         } catch {
+          if (layarKecil()) bukuTerbuka = false;
           galat = 'Status daftar buku tidak dapat dibaca pada perangkat ini.';
         }
         try {
           const nilaiDrawerKonteks = window.localStorage.getItem(kunciStatusDrawerKonteks);
           if (nilaiDrawerKonteks === 'true' || nilaiDrawerKonteks === 'false') {
             konteksTerbuka = nilaiDrawerKonteks === 'true';
-          } else if (nilaiDrawerKonteks === null && window.matchMedia('(max-width: 760px)').matches) {
+          } else if (nilaiDrawerKonteks === null && layarKecil()) {
             konteksTerbuka = false;
           }
         } catch {
-          galat = 'Status drawer Artefak tidak dapat dibaca pada perangkat ini.';
+          if (layarKecil()) konteksTerbuka = false;
+          galat = 'Status drawer konteks tidak dapat dibaca pada perangkat ini.';
         }
-        if (layarKecil()) {
-          bukuTerbuka = false;
-          konteksTerbuka = false;
+        try {
+          const nilaiPanel = window.localStorage.getItem(kunciPanelKonteks);
+          if (nilaiPanel === 'sumber' || nilaiPanel === 'artefak') panel = nilaiPanel;
+        } catch {
+          galat = 'Tab panel konteks tidak dapat dibaca pada perangkat ini.';
         }
       }
       const versiResponse = await fetch('/api/version');
@@ -1249,8 +1263,8 @@
           <aside class="panel-konteks" aria-label="Konteks">
             <div class="tab-konteks">
               <div class="tab-konteks-pilihan">
-                <button class:aktif={panel === 'sumber'} type="button" onclick={() => panel = 'sumber'}>Sumber</button>
-                <button class:aktif={panel === 'artefak'} type="button" onclick={() => panel = 'artefak'}>Artefak</button>
+                <button class:aktif={panel === 'sumber'} type="button" onclick={() => ubahPanelKonteks('sumber')}>Sumber</button>
+                <button class:aktif={panel === 'artefak'} type="button" onclick={() => ubahPanelKonteks('artefak')}>Artefak</button>
               </div>
               <button
                 class="tombol-lipat-konteks"
@@ -1346,11 +1360,11 @@
             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z" /><path d="M9 12h7M9 16h7" /></svg>
             <span>Catatan</span>
           </button>
-          <button class:aktif={konteksTerbuka && panel === 'sumber'} type="button" onclick={() => { panel = 'sumber'; ubahStatusDrawerKonteks(true); }}>
+          <button class:aktif={konteksTerbuka && panel === 'sumber'} type="button" onclick={() => { ubahPanelKonteks('sumber'); ubahStatusDrawerKonteks(true); }}>
             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h9l5 5v11H5z" /><path d="M14 4v5h5" /></svg>
             <span>Sumber</span>
           </button>
-          <button class:aktif={konteksTerbuka && panel === 'artefak'} type="button" onclick={() => { panel = 'artefak'; ubahStatusDrawerKonteks(true); }}>
+          <button class:aktif={konteksTerbuka && panel === 'artefak'} type="button" onclick={() => { ubahPanelKonteks('artefak'); ubahStatusDrawerKonteks(true); }}>
             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z" /><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5" /></svg>
             <span>Artefak</span>
           </button>
