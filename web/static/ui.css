@@ -829,76 +829,184 @@ dialog.dialog::backdrop { background: var(--lapisan); backdrop-filter: blur(3px)
 }
 
 
-/* Ruang percakapan */
+/* Ruang percakapan — lebar dan tipografi terinspirasi pola chat modern. */
 .chat-atas {
   justify-content: space-between;
 }
 .tombol-chat {
   margin-left: auto;
 }
+.editor:has(.chat-ruang) {
+  padding: 20px clamp(12px, 3vw, 32px) 16px;
+  overflow: hidden;
+}
+.editor:has(.chat-ruang) > .chat-atas {
+  width: 100%;
+  max-width: 900px;
+  margin-inline: auto;
+}
 .chat-ruang {
   display: flex;
-  flex: 1;
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 960px;
+  min-width: 0;
   min-height: 0;
+  margin-inline: auto;
   flex-direction: column;
   gap: 16px;
-  padding: 20px clamp(16px, 4vw, 48px);
+  padding: 16px clamp(0px, 1.5vw, 16px) 8px;
 }
 .chat-pesan {
-  flex: 1;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
   min-height: 0;
   overflow: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  padding: 8px 4px 20px;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 .chat-pesan-item {
-  max-width: min(760px, 92%);
-  padding: 14px 16px;
-  border: 1px solid var(--garis);
-  border-radius: 14px;
-  background: var(--permukaan);
+  align-self: flex-start;
+  width: 100%;
+  max-width: 800px;
+  padding: 2px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 .chat-pesan-item.user {
   align-self: flex-end;
+  width: fit-content;
+  max-width: min(82%, 680px);
+  padding: 12px 16px;
+  border: 1px solid var(--garis);
+  border-radius: 20px 20px 6px 20px;
   background: var(--permukaan-lembut);
 }
 .chat-peran {
-  margin-bottom: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--teks-lembut);
+  margin-bottom: 5px;
+  color: var(--teks-3);
+  font-size: .8125rem;
+  font-weight: 600;
+  letter-spacing: .01em;
 }
 .chat-isi {
+  color: var(--teks);
+  font-size: 1rem;
+  line-height: 1.75;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  line-height: 1.6;
+}
+.chat-konteks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  color: var(--teks-3);
+  font-size: .8125rem;
+}
+.chat-konteks span:not(:first-child) {
+  max-width: 100%;
+  overflow: hidden;
+  padding: 3px 9px;
+  border: 1px solid var(--garis);
+  border-radius: 999px;
+  color: var(--teks-2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .chat-kutipan {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 10px;
+  margin-top: 12px;
 }
 .chat-kutipan button {
   border: 1px solid var(--garis);
   border-radius: 999px;
-  padding: 5px 9px;
+  padding: 5px 10px;
   background: var(--permukaan-lembut);
-  color: var(--teks);
+  color: var(--teks-2);
   cursor: pointer;
-  font-size: 12px;
+  font-size: .8125rem;
 }
+.chat-kutipan button:hover { background: var(--permukaan-hover); color: var(--teks); }
 .chat-form {
   display: flex;
-  gap: 10px;
   align-items: flex-end;
+  gap: 10px;
+  width: 100%;
+  max-width: 800px;
+  min-width: 0;
+  margin: 0 auto;
+  padding: 8px 10px 8px 18px;
+  border: 1px solid var(--garis-kuat);
+  border-radius: 24px;
+  background: var(--permukaan);
+  box-shadow: 0 3px 14px rgba(20, 28, 24, .06);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.chat-form:focus-within {
+  border-color: var(--teks-3);
+  box-shadow: 0 3px 16px rgba(20, 28, 24, .09);
 }
 .chat-form textarea {
-  min-height: 76px;
+  display: block;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
   max-height: 220px;
-  resize: vertical;
-  flex: 1;
+  margin: 0;
+  padding: 10px 0;
+  border: 0;
+  border-radius: 0;
+  resize: none;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  background: transparent;
+  color: var(--teks);
+  font-family: var(--huruf-ui);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+.chat-form textarea:focus-visible { outline: 0; }
+.chat-form textarea::placeholder { color: var(--teks-3); }
+.chat-form .tombol.utama {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 42px;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: .875rem;
+}
+.chat-form .tombol.utama svg { width: 18px; height: 18px; }
+.chat-petunjuk {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 8px;
+  color: var(--teks-3);
+  font-size: .75rem;
+  line-height: 1.4;
+  text-align: center;
+}
+.chat-pesan:has(.keadaan-kosong) {
+  justify-content: center;
+}
+.chat-pesan .keadaan-kosong {
+  width: 100%;
+  max-width: 560px;
+  align-self: center;
 }
 .pilih-sumber-konteks {
   display: flex;
@@ -918,14 +1026,34 @@ dialog.dialog::backdrop { background: var(--lapisan); backdrop-filter: blur(3px)
   gap: 3px;
 }
 .pilih-sumber-konteks small {
-  color: var(--teks-lembut);
+  color: var(--teks-3);
 }
 @media (max-width: 760px) {
+  .editor:has(.chat-ruang) {
+    padding: 8px 12px calc(12px + env(safe-area-inset-bottom));
+  }
+  .editor:has(.chat-ruang) > .chat-atas {
+    min-height: 36px;
+    margin-bottom: 0;
+  }
   .chat-ruang {
-    padding: 12px;
+    gap: 12px;
+    padding: 8px 0 4px;
   }
+  .chat-pesan { gap: 20px; padding-inline: 2px; }
+  .chat-pesan-item.user { max-width: 90%; }
   .chat-form {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 6px;
+    padding: 6px 7px 6px 14px;
+    border-radius: 22px;
   }
+  .chat-form .tombol.utama {
+    min-width: 42px;
+    min-height: 42px;
+    padding: 0 10px;
+  }
+  .chat-form .tombol.utama span { display: none; }
+  .chat-petunjuk { padding-inline: 2px; font-size: .6875rem; }
 }
