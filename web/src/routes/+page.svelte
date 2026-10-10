@@ -1100,8 +1100,11 @@
                         {#if message.contexts?.length}
                           <div class="chat-konteks" aria-label="Dokumen konteks yang digunakan">
                             <span>Konteks:</span>
-                            {#each message.contexts as context}
+                            {#each message.contexts as context, i}
                               <span>{context.title}</span>
+                              {#if i < message.contexts.length - 1}
+                                <span class="chat-konteks-pemisah" aria-hidden="true">·</span>
+                              {/if}
                             {/each}
                           </div>
                         {/if}
