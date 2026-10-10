@@ -29,6 +29,7 @@ type conversationSource struct { ID string; Title string; Content string; Checks
 type conversationNote struct { ID string; Title string; Content string }
 type citationMatch struct { SourceRef string; StartLine int; EndLine int }
 var citationPattern = regexp.MustCompile(`\[([SN])([1-8]):L([0-9]+)(?:-L([0-9]+))?\]`)
+var citationLikePattern = regexp.MustCompile(`\[[SN][0-9]+\s*:`)
 var citationVariantPattern = regexp.MustCompile(`\[([SN])([1-8])\s*:\s*L([0-9]+)(?:\s*[-–—]\s*L?([0-9]+))?\]`)
 const noInfoMarker = "[TIDAK_DITEMUKAN]"
 
@@ -89,7 +90,7 @@ func (s *Server) createConversationMessage(w http.ResponseWriter,r *http.Request
 	matches, reason := validateCitations(response.Text, refs)
 	// Mode sementara: jawaban tanpa kutipan diperbolehkan. Kutipan yang dikirim model
 	// tetap harus valid; penanda jawaban tidak ditemukan juga tetap diperiksa ketat.
-	if reason == "tanpa_kutipan" && !strings.Contains(response.Text, noInfoMarker) {
+	if reason == "tanpa_kutipan" && !strings.Contains(response.Text, noInfoMarker) && !citationLikePattern.MatchString(response.Text) {
 		reason = ""
 	}
 	if reason != "" && ((note != nil || len(sources) > 0) || strings.Contains(response.Text, noInfoMarker)) {
