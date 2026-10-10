@@ -87,8 +87,8 @@ func TestConversationContextAndCitation(t *testing.T) {
 	}
 	system := p.requests[0].Messages[0]
 	if system.Role != ai.RoleSystem ||
-		!strings.Contains(system.Content, "WAJIB diikuti kutipan") ||
-		!strings.Contains(system.Content, "[S1:L1]") ||
+		!strings.Contains(system.Content, "jangan keluarkan kutipan baris") ||
+		!strings.Contains(system.Content, "judul Catatan/dokumen") ||
 		!strings.Contains(system.Content, noInfoMarker) ||
 		!strings.Contains(system.Content, "jangan menambahkan klaim faktual atau kutipan") {
 		t.Fatalf("instruksi kutipan sumber harus eksplisit: %#v", system)
@@ -277,4 +277,36 @@ func TestConversationAcceptsAndStripsNoInfoMarker(t *testing.T) {
 	list := requestUji(t, h, http.MethodGet, "/api/conversations/"+c.ID+"/messages", nil)
 	if list.Code != http.StatusOK { t.Fatalf("riwayat: %d %s", list.Code, list.Body.String()) }
 	if strings.Contains(list.Body.String(), noInfoMarker) { t.Fatalf("marker internal tersimpan di riwayat: %s", list.Body.String()) }
+}
+
+
+func TestConversationAcceptsAnswerWithoutCitationAndPersistsContextTitle(t *testing.T) {
+	old := os.Getenv("CATATAN_AI_MODEL")
+	t.Cleanup(func() { _ = os.Setenv("CATATAN_AI_MODEL", old) })
+	_ = os.Setenv("CATATAN_AI_MODEL", "uji-model")
+
+	p := &fakeConversationProvider{response: "Status pengiriman selesai."}
+	h := conversationHandler(t, p)
+	c := buatPercakapanUji(t, h)
+	s := permintaanSumber(t, h, "default", "pengiriman.txt", "Dokumen Pengiriman", "Status: selesai")
+	var src Source
+	if err := json.NewDecoder(s.Body).Decode(&src); err != nil { t.Fatal(err) }
+
+	r := requestUji(t, h, http.MethodPost, "/api/conversations/"+c.ID+"/messages",
+		map[string]any{"content": "Apa statusnya?", "source_ids": []string{src.ID}})
+	if r.Code != http.StatusCreated { t.Fatalf("jawaban tanpa kutipan ditolak: %d %s", r.Code, r.Body.String()) }
+	var out map[string]any
+	if err := json.NewDecoder(r.Body).Decode(&out); err != nil { t.Fatal(err) }
+	assistant := out["assistant_message"].(map[string]any)
+	if assistant["content"] != "Status pengiriman selesai." { t.Fatalf("jawaban berubah: %#v", assistant["content"]) }
+	contexts, ok := assistant["contexts"].([]any)
+	if !ok || len(contexts) != 1 { t.Fatalf("label konteks tidak dikembalikan: %#v", assistant["contexts"]) }
+	label := contexts[0].(map[string]any)
+	if label["title"] != "Dokumen Pengiriman" || label["kind"] != "source" || label["source_id"] != src.ID {
+		t.Fatalf("label konteks salah: %#v", label)
+	}
+
+	list := requestUji(t, h, http.MethodGet, "/api/conversations/"+c.ID+"/messages", nil)
+	if list.Code != http.StatusOK { t.Fatalf("riwayat: %d %s", list.Code, list.Body.String()) }
+	if !strings.Contains(list.Body.String(), "Dokumen Pengiriman") { t.Fatalf("label konteks tidak tersimpan dalam riwayat: %s", list.Body.String()) }
 }
