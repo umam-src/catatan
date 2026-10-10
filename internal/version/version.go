@@ -1,1 +1,3 @@
-package version\n\nconst Value = "0.3.8"\n
+package version
+
+const Value = "0.3.8"
