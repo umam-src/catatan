@@ -32,6 +32,7 @@
   const kunciStatusDrawer = 'catatan.bukuTerbuka';
   const kunciStatusDrawerKonteks = 'catatan.konteksTerbuka';
   const kunciPilihanSumberKonteks = 'catatan.pilihanSumberKonteks';
+  const batasSumberKonteks = 8;
 
   let notebooks: Notebook[] = [];
   let notebookID = '';
@@ -507,7 +508,7 @@
           pilihan.knownIds.filter((id): id is string => typeof id === 'string')
         );
         const baru = tersedia.filter((id) => !sudahDikenal.has(id));
-        sumberKonteks = [...new Set([...terpilih, ...baru])];
+        sumberKonteks = [...new Set([...terpilih, ...baru])].slice(0, batasSumberKonteks);
       }
     } catch {
       sumberKonteks = tersedia;
@@ -516,6 +517,7 @@
   }
 
   function toggleSumberKonteks(id: string) {
+    if (!sumberKonteks.includes(id) && sumberKonteks.length >= batasSumberKonteks) return;
     sumberKonteks = sumberKonteks.includes(id)
       ? sumberKonteks.filter((item) => item !== id)
       : [...sumberKonteks, id];
@@ -1265,12 +1267,15 @@
               <div class="konteks-header">
                 <div>
                   <strong>Sumber</strong>
-                  <span>{sources.length} sumber{view === 'chat' ? ` · ${sumberKonteks.length} dipilih` : ''}{view === 'chat' && catatanAktif ? ' · catatan aktif ikut konteks' : ''}</span>
+                  <span>{sources.length} sumber{view === 'chat' ? ` · ${sumberKonteks.length} dipilih (maks. ${batasSumberKonteks})` : ''}{view === 'chat' && catatanAktif ? ' · catatan aktif ikut konteks' : ''}</span>
                 </div>
                 <button class="ikon-tombol" type="button" onclick={bukaImpor} disabled={!notebookID} title="Tambah sumber">+</button>
               </div>
               <input bind:this={imporInput} class="tersembunyi" type="file" accept=".txt,.md,.csv,.json,.html,.xml,.log,text/*" onchange={imporSumber} />
               <div class="daftar-sumber">
+                {#if view === 'chat' && sources.length > batasSumberKonteks}
+                  <p class="batas-sumber-konteks" role="note">Maksimal {batasSumberKonteks} dokumen dapat disertakan sekaligus. Hapus centang dokumen terpilih untuk memilih dokumen lain.</p>
+                {/if}
                 {#each sources as source}
                   <article class:aktif={sumberAktif?.id === source.id} class="item-sumber">
                     {#if view === 'chat'}
@@ -1278,6 +1283,7 @@
                         <input
                           type="checkbox"
                           checked={sumberKonteks.includes(source.id)}
+                          disabled={!sumberKonteks.includes(source.id) && sumberKonteks.length >= batasSumberKonteks}
                           aria-label={"Sertakan " + namaSumberKonteks(source) + " dalam konteks percakapan"}
                           onchange={() => toggleSumberKonteks(source.id)}
                         />
@@ -1437,6 +1443,7 @@
   .pilih-sumber-teks { display: grid; min-width: 0; gap: 3px; }
   .pilih-sumber-teks strong { overflow-wrap: anywhere; font-weight: 600; }
   .pilih-sumber-teks small { color: var(--teks-2); font-size: .8rem; line-height: 1.35; }
+  .batas-sumber-konteks { margin: 8px 12px; color: var(--teks-2); font-size: .8rem; line-height: 1.4; }
   .hasil-pencarian-ikon { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border-radius: 8px; background: var(--permukaan-lembut); color: var(--teks-2); font-size: .75rem; font-weight: 700; }
   .hasil-pencarian-teks { min-width: 0; display: grid; gap: 2px; }
   .hasil-pencarian-teks strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
