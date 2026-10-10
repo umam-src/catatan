@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -342,7 +343,7 @@ func TestConversationHistoryUsesInsertionOrderWhenTimestampsAndIDsConflict(t *te
 		t.Fatalf("atur ID uji: %v", err)
 	}
 	server := &Server{db: d}
-	history, err := server.loadConversationHistory(context.Background(), conversation.ID)
+	history, err := server.loadConversationHistory(httptest.NewRequest(http.MethodGet, "/", nil), conversation.ID)
 	if err != nil { t.Fatal(err) }
 	if len(history) != 2 || history[0].Role != ai.RoleUser || history[1].Role != ai.RoleAssistant {
 		t.Fatalf("riwayat harus mempertahankan urutan penyisipan user lalu assistant: %#v", history)
