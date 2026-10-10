@@ -726,7 +726,7 @@
     try {
       const response = await permintaan('/api/notes/' + note.id, {
         method: 'PUT',
-        body: JSON.stringify({ title: title.trim(), content: note.content.trim() || ' ' })
+        body: JSON.stringify({ title: title.trim(), content: note.content || ' ' })
       });
       const data = await response.json();
       notes = notes.map((item) => item.id === note.id ? { ...item, title: title.trim(), updated_at: data.updated_at } : item);
@@ -751,12 +751,12 @@
     try {
       const response = await permintaan('/api/notes/' + note.id, {
         method: 'PUT',
-        body: JSON.stringify({ title: note.title, content: note.content.trim() || ' ' })
+        body: JSON.stringify({ title: note.title, content: note.content || ' ' })
       });
       if (nomor !== nomorSimpan || catatanAktif?.id !== note.id) return;
       const data = await response.json();
-      catatanAktif = { ...note, content: note.content.trim() || ' ', updated_at: data.updated_at };
-      notes = notes.map((item) => item.id === note.id ? { ...item, ...catatanAktif } : item);
+      catatanAktif = { ...catatanAktif, updated_at: data.updated_at };
+      notes = notes.map((item) => item.id === note.id ? { ...item, title: note.title, content: note.content, updated_at: data.updated_at } : item);
       statusSimpan = 'tersimpan';
       galat = '';
     } catch (error) {
@@ -1290,7 +1290,7 @@
               <div class="konteks-header">
                 <div>
                   <strong>Sumber</strong>
-                  <span>{sources.length} sumber{view === 'chat' ? ` · ${sumberKonteks.length} dipilih (maks. ${batasSumberKonteks})` : ''}{view === 'chat' && catatanAktif ? ' · catatan aktif ikut konteks' : ''}</span>
+                  <span>{sources.length} sumber{view === 'chat' ? ` · ${sumberKonteks.length} dipilih (maks. ${batasSumberKonteks})` : ''}</span>
                 </div>
                 <button class="ikon-tombol" type="button" onclick={bukaImpor} disabled={!notebookID} title="Tambah sumber">+</button>
               </div>
