@@ -842,14 +842,14 @@ dialog.dialog::backdrop { background: var(--lapisan); backdrop-filter: blur(3px)
 }
 .editor:has(.chat-ruang) > .chat-atas {
   width: 100%;
-  max-width: none;
+  max-width: 800px;
   margin-inline: auto;
 }
 .chat-ruang {
   display: flex;
   flex: 1 1 auto;
   width: 100%;
-  max-width: none;
+  max-width: 800px;
   min-width: 0;
   min-height: 0;
   margin-inline: auto;
