@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.12] - 2026-10-10
+
+### Diperbaiki
+
+- Daftar dokumen konteks percakapan menampilkan nama file dengan jelas; semua sumber dipilih pada penggunaan pertama dan pilihan disimpan per buku di perangkat.
+- Dokumen baru otomatis ikut terpilih tanpa mengubah pilihan dokumen lama.
+
 ## [0.3.11] - 2026-10-10
 
 ### Diperbaiki
