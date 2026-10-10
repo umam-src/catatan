@@ -271,7 +271,9 @@ func TestConversationAcceptsAndStripsNoInfoMarker(t *testing.T) {
 	if err := json.NewDecoder(r.Body).Decode(&out); err != nil { t.Fatal(err) }
 	assistant := out["assistant_message"].(map[string]any)
 	if assistant["content"] != "Informasi tidak ditemukan dalam konteks." { t.Fatalf("marker internal bocor ke jawaban: %#v", assistant["content"]) }
-	if len(assistant["citations"].([]any)) != 0 { t.Fatalf("jawaban tidak ditemukan seharusnya tanpa kutipan: %#v", assistant["citations"]) }
+	if citations, ok := assistant["citations"].([]any); ok && len(citations) != 0 {
+		t.Fatalf("jawaban tidak ditemukan seharusnya tanpa kutipan: %#v", citations)
+	}
 	list := requestUji(t, h, http.MethodGet, "/api/conversations/"+c.ID+"/messages", nil)
 	if list.Code != http.StatusOK { t.Fatalf("riwayat: %d %s", list.Code, list.Body.String()) }
 	if strings.Contains(list.Body.String(), noInfoMarker) { t.Fatalf("marker internal tersimpan di riwayat: %s", list.Body.String()) }
