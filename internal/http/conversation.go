@@ -27,8 +27,8 @@ type Citation struct { Kind string `json:"kind"`; SourceID string `json:"source_
 type conversationSource struct { ID string; Title string; Content string; Checksum string }
 type conversationNote struct { ID string; Title string; Content string }
 type citationMatch struct { SourceRef string; StartLine int; EndLine int }
-var citationPattern = regexp.MustCompile(`\\[([SN])([1-8]):L([0-9]+)(?:-L([0-9]+))?\\]`)
-var citationVariantPattern = regexp.MustCompile(`\\[([SN])([1-8])\\s*:\\s*L([0-9]+)(?:\\s*[-–—]\\s*L?([0-9]+))?\\]`)
+var citationPattern = regexp.MustCompile(`\[([SN])([1-8]):L([0-9]+)(?:-L([0-9]+))?\]`)
+var citationVariantPattern = regexp.MustCompile(`\[([SN])([1-8])\s*:\s*L([0-9]+)(?:\s*[-–—]\s*L?([0-9]+))?\]`)
 const noInfoMarker = "[TIDAK_DITEMUKAN]"
 
 func normalizeCitationFormat(text string) string {
@@ -54,9 +54,10 @@ func validNoInfoAnswer(text string) bool {
 	if body == "" {
 		return false
 	}
-	return strings.HasPrefix(body, "informasi tidak ditemukan dalam konteks") ||
-		strings.HasPrefix(body, "tidak ditemukan dalam konteks") ||
-		strings.HasPrefix(body, "konteks tidak memuat informasi")
+	body = strings.TrimRight(body, ".!? ")
+	return body == "informasi tidak ditemukan dalam konteks" ||
+		body == "tidak ditemukan dalam konteks" ||
+		body == "konteks tidak memuat informasi"
 }
 
 func stripNoInfoMarker(text string) string {
@@ -125,7 +126,35 @@ func validateCitations(text string, refs map[string]contextRef) ([]citationMatch
 	matches := citationPattern.FindAllStringSubmatch(text, -1)
 	if len(matches) == 0 {
 		return nil, "tanpa_kutipan"
-	}out:=[]citationMatch{};seen:=map[string]struct{}{};for _,m:=range matches{ref:=m[1]+m[2];src,ok:=refs[ref];if !ok||(m[1]=="N"&&m[2]!="1"){return nil,"referensi_tidak_dikenal"};start,_:=strconv.Atoi(m[3]);end:=start;if m[4]!=""{end,_=strconv.Atoi(m[4])};if start<1||end<start||end>src.LineCount{return nil,"rentang_tidak_valid"};if end-start>50{return nil,"rentang_terlalu_panjang"};key:=fmt.Sprintf("%s:%d-%d",ref,start,end);if _,ok:=seen[key];ok{continue};seen[key]=struct{}{};out=append(out,citationMatch{ref,start,end})};return out,""}
+	}
+	out := []citationMatch{}
+	seen := map[string]struct{}{}
+	for _, m := range matches {
+		ref := m[1] + m[2]
+		src, ok := refs[ref]
+		if !ok || (m[1] == "N" && m[2] != "1") {
+			return nil, "referensi_tidak_dikenal"
+		}
+		start, _ := strconv.Atoi(m[3])
+		end := start
+		if m[4] != "" {
+			end, _ = strconv.Atoi(m[4])
+		}
+		if start < 1 || end < start || end > src.LineCount {
+			return nil, "rentang_tidak_valid"
+		}
+		if end-start > 50 {
+			return nil, "rentang_terlalu_panjang"
+		}
+		key := fmt.Sprintf("%s:%d-%d", ref, start, end)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, citationMatch{ref, start, end})
+	}
+	return out, ""
+}
 type httpError struct{status int;message string};func(e *httpError)Error()string{return e.message}
 func(s *Server)loadConversationHistory(r *http.Request,id string)([]ai.Message,error){rows,err:=s.db.QueryContext(r.Context(),`SELECT role,content FROM messages WHERE conversation_id=? ORDER BY created_at DESC,id DESC LIMIT 12`,id);if err!=nil{return nil,err};defer rows.Close();reverse:=[]ai.Message{};total:=0;for rows.Next(){var role,content string;if err:=rows.Scan(&role,&content);err!=nil{return nil,err};if role!="user"&&role!="assistant"{continue};if len(content)>maxMessageContent||total+len(content)>32<<10{break};reverse=append(reverse,ai.Message{Role:ai.Role(role),Content:content});total+=len(content)};if err:=rows.Err();err!=nil{return nil,err};out:=make([]ai.Message,len(reverse));for i:=range reverse{out[len(reverse)-1-i]=reverse[i]};return out,nil}
 func parseMessageMetadata(item *ConversationMessage,metadata string){var v struct{Citations []Citation `json:"citations"`;SourceIDs []string `json:"source_ids"`;NoteID string `json:"note_id"`};if json.Unmarshal([]byte(metadata),&v)==nil{item.Citations=v.Citations;item.SourceIDs=v.SourceIDs;item.NoteID=v.NoteID}}
