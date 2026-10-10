@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.8] - 2026-10-10
+
+### Diperbaiki
+
+- Jawaban AI yang secara eksplisit menyatakan informasi tidak ditemukan dapat diterima dengan penanda internal `[TIDAK_DITEMUKAN]`; penanda dihapus sebelum jawaban disimpan atau ditampilkan.
+- Variasi kutipan yang tidak ambigu dinormalisasi ke format kanonis sebelum validasi. Klaim faktual tanpa kutipan tetap ditolak. (#105)
+
 ## [0.3.7] - 2026-10-10
 
 ### Diperbaiki

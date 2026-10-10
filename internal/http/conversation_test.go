@@ -89,7 +89,8 @@ func TestConversationContextAndCitation(t *testing.T) {
 	if system.Role != ai.RoleSystem ||
 		!strings.Contains(system.Content, "WAJIB diikuti kutipan") ||
 		!strings.Contains(system.Content, "[S1:L1]") ||
-		!strings.Contains(system.Content, "jangan membuat klaim faktual tanpa dukungan") {
+		!strings.Contains(system.Content, noInfoMarker) ||
+		!strings.Contains(system.Content, "jangan menambahkan klaim faktual atau kutipan") {
 		t.Fatalf("instruksi kutipan sumber harus eksplisit: %#v", system)
 	}
 }
@@ -217,4 +218,63 @@ func TestValidateCitationsReasonCodes(t *testing.T) {
 			if len(matches) != c.jumlah { t.Fatalf("jumlah kutipan = %d, ingin %d", len(matches), c.jumlah) }
 		})
 	}
+}
+
+
+func TestValidateNoInfoMarkerAndCitationNormalization(t *testing.T) {
+	refs := map[string]contextRef{
+		"S1": {Kind: "source", SourceID: "s1", LineCount: 10},
+		"N1": {Kind: "note", SourceID: "n1", LineCount: 5},
+	}
+	cases := []struct {
+		name string
+		text string
+		wantReason string
+		wantCount int
+	}{
+		{"marker no info valid", "[TIDAK_DITEMUKAN] Informasi tidak ditemukan dalam konteks.", "", 0},
+		{"marker must be first", "Catatan: [TIDAK_DITEMUKAN] Informasi tidak ditemukan dalam konteks.", "format_tidak_ditemukan", 0},
+		{"marker with citation rejected", "[TIDAK_DITEMUKAN] Informasi tidak ditemukan dalam konteks. [S1:L1]", "format_tidak_ditemukan", 0},
+		{"marker with factual claim rejected", "[TIDAK_DITEMUKAN] Status pengiriman adalah selesai.", "format_tidak_ditemukan", 0},
+		{"marker too long rejected", "[TIDAK_DITEMUKAN] Informasi tidak ditemukan dalam konteks. " + strings.Repeat("x", 240), "format_tidak_ditemukan", 0},
+		{"factual answer without citation rejected", "Status pengiriman selesai.", "tanpa_kutipan", 0},
+		{"space after colon normalized", "Fakta [S1: L3].", "", 1},
+		{"short range normalized", "Fakta [S1:L3-5].", "", 1},
+		{"unicode dash normalized", "Fakta [S1:L3–L5].", "", 1},
+		{"note citation normalized", "Fakta [N1 : L2 - 4].", "", 1},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			matches, reason := validateCitations(tc.text, refs)
+			if reason != tc.wantReason { t.Fatalf("reason = %q, want %q", reason, tc.wantReason) }
+			if len(matches) != tc.wantCount { t.Fatalf("citation count = %d, want %d", len(matches), tc.wantCount) }
+		})
+	}
+}
+
+func TestConversationAcceptsAndStripsNoInfoMarker(t *testing.T) {
+	old := os.Getenv("CATATAN_AI_MODEL")
+	t.Cleanup(func() { _ = os.Setenv("CATATAN_AI_MODEL", old) })
+	_ = os.Setenv("CATATAN_AI_MODEL", "uji-model")
+
+	p := &fakeConversationProvider{response: "[TIDAK_DITEMUKAN] Informasi tidak ditemukan dalam konteks."}
+	h := conversationHandler(t, p)
+	c := buatPercakapanUji(t, h)
+	s := permintaanSumber(t, h, "default", "bahan.txt", "Bahan", "Status: belum diketahui")
+	var src Source
+	if err := json.NewDecoder(s.Body).Decode(&src); err != nil { t.Fatal(err) }
+
+	r := requestUji(t, h, http.MethodPost, "/api/conversations/"+c.ID+"/messages",
+		map[string]any{"content": "Apa statusnya?", "source_ids": []string{src.ID}})
+	if r.Code != http.StatusCreated { t.Fatalf("pesan: %d %s", r.Code, r.Body.String()) }
+	var out map[string]any
+	if err := json.NewDecoder(r.Body).Decode(&out); err != nil { t.Fatal(err) }
+	assistant := out["assistant_message"].(map[string]any)
+	if assistant["content"] != "Informasi tidak ditemukan dalam konteks." { t.Fatalf("marker internal bocor ke jawaban: %#v", assistant["content"]) }
+	if citations, ok := assistant["citations"].([]any); ok && len(citations) != 0 {
+		t.Fatalf("jawaban tidak ditemukan seharusnya tanpa kutipan: %#v", citations)
+	}
+	list := requestUji(t, h, http.MethodGet, "/api/conversations/"+c.ID+"/messages", nil)
+	if list.Code != http.StatusOK { t.Fatalf("riwayat: %d %s", list.Code, list.Body.String()) }
+	if strings.Contains(list.Body.String(), noInfoMarker) { t.Fatalf("marker internal tersimpan di riwayat: %s", list.Body.String()) }
 }
