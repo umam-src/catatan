@@ -8,7 +8,8 @@
   type Conversation = { id: string; notebook_id: string; title: string; created_at: string; updated_at: string };
   type Citation = { kind?: 'note' | 'source'; source_id: string; source_ref: string; start_line: number; end_line: number };
   type ContextLabel = { kind: 'note' | 'source'; source_id: string; title: string };
-  type ChatMessage = { id: string; role: 'user' | 'assistant'; content: string; citations?: Citation[]; contexts?: ContextLabel[]; source_ids?: string[]; created_at: string };
+  type ConversationContextDiagnostics = { note_included: boolean; source_count: number; line_count: number; content_bytes: number };
+  type ChatMessage = { id: string; role: 'user' | 'assistant'; content: string; citations?: Citation[]; contexts?: ContextLabel[]; context_diagnostics?: ConversationContextDiagnostics; source_ids?: string[]; created_at: string };
 
   type Panel = 'sumber' | 'artefak';
   type View = 'catatan' | 'chat' | 'pratinjau';
@@ -1200,6 +1201,17 @@
                                 <span class="chat-konteks-pemisah" aria-hidden="true">·</span>
                               {/if}
                             {/each}
+                          </div>
+                        {/if}
+                        {#if message.context_diagnostics && (message.context_diagnostics.note_included || message.context_diagnostics.source_count > 0)}
+                          <div class="chat-konteks" aria-label="Ringkasan teknis konteks yang disusun">
+                            <span>Konteks disusun:</span>
+                            {#if message.context_diagnostics.note_included}<span>1 Catatan</span><span class="chat-konteks-pemisah" aria-hidden="true">·</span>{/if}
+                            <span>{message.context_diagnostics.source_count} Sumber</span>
+                            <span class="chat-konteks-pemisah" aria-hidden="true">·</span>
+                            <span>{message.context_diagnostics.line_count} baris</span>
+                            <span class="chat-konteks-pemisah" aria-hidden="true">·</span>
+                            <span>{message.context_diagnostics.content_bytes} byte</span>
                           </div>
                         {/if}
                         {#if message.citations?.length}
