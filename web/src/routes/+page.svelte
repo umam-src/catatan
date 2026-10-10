@@ -31,6 +31,9 @@
   const kunciPendaftaran = 'catatan.pendaftaranDiizinkan';
   const kunciStatusDrawer = 'catatan.bukuTerbuka';
   const kunciStatusDrawerKonteks = 'catatan.konteksTerbuka';
+  const kunciPanelKonteks = 'catatan.panelKonteks';
+  const kunciPilihanSumberKonteks = 'catatan.pilihanSumberKonteks';
+  const batasSumberKonteks = 8;
 
   let notebooks: Notebook[] = [];
   let notebookID = '';
@@ -209,7 +212,16 @@
     try {
       window.localStorage.setItem(kunciStatusDrawerKonteks, String(terbuka));
     } catch {
-      galat = 'Status drawer Artefak tidak dapat disimpan pada perangkat ini.';
+      galat = 'Status drawer konteks tidak dapat disimpan pada perangkat ini.';
+    }
+  }
+
+  function ubahPanelKonteks(panelBaru: Panel) {
+    panel = panelBaru;
+    try {
+      window.localStorage.setItem(kunciPanelKonteks, panelBaru);
+    } catch {
+      galat = 'Tab panel konteks tidak dapat disimpan pada perangkat ini.';
     }
   }
 
@@ -247,21 +259,25 @@
           if (nilaiDrawer === 'true' || nilaiDrawer === 'false') bukuTerbuka = nilaiDrawer === 'true';
           else if (nilaiDrawer === null && window.matchMedia('(max-width: 760px)').matches) bukuTerbuka = false;
         } catch {
+          if (layarKecil()) bukuTerbuka = false;
           galat = 'Status daftar buku tidak dapat dibaca pada perangkat ini.';
         }
         try {
           const nilaiDrawerKonteks = window.localStorage.getItem(kunciStatusDrawerKonteks);
           if (nilaiDrawerKonteks === 'true' || nilaiDrawerKonteks === 'false') {
             konteksTerbuka = nilaiDrawerKonteks === 'true';
-          } else if (nilaiDrawerKonteks === null && window.matchMedia('(max-width: 760px)').matches) {
+          } else if (nilaiDrawerKonteks === null && layarKecil()) {
             konteksTerbuka = false;
           }
         } catch {
-          galat = 'Status drawer Artefak tidak dapat dibaca pada perangkat ini.';
+          if (layarKecil()) konteksTerbuka = false;
+          galat = 'Status drawer konteks tidak dapat dibaca pada perangkat ini.';
         }
-        if (layarKecil()) {
-          bukuTerbuka = false;
-          konteksTerbuka = false;
+        try {
+          const nilaiPanel = window.localStorage.getItem(kunciPanelKonteks);
+          if (nilaiPanel === 'sumber' || nilaiPanel === 'artefak') panel = nilaiPanel;
+        } catch {
+          galat = 'Tab panel konteks tidak dapat dibaca pada perangkat ini.';
         }
       }
       const versiResponse = await fetch('/api/version');
@@ -450,10 +466,76 @@
     }
   }
 
+  function namaSumberKonteks(source: Source): string {
+    return source.title?.trim() || source.locator?.trim() || 'Dokumen tanpa nama';
+  }
+
+  function simpanPilihanSumberKonteks() {
+    if (typeof window === 'undefined' || !notebookID) return;
+    try {
+      window.localStorage.setItem(
+        `${kunciPilihanSumberKonteks}.${notebookID}`,
+        JSON.stringify({
+          selectedIds: sumberKonteks.filter((id) => sources.some((source) => source.id === id)),
+          knownIds: sources.map((source) => source.id)
+        })
+      );
+    } catch {
+      // Pilihan konteks adalah preferensi antarmuka; kegagalan penyimpanan tidak boleh menghentikan chat.
+    }
+  }
+
+  function muatPilihanSumberKonteks() {
+    const tersedia = sources.map((source) => source.id);
+    if (!notebookID) {
+      sumberKonteks = [];
+      return;
+    }
+    if (typeof window === 'undefined') {
+      sumberKonteks = tersedia.slice(0, batasSumberKonteks);
+      return;
+    }
+
+    let tersimpan: string | null;
+    try {
+      tersimpan = window.localStorage.getItem(`${kunciPilihanSumberKonteks}.${notebookID}`);
+    } catch {
+      sumberKonteks = tersedia.slice(0, batasSumberKonteks);
+      return;
+    }
+
+    if (tersimpan === null) {
+      sumberKonteks = tersedia.slice(0, batasSumberKonteks);
+      simpanPilihanSumberKonteks();
+      return;
+    }
+
+    try {
+      const pilihan = JSON.parse(tersimpan) as { selectedIds?: unknown; knownIds?: unknown };
+      if (!Array.isArray(pilihan.selectedIds) || !Array.isArray(pilihan.knownIds)) {
+        sumberKonteks = tersedia.slice(0, batasSumberKonteks);
+      } else {
+        const terpilih = pilihan.selectedIds.filter(
+          (id): id is string => typeof id === 'string' && tersedia.includes(id)
+        );
+        const sudahDikenal = new Set(
+          pilihan.knownIds.filter((id): id is string => typeof id === 'string')
+        );
+        const baru = tersedia.filter((id) => !sudahDikenal.has(id));
+        sumberKonteks = [...new Set([...terpilih, ...baru])].slice(0, batasSumberKonteks);
+      }
+    } catch {
+      sumberKonteks = tersedia.slice(0, batasSumberKonteks);
+    }
+    simpanPilihanSumberKonteks();
+  }
+
   function toggleSumberKonteks(id: string) {
+    if (!sumberKonteks.includes(id) && sumberKonteks.length >= batasSumberKonteks) return;
     sumberKonteks = sumberKonteks.includes(id)
       ? sumberKonteks.filter((item) => item !== id)
       : [...sumberKonteks, id];
+    simpanPilihanSumberKonteks();
   }
 
   function tanganiTombolChat(event: KeyboardEvent) {
@@ -524,6 +606,7 @@
 
     notes = await notesResponse.json();
     sources = await sourcesResponse.json();
+    muatPilihanSumberKonteks();
     catatanAktif = notes[0] ? { ...notes[0] } : null;
     sumberAktif = null;
     view = 'catatan';
@@ -711,6 +794,7 @@
     try {
       await permintaan('/api/sources/' + source.id, { method: 'DELETE' });
       sources = sources.filter((item) => item.id !== source.id);
+      muatPilihanSumberKonteks();
       if (sumberAktif?.id === source.id) sumberAktif = null;
       view = 'catatan';
     } catch (error) {
@@ -739,6 +823,7 @@
       });
       const source: Source = await response.json();
       sources = [source, ...sources];
+      muatPilihanSumberKonteks();
       await pilihSumber(source);
     } catch (error) {
       galat = error instanceof Error ? error.message : 'Gagal mengimpor sumber.';
@@ -1178,8 +1263,8 @@
           <aside class="panel-konteks" aria-label="Konteks">
             <div class="tab-konteks">
               <div class="tab-konteks-pilihan">
-                <button class:aktif={panel === 'sumber'} type="button" onclick={() => panel = 'sumber'}>Sumber</button>
-                <button class:aktif={panel === 'artefak'} type="button" onclick={() => panel = 'artefak'}>Artefak</button>
+                <button class:aktif={panel === 'sumber'} type="button" onclick={() => ubahPanelKonteks('sumber')}>Sumber</button>
+                <button class:aktif={panel === 'artefak'} type="button" onclick={() => ubahPanelKonteks('artefak')}>Artefak</button>
               </div>
               <button
                 class="tombol-lipat-konteks"
@@ -1196,18 +1281,30 @@
               <div class="konteks-header">
                 <div>
                   <strong>Sumber</strong>
-                  <span>{sources.length} sumber{view === 'chat' ? ` · ${sumberKonteks.length} dipilih` : ''}{view === 'chat' && catatanAktif ? ' · catatan aktif ikut konteks' : ''}</span>
+                  <span>{sources.length} sumber{view === 'chat' ? ` · ${sumberKonteks.length} dipilih (maks. ${batasSumberKonteks})` : ''}{view === 'chat' && catatanAktif ? ' · catatan aktif ikut konteks' : ''}</span>
                 </div>
                 <button class="ikon-tombol" type="button" onclick={bukaImpor} disabled={!notebookID} title="Tambah sumber">+</button>
               </div>
               <input bind:this={imporInput} class="tersembunyi" type="file" accept=".txt,.md,.csv,.json,.html,.xml,.log,text/*" onchange={imporSumber} />
               <div class="daftar-sumber">
+                {#if view === 'chat' && sources.length > batasSumberKonteks}
+                  <p class="batas-sumber-konteks" role="note">Maksimal {batasSumberKonteks} dokumen dapat disertakan sekaligus. Hapus centang dokumen terpilih untuk memilih dokumen lain.</p>
+                {/if}
                 {#each sources as source}
                   <article class:aktif={sumberAktif?.id === source.id} class="item-sumber">
                     {#if view === 'chat'}
                       <label class="pilih-sumber-konteks">
-                        <input type="checkbox" checked={sumberKonteks.includes(source.id)} onchange={() => toggleSumberKonteks(source.id)} />
-                        <span><strong>{source.title}</strong><small>{source.kind}</small></span>
+                        <input
+                          type="checkbox"
+                          checked={sumberKonteks.includes(source.id)}
+                          disabled={!sumberKonteks.includes(source.id) && sumberKonteks.length >= batasSumberKonteks}
+                          aria-label={"Sertakan " + namaSumberKonteks(source) + " dalam konteks percakapan"}
+                          onchange={() => toggleSumberKonteks(source.id)}
+                        />
+                        <span class="pilih-sumber-teks">
+                          <strong>{namaSumberKonteks(source)}</strong>
+                          <small>{source.kind || 'Dokumen teks'} · {sumberKonteks.includes(source.id) ? 'Disertakan dalam konteks' : 'Tidak disertakan'}</small>
+                        </span>
                       </label>
                     {:else}
                       <button type="button" onclick={() => pilihSumber(source)}>
@@ -1263,11 +1360,11 @@
             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z" /><path d="M9 12h7M9 16h7" /></svg>
             <span>Catatan</span>
           </button>
-          <button class:aktif={konteksTerbuka && panel === 'sumber'} type="button" onclick={() => { panel = 'sumber'; ubahStatusDrawerKonteks(true); }}>
+          <button class:aktif={konteksTerbuka && panel === 'sumber'} type="button" onclick={() => { ubahPanelKonteks('sumber'); ubahStatusDrawerKonteks(true); }}>
             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h9l5 5v11H5z" /><path d="M14 4v5h5" /></svg>
             <span>Sumber</span>
           </button>
-          <button class:aktif={konteksTerbuka && panel === 'artefak'} type="button" onclick={() => { panel = 'artefak'; ubahStatusDrawerKonteks(true); }}>
+          <button class:aktif={konteksTerbuka && panel === 'artefak'} type="button" onclick={() => { ubahPanelKonteks('artefak'); ubahStatusDrawerKonteks(true); }}>
             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z" /><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5" /></svg>
             <span>Artefak</span>
           </button>
@@ -1355,6 +1452,12 @@
   .galat-pencarian { color: var(--bahaya); }
   .hasil-pencarian-item { display: flex; width: 100%; gap: 10px; align-items: center; padding: 11px 12px; border: 0; background: transparent; color: var(--teks); text-align: left; cursor: pointer; }
   .hasil-pencarian-item:hover, .hasil-pencarian-item:focus-visible { background: var(--permukaan-hover); }
+  .pilih-sumber-konteks { display: flex; align-items: flex-start; gap: 10px; width: 100%; min-width: 0; box-sizing: border-box; padding: 10px 12px; color: var(--teks); text-align: left; cursor: pointer; }
+  .pilih-sumber-konteks input { flex: 0 0 auto; margin-top: 3px; }
+  .pilih-sumber-teks { display: grid; min-width: 0; gap: 3px; }
+  .pilih-sumber-teks strong { overflow-wrap: anywhere; font-weight: 600; }
+  .pilih-sumber-teks small { color: var(--teks-2); font-size: .8rem; line-height: 1.35; }
+  .batas-sumber-konteks { margin: 8px 12px; color: var(--teks-2); font-size: .8rem; line-height: 1.4; }
   .hasil-pencarian-ikon { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border-radius: 8px; background: var(--permukaan-lembut); color: var(--teks-2); font-size: .75rem; font-weight: 700; }
   .hasil-pencarian-teks { min-width: 0; display: grid; gap: 2px; }
   .hasil-pencarian-teks strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
