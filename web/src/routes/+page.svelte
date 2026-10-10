@@ -55,6 +55,7 @@
   let conversationID = '';
   let chatMessages: ChatMessage[] = [];
   let chatInput = '';
+  let chatInputElemen: HTMLTextAreaElement;
   let chatMemuat = false;
   let chatMengirim = false;
   let chatStatus: 'disabled' | 'ready' | 'unavailable' | 'invalid' = 'disabled';
@@ -455,6 +456,20 @@
       : [...sumberKonteks, id];
   }
 
+  function tanganiTombolChat(event: KeyboardEvent) {
+    // Enter mengirim; Shift+Enter membuat baris baru. Jangan memotong komposisi IME.
+    if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
+    event.preventDefault();
+    (event.currentTarget as HTMLTextAreaElement).form?.requestSubmit();
+  }
+
+  function sesuaikanTinggiChat(event: Event) {
+    const textarea = event.currentTarget as HTMLTextAreaElement;
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 220) + 'px';
+    textarea.style.overflowY = textarea.scrollHeight > 220 ? 'auto' : 'hidden';
+  }
+
   async function kirimChat(event: SubmitEvent) {
     event.preventDefault();
     const content = chatInput.trim();
@@ -469,6 +484,10 @@
       const data = await response.json();
       chatMessages = [...chatMessages, data.user_message, data.assistant_message];
       chatInput = '';
+      if (chatInputElemen) {
+        chatInputElemen.style.height = 'auto';
+        chatInputElemen.style.overflowY = 'hidden';
+      }
     } catch (error) {
       galat = error instanceof Error ? error.message : 'Pesan tidak dapat dikirim.';
     } finally {
@@ -1101,9 +1120,26 @@
                     {/each}
                   </div>
                   <form class="chat-form" onsubmit={kirimChat}>
-                    <textarea bind:value={chatInput} aria-label="Pesan chat" placeholder="Tanyakan sesuatu…" maxlength="16384"></textarea>
-                    <button class="tombol utama" type="submit" disabled={chatMengirim || !chatInput.trim() || chatStatus !== 'ready'}>{chatMengirim ? 'Mengirim…' : 'Kirim'}</button>
+                    <textarea
+                      bind:this={chatInputElemen}
+                      bind:value={chatInput}
+                      onkeydown={tanganiTombolChat}
+                      oninput={sesuaikanTinggiChat}
+                      rows="1"
+                      aria-label="Pesan chat"
+                      placeholder="Balas atau tanyakan sesuatu…"
+                      maxlength="16384"
+                    ></textarea>
+                    <button class="tombol utama" type="submit" aria-label="Kirim pesan" title="Kirim pesan (Enter)" disabled={chatMengirim || !chatInput.trim() || chatStatus !== 'ready'}>
+                      {#if chatMengirim}
+                        Mengirim…
+                      {:else}
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+                        <span>Kirim</span>
+                      {/if}
+                    </button>
                   </form>
+                  <div class="chat-petunjuk">Enter untuk mengirim · Shift+Enter untuk baris baru</div>
                 {/if}
               </div>
             {:else if view === 'pratinjau' && sumberAktif}

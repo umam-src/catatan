@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.10] - 2026-10-10
+
+### Diperbaiki
+
+- Tampilan Chat dirapikan dengan lebar baca terukur, tipografi 16 px yang lebih nyaman, pesan pengguna berbentuk gelembung, dan jawaban AI tanpa kotak yang berlebihan.
+- Kotak pesan mengikuti tinggi teks hingga batas maksimum; Enter mengirim dan Shift+Enter menambah baris. Petunjuk keyboard ditampilkan dan perilaku komposisi IME dipertahankan.
+
 ## [0.3.9] - 2026-10-10
 
 ### Diubah sementara
