@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.17] - 2026-10-10
+
+### Diperbaiki
+
+- Kolom percakapan chat, jawaban AI, dan input dibatasi maksimal 800 px dan dipusatkan agar tetap nyaman dibaca di layar besar; ruang sisi kiri/kanan tetap mengikuti lebar halaman.
+- Scrollbar area pesan chat dibuat tipis dan disamarkan saat tidak diarahkan pointer; muncul saat area chat diarahkan atau difokuskan, tanpa mengubah kemampuan scroll.
+
 ## [0.3.16] - 2026-10-10
 
 ### Diperbaiki
