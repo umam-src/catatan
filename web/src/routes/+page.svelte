@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   type User = { id: string; username: string; display_name: string };
   type Notebook = { id: string; title: string; description: string };
   type Note = { id: string; title: string; content: string; updated_at: string };
@@ -56,6 +57,7 @@
   let chatMessages: ChatMessage[] = [];
   let chatInput = '';
   let chatInputElemen: HTMLTextAreaElement;
+  let chatPesanElemen: HTMLDivElement | undefined;
   let chatMemuat = false;
   let chatMengirim = false;
   let chatStatus: 'disabled' | 'ready' | 'unavailable' | 'invalid' = 'disabled';
@@ -412,6 +414,11 @@
     await muatIsiBuku();
   }
 
+  async function gulirChatKeBawah() {
+    await tick();
+    if (chatPesanElemen) chatPesanElemen.scrollTop = chatPesanElemen.scrollHeight;
+  }
+
   async function muatChat() {
     if (!notebookID) return;
     const response = await permintaan('/api/notebooks/' + notebookID + '/conversations');
@@ -447,6 +454,7 @@
       galat = error instanceof Error ? error.message : 'Chat tidak dapat dibuka.';
     } finally {
       chatMemuat = false;
+      await gulirChatKeBawah();
     }
   }
 
@@ -483,6 +491,7 @@
       });
       const data = await response.json();
       chatMessages = [...chatMessages, data.user_message, data.assistant_message];
+      await gulirChatKeBawah();
       chatInput = '';
       if (chatInputElemen) {
         chatInputElemen.style.height = 'auto';
@@ -1092,7 +1101,7 @@
                 {#if chatMemuat}
                   <div class="keadaan-kosong kecil"><strong>Memuat percakapan…</strong></div>
                 {:else}
-                  <div class="chat-pesan" aria-live="polite">
+                  <div class="chat-pesan" aria-live="polite" bind:this={chatPesanElemen}>
                     {#each chatMessages as message}
                       <article class="chat-pesan-item" class:user={message.role === 'user'}>
                         <div class="chat-peran">{message.role === 'user' ? 'Anda' : 'AI'}</div>
