@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.13] - 2026-10-10
+
+### Diperbaiki
+
+- Preferensi drawer daftar buku dan drawer konteks dipulihkan setelah aplikasi dimuat ulang, termasuk pada ponsel; default responsif hanya dipakai jika belum ada pilihan tersimpan.
+- Tab Sumber/Artefak terakhir disimpan di perangkat dan dipulihkan saat aplikasi dibuka kembali.
+- Daftar dokumen konteks percakapan menampilkan nama file dengan jelas; semua sumber dipilih pada penggunaan pertama sampai batas 8 dokumen per permintaan, dan pilihan disimpan per buku di perangkat.
+- Dokumen baru otomatis ikut terpilih jika masih ada slot; pilihan lama tetap dihormati dan batas 8 dokumen dijelaskan di UI.
+
 ## [0.3.12] - 2026-10-10
 
 ### Diperbaiki
