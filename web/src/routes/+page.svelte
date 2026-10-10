@@ -1312,7 +1312,6 @@
                         />
                         <span class="pilih-sumber-teks">
                           <strong>{namaSumberKonteks(source)}</strong>
-                          <small>{source.kind || 'Dokumen teks'} · {sumberKonteks.includes(source.id) ? 'Disertakan dalam konteks' : 'Tidak disertakan'}</small>
                         </span>
                       </label>
                     {:else}
@@ -1461,11 +1460,10 @@
   .galat-pencarian { color: var(--bahaya); }
   .hasil-pencarian-item { display: flex; width: 100%; gap: 10px; align-items: center; padding: 11px 12px; border: 0; background: transparent; color: var(--teks); text-align: left; cursor: pointer; }
   .hasil-pencarian-item:hover, .hasil-pencarian-item:focus-visible { background: var(--permukaan-hover); }
-  .pilih-sumber-konteks { display: flex; align-items: flex-start; gap: 10px; width: 100%; min-width: 0; box-sizing: border-box; padding: 10px 12px; color: var(--teks); text-align: left; cursor: pointer; }
-  .pilih-sumber-konteks input { flex: 0 0 auto; margin-top: 3px; }
-  .pilih-sumber-teks { display: grid; min-width: 0; gap: 3px; }
+  .pilih-sumber-konteks { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; box-sizing: border-box; padding: 8px 12px; color: var(--teks); text-align: left; cursor: pointer; }
+  .pilih-sumber-konteks input { width: 14px; height: 14px; flex: 0 0 14px; margin: 0; }
+  .pilih-sumber-teks { display: grid; min-width: 0; }
   .pilih-sumber-teks strong { overflow-wrap: anywhere; font-weight: 600; }
-  .pilih-sumber-teks small { color: var(--teks-2); font-size: .8rem; line-height: 1.35; }
   .batas-sumber-konteks { margin: 8px 12px; color: var(--teks-2); font-size: .8rem; line-height: 1.4; }
   .hasil-pencarian-ikon { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border-radius: 8px; background: var(--permukaan-lembut); color: var(--teks-2); font-size: .75rem; font-weight: 700; }
   .hasil-pencarian-teks { min-width: 0; display: grid; gap: 2px; }
