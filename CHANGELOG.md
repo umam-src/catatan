@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.9] - 2026-10-10
+
+### Diubah sementara
+
+- Chat AI tidak lagi mewajibkan kutipan baris pada setiap jawaban; kutipan yang tetap diberikan model masih divalidasi.
+- Judul Catatan dan dokumen yang dipakai disimpan bersama jawaban dan ditampilkan sebagai label konteks. Label ini menunjukkan konteks yang digunakan, bukan bukti per klaim.
+
 ## [0.3.8] - 2026-10-10
 
 ### Diperbaiki
@@ -22,6 +29,8 @@
 - Catatan dari buku lain ditolak sebagai konteks percakapan.
 
 ## [0.3.5] - 2026-10-09
+
+
 
 ### Diperbaiki
 
