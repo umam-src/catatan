@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.15] - 2026-10-10
+
+### Diperbaiki
+
+- Daftar pilihan sumber di chat dibuat lebih ringkas dengan checkbox kecil di depan nama file; keterangan per-item dihilangkan, sementara penanda bahwa Catatan aktif ikut konteks tetap terlihat.
+
 ## [0.3.14] - 2026-10-10
 
 ### Diperbaiki
