@@ -1,0 +1,72 @@
+name: Build artefak manual
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Nama branch, tag, atau commit SHA yang ingin dibangun"
+        required: true
+        default: "main"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Bangun artefak dari ref pilihan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Ambil sumber
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Siapkan Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+          cache: true
+
+      - name: Siapkan Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Bangun UI
+        working-directory: web
+        run: |
+          npm ci --no-audit --no-fund --prefer-offline
+          npm exec -- svelte-kit sync
+          npm run build
+
+      - name: Bangun program
+        run: go build -trimpath -ldflags='-s -w' -o catatan ./cmd/catatan
+
+      - name: Buat checksum dan info build
+        env:
+          REQUESTED_REF: ${{ inputs.ref }}
+        run: |
+          set -euo pipefail
+          sha256sum catatan > catatan.sha256
+          {
+            echo "requested_ref=${REQUESTED_REF}"
+            echo "commit_sha=$(git rev-parse HEAD)"
+            echo "version=$(git describe --tags --always 2>/dev/null || git rev-parse --short HEAD)"
+            echo "built_at_utc=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          } > build-info.txt
+
+      - name: Unggah artefak
+        uses: actions/upload-artifact@v4
+        with:
+          name: catatan-manual-${{ github.run_number }}-${{ github.run_attempt }}
+          path: |
+            catatan
+            catatan.sha256
+            build-info.txt
+          if-no-files-found: error
+          retention-days: 7
