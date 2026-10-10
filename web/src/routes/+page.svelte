@@ -6,7 +6,8 @@
   type SearchResult = { id: string; kind: 'note' | 'source'; notebook_id: string; title: string; relevance: number };
   type Conversation = { id: string; notebook_id: string; title: string; created_at: string; updated_at: string };
   type Citation = { kind?: 'note' | 'source'; source_id: string; source_ref: string; start_line: number; end_line: number };
-  type ChatMessage = { id: string; role: 'user' | 'assistant'; content: string; citations?: Citation[]; source_ids?: string[]; created_at: string };
+  type ContextLabel = { kind: 'note' | 'source'; source_id: string; title: string };
+  type ChatMessage = { id: string; role: 'user' | 'assistant'; content: string; citations?: Citation[]; contexts?: ContextLabel[]; source_ids?: string[]; created_at: string };
 
   type Panel = 'sumber' | 'artefak';
   type View = 'catatan' | 'chat' | 'pratinjau';
@@ -1077,6 +1078,14 @@
                       <article class="chat-pesan-item" class:user={message.role === 'user'}>
                         <div class="chat-peran">{message.role === 'user' ? 'Anda' : 'AI'}</div>
                         <div class="chat-isi">{message.content}</div>
+                        {#if message.contexts?.length}
+                          <div class="chat-konteks" aria-label="Dokumen konteks yang digunakan">
+                            <span>Konteks:</span>
+                            {#each message.contexts as context}
+                              <span>{context.title}</span>
+                            {/each}
+                          </div>
+                        {/if}
                         {#if message.citations?.length}
                           <div class="chat-kutipan">
                             {#each message.citations as citation}
