@@ -56,7 +56,7 @@ jobs:
           {
             echo "requested_ref=${REQUESTED_REF}"
             echo "commit_sha=$(git rev-parse HEAD)"
-            echo "version=$(grep -m1 -E '^## \\[[0-9]+\\.[0-9]+\\.[0-9]+\\] - ' CHANGELOG.md | sed -E 's/^## \\[[^]]+\\].*/\\1/')"
+            echo "version=$(git describe --tags --always 2>/dev/null || git rev-parse --short HEAD)"
             echo "built_at_utc=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           } > build-info.txt
 
