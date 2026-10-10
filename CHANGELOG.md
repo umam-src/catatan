@@ -30,8 +30,6 @@
 
 ## [0.3.5] - 2026-10-09
 
-
-
 ### Diperbaiki
 
 - Memperjelas instruksi Catatan Jaga agar kutipan jawaban berdasarkan sumber menggunakan format dan nomor baris yang dapat diverifikasi.
