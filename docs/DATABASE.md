@@ -166,6 +166,20 @@ Cermin lokal untuk kebutuhan pencarian. Data utama tetap berada pada `notes` dan
 
 Indeks FTS5 menggunakan tabel ini untuk pencarian lokal. Pengguna tidak mengakses tabel ini secara langsung.
 
+### `potongan`
+
+Potongan teks Catatan dan Sumber untuk pengambilan konteks chat. Dibuat dan dihapus mengikuti `search_documents`: pemicu hanya menandai dokumen pada `potongan_tertunda`, lalu aplikasi memecahnya saat chat membutuhkan konteks.
+
+| Kolom | Tipe | Aturan | Keterangan |
+|---|---|---|---|
+| `id` | INTEGER | PRIMARY KEY AUTOINCREMENT | ID potongan. |
+| `dokumen_id` | TEXT | NOT NULL | ID gabungan dokumen (`note:ID` atau `source:ID`). |
+| `buku_id` | TEXT | NOT NULL, FK ke `notebooks.id` ON DELETE CASCADE | Buku pemilik. |
+| `urutan` | INTEGER | NOT NULL | Urutan potongan dalam dokumen. |
+| `baris_awal`, `baris_akhir` | INTEGER | NOT NULL | Rentang baris asli (berbasis 1). |
+| `isi` | TEXT | NOT NULL | Teks potongan. |
+
+`potongan_tertunda` mencatat dokumen yang perlu dipecah ulang, dan `indeks_potongan` adalah indeks FTS5 (bm25) atas `potongan.isi`.
 ### `source_locations`
 
 Penanda rentang baris pada sumber teks.

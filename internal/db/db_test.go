@@ -36,8 +36,8 @@ func TestOpenRunsMigrationAndCreatesDefaultNotebook(t *testing.T) {
 	if err := d.QueryRow(`SELECT MAX(version) FROM schema_migrations`).Scan(&version); err != nil {
 		t.Fatal(err)
 	}
-	if version != 6 {
-		t.Fatalf("versi migrasi = %d, ingin 6", version)
+	if version != 7 {
+		t.Fatalf("versi migrasi = %d, ingin 7", version)
 	}
 
 	if err := d.Close(); err != nil {
@@ -53,8 +53,8 @@ func TestOpenRunsMigrationAndCreatesDefaultNotebook(t *testing.T) {
 	if err := d.QueryRow(`SELECT COUNT(*) FROM schema_migrations`).Scan(&count); err != nil {
 		t.Fatal(err)
 	}
-	if count != 6 {
-		t.Fatalf("jumlah migrasi setelah buka ulang = %d, ingin 6", count)
+	if count != 7 {
+		t.Fatalf("jumlah migrasi setelah buka ulang = %d, ingin 7", count)
 	}
 }
 
