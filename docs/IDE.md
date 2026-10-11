@@ -10,7 +10,7 @@ Semua usulan mengikuti prinsip `AGENTS.md`: perubahan kecil, terukur, mudah diba
 
 Berdasarkan `internal/http/conversation.go` pada `main` (versi 0.3.6):
 
-- Konteks terdiri dari Catatan aktif (`N1`, jika ada) dan Sumber yang dipilih manual oleh pengguna (maksimal 8 sumber, total 64 KiB). Seluruh isinya dikirim ke model dengan penanda baris `[L1]`, `[L2]`, dan seterusnya.
+- Konteks terdiri dari Catatan aktif (`N1`, jika ada) dan Sumber yang dipilih manual oleh pengguna (maksimal 8 sumber, total 64 KiB). Hanya potongan yang paling relevan (pengambilan FTS5/bm25, maksimal 8 potongan, sekitar 12 KiB) yang dikirim ke model dengan penanda baris asli `[L1]`, `[L2]`, dan seterusnya.
 - Format kutipan yang diterima hanya `[S1:L3]` dan `[S1:L3-L5]` untuk Sumber, serta `[N1:L3]` dan `[N1:L3-L5]` untuk Catatan aktif.
 - `validateCitations` menolak jawaban (HTTP 422) jika tidak ada kutipan sama sekali, nomor sumber tidak dikenal, rentang baris di luar isi sumber, `end < start`, atau rentang lebih dari 50 baris.
 - Satu kutipan yang salah membuat seluruh jawaban dibuang dan tidak disimpan.
