@@ -8,14 +8,14 @@ Semua usulan mengikuti prinsip `AGENTS.md`: perubahan kecil, terukur, mudah diba
 
 ### 1.1 Kondisi saat ini
 
-Berdasarkan `internal/http/conversation.go` pada `main` (versi 0.3.6):
+Berdasarkan `internal/http/conversation.go` dan `kutipan.go`:
 
 - Konteks terdiri dari Catatan aktif (`N1`, jika ada) dan Sumber yang dipilih manual oleh pengguna (maksimal 8 sumber, total 64 KiB). Hanya potongan yang paling relevan (pengambilan FTS5/bm25, maksimal 8 potongan, sekitar 12 KiB) yang dikirim ke model dengan penanda baris asli `[L1]`, `[L2]`, dan seterusnya.
-- Format kutipan yang diterima hanya `[S1:L3]` dan `[S1:L3-L5]` untuk Sumber, serta `[N1:L3]` dan `[N1:L3-L5]` untuk Catatan aktif.
-- `validateCitations` menolak jawaban (HTTP 422) jika tidak ada kutipan sama sekali, nomor sumber tidak dikenal, rentang baris di luar isi sumber, `end < start`, atau rentang lebih dari 50 baris.
-- Satu kutipan yang salah membuat seluruh jawaban dibuang dan tidak disimpan.
-- Validasi hanya memeriksa sintaks dan rentang, bukan apakah baris yang dikutip mendukung klaim.
-- Perintah sistem meminta model menjawab "informasi tidak ditemukan dalam konteks" tanpa kutipan bila konteks tidak memuat jawaban, tetapi validator tetap menolak jawaban tanpa kutipan. Keduanya bertentangan.
+- Kutipan tidak lagi ditulis model. Aplikasi menyusun kutipan dari potongan yang cocok dengan pertanyaan dan benar-benar dikirim ke model (kutipan.go); rentang baris yang bersambung digabung.
+- Kutipan, penanda [TIDAK_DITEMUKAN], dan nomor baris yang tetap ditulis model dibuang; jawaban tidak pernah ditolak (422) karena format.
+- Bila konteks dipilih tetapi tidak ada potongan sama sekali, jawaban "Informasi tidak ditemukan dalam konteks." dikembalikan tanpa memanggil model. Potongan awal cadangan (tidak ada istilah yang cocok) tetap dikirim sebagai konteks tetapi tidak dijadikan kutipan.
+- Validasi tidak memeriksa apakah baris yang dikutip mendukung klaim.
+- Bagian 1.2 dan seterusnya adalah analisis awal sebelum perubahan ini.
 
 ### 1.2 Dugaan penyebab kegagalan
 

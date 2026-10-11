@@ -5,6 +5,7 @@
 ### Diubah
 
 - Chat mengambil konteks per potongan yang paling relevan (FTS5/bm25, maksimal 8 potongan) dari Catatan aktif dan Sumber terpilih, bukan seluruh isi; sumber besar tidak lagi ditolak dengan 413.
+- Kutipan jawaban chat dibuat aplikasi dari potongan yang cocok dan dikirim ke model, bukan ditulis model; jawaban tidak lagi ditolak (422) karena format kutipan, dan dokumen tanpa isi dijawab "tidak ditemukan" tanpa memanggil model.
 - Migrasi 007 menambah tabel potongan, potongan_tertunda, dan indeks indeks_potongan.
 
 ## [0.3.16] - 2026-10-10

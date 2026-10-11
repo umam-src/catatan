@@ -140,6 +140,6 @@ Fase ini tidak:
 
 Percakapan menggunakan CATATAN_AI_MODEL sebagai nama model runtime. Isi sumber hanya dikirim jika source_ids dipilih pengguna dan sumber tersebut berada pada buku percakapan.
 
-Batas awal konteks adalah 8 sumber. Dari Catatan aktif dan sumber terpilih, hanya potongan yang paling relevan terhadap pertanyaan (maksimal 8 potongan, sekitar 12 KiB) yang dikirim ke model. Isi sumber diverifikasi dengan SHA-256 sebelum dikirim. Jawaban dengan konteks sumber harus menyertakan kutipan [S1:L1-L3]; server memeriksa ID sumber dan rentang baris sebelum menyimpannya.
+Batas awal konteks adalah 8 sumber. Dari Catatan aktif dan sumber terpilih, hanya potongan yang paling relevan terhadap pertanyaan (maksimal 8 potongan, sekitar 12 KiB) yang dikirim ke model. Isi sumber diverifikasi dengan SHA-256 sebelum dikirim. Kutipan (misalnya S1 L1-L3) dibuat server dari potongan yang cocok dengan pertanyaan dan dikirim ke model; model tidak diminta menulis kutipan, dan kutipan atau nomor baris yang tetap ditulis model dibuang.
 
 Isi sumber diperlakukan sebagai data tidak tepercaya, bukan instruksi, untuk membatasi dampak injeksi prompt.
