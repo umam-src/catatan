@@ -42,6 +42,17 @@ func TestConversationMengambilPotonganRelevanDariSumberBesar(t *testing.T) {
 		t.Fatalf("sumber besar harus dapat dipakai: %d %s", r.Code, r.Body.String())
 	}
 
+	var keluar struct {
+		Asisten struct {
+			Kutipan []Citation `json:"citations"`
+		} `json:"assistant_message"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&keluar); err != nil {
+		t.Fatal(err)
+	}
+	if len(keluar.Asisten.Kutipan) == 0 || keluar.Asisten.Kutipan[0].StartLine > 1500 || keluar.Asisten.Kutipan[0].EndLine < 1500 {
+		t.Fatalf("kutipan harus mencakup baris 1500: %#v", keluar.Asisten.Kutipan)
+	}
 	messages := p.requests[0].Messages
 	last := messages[len(messages)-1]
 	if last.Role != ai.RoleUser || !strings.Contains(last.Content, "[L1500] Kode pengiriman KJ-7319") {

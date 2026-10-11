@@ -39,6 +39,8 @@ type HasilPotongan struct {
 	BarisAkhir int     `json:"baris_akhir"`
 	Isi        string  `json:"isi"`
 	Relevansi  float64 `json:"relevansi"`
+	// Cocok benar bila potongan dipilih karena istilah pertanyaan (bukan potongan awal cadangan).
+	Cocok bool `json:"cocok"`
 }
 
 // PecahTeks memecah teks menjadi potongan per heading dan paragraf dengan ukuran
@@ -302,6 +304,7 @@ func (d *DB) CariPotongan(ctx context.Context, pemilikID, bukuID string, dokumen
 			if err := rows.Scan(&h.DokumenID, &h.Jenis, &h.Judul, &h.Urutan, &h.BarisAwal, &h.BarisAkhir, &h.Isi, &h.Relevansi); err != nil {
 				return nil, err
 			}
+			h.Cocok = true
 			if len(hasil) > 0 && total+len(h.Isi) > anggaranByte {
 				break
 			}
