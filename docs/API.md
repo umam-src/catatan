@@ -98,8 +98,9 @@ Kunci API hanya dibaca dari lingkungan proses dan tidak disimpan di `config.json
 ## Percakapan
 
 - GET /api/notebooks/{id}/conversations — daftar percakapan dalam buku milik pengguna.
-- POST /api/notebooks/{id}/conversations — membuat percakapan baru.
+- POST /api/notebooks/{id}/conversations - membuat percakapan baru. Body: `title`, `scope` (`semua_catatan`, `satu_catatan`, atau `dokumen`; bawaan `dokumen`), dan `note_id` (wajib untuk `satu_catatan`, dilarang untuk cakupan lain). Daftar dan respons memuat `scope` dan `note_id`.
+- DELETE /api/conversations/{id} - menghapus percakapan beserta pesannya (204). Catatan dan Sumber tidak ikut terhapus.
 - GET /api/conversations/{id}/messages — membaca riwayat percakapan.
-- POST /api/conversations/{id}/messages — mengirim pesan dengan content dan daftar source_ids yang dipilih.
+- POST /api/conversations/{id}/messages - mengirim pesan dengan `content`. Konteks mengikuti cakupan percakapan: `semua_catatan` mengambil potongan paling relevan dari seluruh Catatan buku (tanpa Sumber); `satu_catatan` hanya Catatan cakupan; `dokumen` hanya `source_ids` yang dipilih (maksimal 8). Pilihan yang tidak sesuai cakupan (mis. `source_ids` pada `semua_catatan`, atau `note_id` pada pesan) ditolak dengan 400. Pada `semua_catatan` dan `satu_catatan`, bila tidak ada potongan relevan, server menjawab tidak ditemukan tanpa memanggil model.
 
 Batas konteks: maksimal 8 sumber. Server mengirim maksimal 8 potongan paling relevan (sekitar 12 KiB) dari Catatan aktif dan sumber terpilih, sehingga sumber besar tidak lagi ditolak dengan 413. Sumber harus dimiliki buku percakapan dan checksum harus cocok sebelum dikirim ke provider. Kutipan pada `assistant_message.citations` dibuat server dari potongan yang cocok dengan pertanyaan dan dikirim ke model; jawaban model tidak ditolak karena format. Bila konteks dipilih tetapi tidak ada potongan sama sekali, server menjawab "Informasi tidak ditemukan dalam konteks." tanpa memanggil model. Model percakapan dibaca dari CATATAN_AI_MODEL. Provider, model, dan percakapan AI tetap opsional; tanpa AI, buku, catatan, sumber, dan pencarian tetap berjalan.

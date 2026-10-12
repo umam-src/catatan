@@ -5,7 +5,8 @@
   type Note = { id: string; title: string; content: string; updated_at: string };
   type Source = { id: string; title: string; kind: string; content?: string; locator: string; checksum: string; metadata_json: string };
   type SearchResult = { id: string; kind: 'note' | 'source'; notebook_id: string; title: string; relevance: number };
-  type Conversation = { id: string; notebook_id: string; title: string; created_at: string; updated_at: string };
+  type Cakupan = 'semua_catatan' | 'satu_catatan' | 'dokumen';
+  type Conversation = { id: string; notebook_id: string; title: string; scope?: Cakupan; note_id?: string; created_at: string; updated_at: string };
   type Citation = { kind?: 'note' | 'source'; source_id: string; source_ref: string; start_line: number; end_line: number };
   type ContextLabel = { kind: 'note' | 'source'; source_id: string; title: string };
   type ChatMessage = { id: string; role: 'user' | 'assistant'; content: string; citations?: Citation[]; contexts?: ContextLabel[]; source_ids?: string[]; created_at: string };
@@ -35,6 +36,8 @@
   const kunciPanelKonteks = 'catatan.panelKonteks';
   const kunciPilihanSumberKonteks = 'catatan.pilihanSumberKonteks';
   const batasSumberKonteks = 8;
+  const daftarCakupan: Cakupan[] = ['semua_catatan', 'satu_catatan', 'dokumen'];
+  const labelCakupan: Record<Cakupan, string> = { semua_catatan: 'Semua Catatan', satu_catatan: 'Catatan ini', dokumen: 'Dokumen' };
 
   let notebooks: Notebook[] = [];
   let notebookID = '';
@@ -439,15 +442,114 @@
     if (!notebookID) return;
     const response = await permintaan('/api/notebooks/' + notebookID + '/conversations');
     conversations = await response.json();
-    conversationID = conversations[0]?.id ?? '';
+  }
+
+  async function muatPesan(id: string) {
+    const messages = await permintaan('/api/conversations/' + id + '/messages');
+    chatMessages = await messages.json();
+  }
+
+  async function buatPercakapan(cakupan: Cakupan) {
+    const catatanID = cakupan === 'satu_catatan' ? catatanAktif?.id : undefined;
+    if (cakupan === 'satu_catatan' && !catatanID) throw new Error('Pilih catatan terlebih dahulu.');
+    const judul = cakupan === 'satu_catatan' ? catatanAktif?.title?.trim() || 'Catatan' : labelCakupan[cakupan];
+    const response = await permintaan('/api/notebooks/' + notebookID + '/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ title: judul, scope: cakupan, ...(catatanID ? { note_id: catatanID } : {}) })
+    });
+    const conversation: Conversation = await response.json();
+    conversations = [conversation, ...conversations];
+    conversationID = conversation.id;
     chatMessages = [];
-    if (conversationID) {
-      const messages = await permintaan('/api/conversations/' + conversationID + '/messages');
-      chatMessages = await messages.json();
+  }
+
+  // Memakai percakapan terbaru dengan cakupan yang sama (dan Catatan yang sama), atau membuat yang baru.
+  // Percakapan kosong yang ditinggalkan dihapus agar daftar tidak penuh percakapan tanpa isi.
+  async function aktifkanCakupan(cakupan: Cakupan, paksaBaru = false) {
+    const kosong = chatMessages.length === 0 ? conversationID : '';
+    const ada = paksaBaru
+      ? undefined
+      : conversations.find((item) => item.scope === cakupan && (cakupan !== 'satu_catatan' || item.note_id === catatanAktif?.id));
+    if (ada) {
+      conversationID = ada.id;
+      await muatPesan(ada.id);
+    } else {
+      await buatPercakapan(cakupan);
+    }
+    if (kosong && kosong !== conversationID) {
+      try {
+        await permintaan('/api/conversations/' + kosong, { method: 'DELETE' });
+        conversations = conversations.filter((item) => item.id !== kosong);
+      } catch {
+        // Percakapan kosong yang gagal dihapus tidak mengganggu percakapan aktif.
+      }
     }
   }
 
-  async function bukaChat() {
+  async function gantiCakupan(cakupan: Cakupan) {
+    if (chatMengirim || cakupan === cakupanSaatIni) return;
+    galat = '';
+    try {
+      await aktifkanCakupan(cakupan);
+    } catch (error) {
+      galat = error instanceof Error ? error.message : 'Cakupan tidak dapat diganti.';
+    }
+    await gulirChatKeBawah();
+  }
+
+  async function pilihPercakapan(id: string) {
+    if (chatMengirim || !id || id === conversationID) return;
+    galat = '';
+    try {
+      await muatPesan(id);
+      conversationID = id;
+    } catch (error) {
+      galat = error instanceof Error ? error.message : 'Percakapan tidak dapat dibuka.';
+    }
+    await gulirChatKeBawah();
+  }
+
+  async function percakapanBaru() {
+    if (chatMengirim || chatMessages.length === 0) return;
+    galat = '';
+    try {
+      await aktifkanCakupan(cakupanSaatIni, true);
+    } catch (error) {
+      galat = error instanceof Error ? error.message : 'Percakapan baru tidak dapat dibuat.';
+    }
+  }
+
+  async function hapusPercakapan() {
+    if (chatMengirim || !conversationID) return;
+    if (!window.confirm('Hapus percakapan ini beserta seluruh pesannya? Catatan dan dokumen tidak ikut terhapus.')) return;
+    const id = conversationID;
+    const cakupan = cakupanSaatIni;
+    galat = '';
+    try {
+      await permintaan('/api/conversations/' + id, { method: 'DELETE' });
+      conversations = conversations.filter((item) => item.id !== id);
+      conversationID = '';
+      chatMessages = [];
+      await aktifkanCakupan(cakupan);
+    } catch (error) {
+      galat = error instanceof Error ? error.message : 'Percakapan tidak dapat dihapus.';
+    }
+  }
+
+  function namaPercakapan(item: Conversation): string {
+    const cakupan = item.scope ?? 'dokumen';
+    const nama = cakupan === 'satu_catatan' ? notes.find((n) => n.id === item.note_id)?.title?.trim() || 'Catatan' : labelCakupan[cakupan];
+    const waktu = new Date(item.updated_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' });
+    return `${nama} · ${waktu}`;
+  }
+
+  function judulKutipan(message: ChatMessage, citation: Citation): string {
+    const judul = message.contexts?.find((item) => item.source_id === citation.source_id)?.title?.trim();
+    if (!judul) return citation.source_ref;
+    return judul.length > 24 ? judul.slice(0, 23) + '…' : judul;
+  }
+
+  async function bukaChat(cakupan: Cakupan = catatanAktif ? 'satu_catatan' : 'semua_catatan') {
     if (!notebookID) return;
     galat = '';
     view = 'chat';
@@ -457,15 +559,9 @@
       const status = await permintaan('/api/ai/status');
       chatStatus = (await status.json()).status ?? 'disabled';
       await muatChat();
-      if (!conversationID) {
-        const response = await permintaan('/api/notebooks/' + notebookID + '/conversations', {
-          method: 'POST',
-          body: JSON.stringify({ title: 'Percakapan baru' })
-        });
-        const conversation: Conversation = await response.json();
-        conversations = [conversation, ...conversations];
-        conversationID = conversation.id;
-      }
+      conversationID = '';
+      chatMessages = [];
+      await aktifkanCakupan(cakupan);
     } catch (error) {
       galat = error instanceof Error ? error.message : 'Chat tidak dapat dibuka.';
     } finally {
@@ -569,7 +665,7 @@
     try {
       const response = await permintaan('/api/conversations/' + conversationID + '/messages', {
         method: 'POST',
-        body: JSON.stringify({ content, source_ids: sumberKonteks, ...(catatanAktif ? { note_id: catatanAktif.id } : {}) })
+        body: JSON.stringify(cakupanSaatIni === 'dokumen' ? { content, source_ids: sumberKonteks } : { content })
       });
       const data = await response.json();
       chatMessages = [...chatMessages, data.user_message, data.assistant_message];
@@ -842,6 +938,9 @@
   }
 
   $: bukuAktif = notebooks.find((item) => item.id === notebookID);
+  $: percakapanAktif = conversations.find((item) => item.id === conversationID);
+  $: cakupanSaatIni = (percakapanAktif?.scope ?? 'dokumen') as Cakupan;
+  $: tanpaDokumenTerpilih = cakupanSaatIni === 'dokumen' && sumberKonteks.length === 0;
   $: inisial = (user?.display_name || user?.username || 'C').slice(0, 1).toUpperCase();
 
   mulai();
@@ -1138,7 +1237,12 @@
                 <strong>Catatan</strong>
                 <span>{notes.length} catatan</span>
               </div>
-              <button class="ikon-tombol" type="button" onclick={buatCatatan} disabled={!notebookID} title="Catatan baru" aria-label="Catatan baru">+</button>
+              <div class="panel-header-aksi">
+                <button class="ikon-tombol" type="button" onclick={() => bukaChat('semua_catatan')} disabled={!notebookID} title="Chat dengan semua catatan" aria-label="Chat dengan semua catatan">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" /></svg>
+                </button>
+                <button class="ikon-tombol" type="button" onclick={buatCatatan} disabled={!notebookID} title="Catatan baru" aria-label="Catatan baru">+</button>
+              </div>
             </div>
 
             <div class="daftar-catatan">
@@ -1182,6 +1286,40 @@
                 <button class="tautan-kembali" type="button" onclick={() => { view = 'catatan'; }}>← Kembali ke catatan</button>
                 <span class="status">AI · {chatStatus === 'ready' ? 'siap' : chatStatus === 'disabled' ? 'nonaktif' : 'tidak tersedia'}</span>
               </div>
+              {#if !chatMemuat}
+                <div class="chat-cakupan-bar">
+                  <div class="chat-cakupan" role="group" aria-label="Cakupan percakapan">
+                    {#each daftarCakupan as cakupan}
+                      <button
+                        type="button"
+                        class:aktif={cakupanSaatIni === cakupan}
+                        aria-pressed={cakupanSaatIni === cakupan}
+                        disabled={chatMengirim || (cakupan === 'satu_catatan' && !catatanAktif && cakupanSaatIni !== cakupan)}
+                        title={cakupan === 'satu_catatan' && !catatanAktif ? 'Pilih catatan terlebih dahulu' : labelCakupan[cakupan]}
+                        onclick={() => gantiCakupan(cakupan)}
+                      >{labelCakupan[cakupan]}</button>
+                    {/each}
+                  </div>
+                  <div class="chat-aksi">
+                    <select aria-label="Pilih percakapan" disabled={chatMengirim} onchange={(event) => pilihPercakapan(event.currentTarget.value)}>
+                      {#each conversations as item}
+                        <option value={item.id} selected={item.id === conversationID}>{namaPercakapan(item)}</option>
+                      {/each}
+                    </select>
+                    <button class="tombol sekunder" type="button" onclick={percakapanBaru} disabled={chatMengirim || chatMessages.length === 0} title="Mulai riwayat baru yang terpisah">Percakapan baru</button>
+                    <button class="tombol sekunder" type="button" onclick={hapusPercakapan} disabled={chatMengirim || !conversationID} title="Hapus percakapan ini">Hapus percakapan</button>
+                  </div>
+                  <p class="chat-cakupan-info">
+                    {#if cakupanSaatIni === 'semua_catatan'}
+                      Sumber AI: seluruh catatan di buku ini. Hanya bagian yang paling relevan dengan pertanyaan yang dikirim ke model.
+                    {:else if cakupanSaatIni === 'satu_catatan'}
+                      Sumber AI: hanya catatan “{notes.find((n) => n.id === percakapanAktif?.note_id)?.title?.trim() || 'Catatan'}”.
+                    {:else}
+                      Sumber AI: hanya dokumen yang dicentang di panel Sumber ({sumberKonteks.length} dipilih).
+                    {/if}
+                  </p>
+                </div>
+              {/if}
               <div class="chat-ruang">
                 {#if chatMemuat}
                   <div class="keadaan-kosong kecil"><strong>Memuat percakapan…</strong></div>
@@ -1206,14 +1344,14 @@
                           <div class="chat-kutipan">
                             {#each message.citations as citation}
                               <button type="button" onclick={() => bukaKutipan(citation)} title={citation.kind === 'note' ? 'Buka catatan dan lokasi kutipan' : 'Buka sumber dan lokasi kutipan'}>
-                                {citation.source_ref} · L{citation.start_line}{citation.end_line !== citation.start_line ? `–L${citation.end_line}` : ''}
+                                {judulKutipan(message, citation)} · L{citation.start_line}{citation.end_line !== citation.start_line ? `–L${citation.end_line}` : ''}
                               </button>
                             {/each}
                           </div>
                         {/if}
                       </article>
                     {:else}
-                      <div class="keadaan-kosong besar"><h2>Mulai percakapan</h2><p>Pilih sumber di panel kanan bila jawaban perlu merujuk isi buku.</p></div>
+                      <div class="keadaan-kosong besar"><h2>Mulai percakapan</h2><p>{cakupanSaatIni === 'dokumen' ? 'Centang dokumen di panel Sumber, lalu ajukan pertanyaan.' : 'Ajukan pertanyaan tentang isi catatan sesuai cakupan di atas.'}</p></div>
                     {/each}
                   </div>
                   <form class="chat-form" onsubmit={kirimChat}>
@@ -1227,7 +1365,7 @@
                       placeholder="Balas atau tanyakan sesuatu…"
                       maxlength="16384"
                     ></textarea>
-                    <button class="tombol utama" type="submit" aria-label="Kirim pesan" title="Kirim pesan (Enter)" disabled={chatMengirim || !chatInput.trim() || chatStatus !== 'ready'}>
+                    <button class="tombol utama" type="submit" aria-label="Kirim pesan" disabled={chatMengirim || !chatInput.trim() || chatStatus !== 'ready' || tanpaDokumenTerpilih} title={tanpaDokumenTerpilih ? 'Centang minimal satu dokumen di panel Sumber' : 'Kirim pesan (Enter)'}>
                       {#if chatMengirim}
                         Mengirim…
                       {:else}
@@ -1256,7 +1394,7 @@
                   <i></i>
                   {statusSimpan === 'menyimpan' ? 'Menyimpan…' : statusSimpan === 'gagal' ? 'Belum tersimpan' : 'Tersimpan'}
                 </span>
-                <button class="tombol sekunder tombol-chat" type="button" onclick={bukaChat}>Chat</button>
+                <button class="tombol sekunder tombol-chat" type="button" onclick={() => bukaChat('satu_catatan')}>Chat</button>
               </div>
               <input class="judul-catatan" bind:value={catatanAktif.title} oninput={jadwalkanSimpan} aria-label="Judul catatan" />
               <textarea bind:value={catatanAktif.content} oninput={jadwalkanSimpan} aria-label="Isi catatan" placeholder="Mulai menulis…"></textarea>
@@ -1290,12 +1428,15 @@
               <div class="konteks-header">
                 <div>
                   <strong>Sumber</strong>
-                  <span>{sources.length} sumber{view === 'chat' ? ` · ${sumberKonteks.length} dipilih (maks. ${batasSumberKonteks})` : ''}</span>
+                  <span>{sources.length} sumber{view === 'chat' ? ` · ${cakupanSaatIni === 'dokumen' ? `${sumberKonteks.length} dipilih (maks. ${batasSumberKonteks})` : 'tidak dipakai pada cakupan ini'}` : ''}</span>
                 </div>
                 <button class="ikon-tombol" type="button" onclick={bukaImpor} disabled={!notebookID} title="Tambah sumber">+</button>
               </div>
-              <input bind:this={imporInput} class="tersembunyi" type="file" accept=".txt,.md,.csv,.json,.html,.xml,.log,text/*" onchange={imporSumber} />
+              <input bind:this={imporInput} class="tersembunyi" type="file" accept=".txt,text/plain" onchange={imporSumber} />
               <div class="daftar-sumber">
+                {#if view === 'chat' && cakupanSaatIni !== 'dokumen'}
+                  <p class="batas-sumber-konteks" role="note">Cakupan ini tidak memakai dokumen. Pilih cakupan Dokumen untuk memakai sumber di bawah.</p>
+                {/if}
                 {#if view === 'chat' && sources.length > batasSumberKonteks}
                   <p class="batas-sumber-konteks" role="note">Maksimal {batasSumberKonteks} dokumen dapat disertakan sekaligus. Hapus centang dokumen terpilih untuk memilih dokumen lain.</p>
                 {/if}
@@ -1306,7 +1447,7 @@
                         <input
                           type="checkbox"
                           checked={sumberKonteks.includes(source.id)}
-                          disabled={!sumberKonteks.includes(source.id) && sumberKonteks.length >= batasSumberKonteks}
+                          disabled={cakupanSaatIni !== 'dokumen' || (!sumberKonteks.includes(source.id) && sumberKonteks.length >= batasSumberKonteks)}
                           aria-label={"Sertakan " + namaSumberKonteks(source) + " dalam konteks percakapan"}
                           onchange={() => toggleSumberKonteks(source.id)}
                         />
