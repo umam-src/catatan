@@ -265,6 +265,20 @@ func (d *DB) pecahDokumen(ctx context.Context, bukuID string, ids []string) erro
 // membatasi cakupan; bila diisi dan tidak ada potongan yang cocok, potongan awal
 // dokumen dipakai agar permintaan seperti "ringkas catatan ini" tetap berfungsi.
 func (d *DB) CariPotongan(ctx context.Context, pemilikID, bukuID string, dokumenIDs []string, pertanyaan string, batasJumlah, anggaranByte int) ([]HasilPotongan, error) {
+	return d.cariPotongan(ctx, pemilikID, bukuID, dokumenIDs, "", pertanyaan, batasJumlah, anggaranByte)
+}
+
+// CariPotonganJenis mengambil potongan paling relevan dari seluruh dokumen berjenis
+// "note" atau "source" pada satu buku. Tanpa istilah yang cocok, hasilnya kosong
+// (tidak ada potongan awal cadangan karena tidak ada dokumen tertentu yang dipilih).
+func (d *DB) CariPotonganJenis(ctx context.Context, pemilikID, bukuID, jenis, pertanyaan string, batasJumlah, anggaranByte int) ([]HasilPotongan, error) {
+	if jenis != "note" && jenis != "source" {
+		return nil, errors.New("jenis dokumen pengambilan tidak dikenal")
+	}
+	return d.cariPotongan(ctx, pemilikID, bukuID, nil, jenis, pertanyaan, batasJumlah, anggaranByte)
+}
+
+func (d *DB) cariPotongan(ctx context.Context, pemilikID, bukuID string, dokumenIDs []string, jenis, pertanyaan string, batasJumlah, anggaranByte int) ([]HasilPotongan, error) {
 	if pemilikID == "" || bukuID == "" {
 		return nil, errors.New("pemilik dan buku pengambilan wajib diisi")
 	}
@@ -283,6 +297,10 @@ func (d *DB) CariPotongan(ctx context.Context, pemilikID, bukuID string, dokumen
 			for _, id := range dokumenIDs {
 				args = append(args, id)
 			}
+		}
+		if jenis != "" {
+			saring += " AND sd.kind = ?"
+			args = append(args, jenis)
 		}
 		args = append(args, batasJumlah)
 		rows, err := d.QueryContext(ctx, `SELECT p.dokumen_id, sd.kind, sd.title, p.urutan, p.baris_awal, p.baris_akhir, p.isi,

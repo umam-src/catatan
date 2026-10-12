@@ -136,21 +136,11 @@ func TestConversationIncludesActiveNoteContextAndCitation(t *testing.T) {
 
 	p := &fakeConversationProvider{response: "Kode catatan KJ-7319"}
 	h := conversationHandler(t, p)
-	conversation := buatPercakapanUji(t, h)
-	noteResponse := requestUji(t, h, http.MethodPost, "/api/notebooks/default/notes", map[string]string{
-		"title": "Catatan pengiriman",
-		"content": "Kode pengiriman: KJ-7319\nStatus: Menunggu pemeriksaan gudang.",
-	})
-	if noteResponse.Code != http.StatusCreated {
-		t.Fatalf("buat catatan: %d %s", noteResponse.Code, noteResponse.Body.String())
-	}
-	var note Note
-	if err := json.NewDecoder(noteResponse.Body).Decode(&note); err != nil { t.Fatal(err) }
+	note := buatCatatanUji(t, h, "Catatan pengiriman", "Kode pengiriman: KJ-7319\nStatus: Menunggu pemeriksaan gudang.")
+	conversation := buatPercakapanCakupan(t, h, cakupanSatuCatatan, note.ID)
 
 	response := requestUji(t, h, http.MethodPost, "/api/conversations/"+conversation.ID+"/messages", map[string]any{
 		"content": "Apa kode dan status pengiriman?",
-		"note_id": note.ID,
-		"source_ids": []string{},
 	})
 	if response.Code != http.StatusCreated { t.Fatalf("pesan: %d %s", response.Code, response.Body.String()) }
 	last := p.requests[0].Messages[len(p.requests[0].Messages)-1]
@@ -169,14 +159,11 @@ func TestConversationIncludesActiveNoteContextAndCitation(t *testing.T) {
 		citation["start_line"] != float64(1) || citation["end_line"] != float64(2) {
 		t.Fatalf("provenance kutipan Catatan salah: %#v", citation)
 	}
-	userMessage := out["user_message"].(map[string]any)
-	if userMessage["note_id"] != note.ID { t.Fatalf("note_id tidak dikembalikan: %#v", userMessage) }
 }
 
 func TestConversationRejectsNoteFromAnotherNotebook(t *testing.T) {
 	p := &fakeConversationProvider{response: "Jawaban [N1:L1]"}
 	h := conversationHandler(t, p)
-	conversation := buatPercakapanUji(t, h)
 	notebookResponse := requestUji(t, h, http.MethodPost, "/api/notebooks", map[string]string{"title": "Buku lain"})
 	if notebookResponse.Code != http.StatusCreated { t.Fatalf("buat buku: %d %s", notebookResponse.Code, notebookResponse.Body.String()) }
 	var notebook Notebook
@@ -186,7 +173,7 @@ func TestConversationRejectsNoteFromAnotherNotebook(t *testing.T) {
 	var note Note
 	if err := json.NewDecoder(noteResponse.Body).Decode(&note); err != nil { t.Fatal(err) }
 
-	response := requestUji(t, h, http.MethodPost, "/api/conversations/"+conversation.ID+"/messages", map[string]any{"content": "Tanya", "note_id": note.ID})
+	response := requestUji(t, h, http.MethodPost, "/api/notebooks/default/conversations", map[string]string{"title": "Uji", "scope": cakupanSatuCatatan, "note_id": note.ID})
 	if response.Code != http.StatusNotFound { t.Fatalf("catatan lintas buku harus ditolak: %d %s", response.Code, response.Body.String()) }
 	if len(p.requests) != 0 { t.Fatal("provider dipanggil meski Catatan tidak diizinkan") }
 }

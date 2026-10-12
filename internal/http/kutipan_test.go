@@ -10,12 +10,12 @@ import (
 )
 
 func TestSusunKutipanMenggabungkanRentangDanMengabaikanYangTidakCocok(t *testing.T) {
-	catatan := &conversationNote{ID: "n1", Potongan: []db.HasilPotongan{
+	catatan := []conversationNote{{ID: "n1", Potongan: []db.HasilPotongan{
 		{BarisAwal: 1, BarisAkhir: 3, Cocok: true},
 		{BarisAwal: 3, BarisAkhir: 6, Cocok: true},
 		{BarisAwal: 20, BarisAkhir: 22, Cocok: true},
 		{BarisAwal: 40, BarisAkhir: 41, Cocok: false},
-	}}
+	}}, {ID: "n2", Potongan: []db.HasilPotongan{{BarisAwal: 5, BarisAkhir: 6, Cocok: true}}}}
 	sumber := []conversationSource{
 		{ID: "s1", Potongan: []db.HasilPotongan{{BarisAwal: 1, BarisAkhir: 2, Cocok: false}}},
 		{ID: "s2", Potongan: []db.HasilPotongan{{BarisAwal: 7, BarisAkhir: 9, Cocok: true}, {BarisAwal: 1, BarisAkhir: 6, Cocok: true}}},
@@ -24,6 +24,7 @@ func TestSusunKutipanMenggabungkanRentangDanMengabaikanYangTidakCocok(t *testing
 	want := []Citation{
 		{Kind: "note", SourceID: "n1", SourceRef: "N1", StartLine: 1, EndLine: 6},
 		{Kind: "note", SourceID: "n1", SourceRef: "N1", StartLine: 20, EndLine: 22},
+		{Kind: "note", SourceID: "n2", SourceRef: "N2", StartLine: 5, EndLine: 6},
 		{Kind: "source", SourceID: "s2", SourceRef: "S2", StartLine: 1, EndLine: 9},
 	}
 	if len(got) != len(want) {
@@ -92,17 +93,10 @@ func TestConversationJawabanModelTidakDitolakKarenaFormatKutipan(t *testing.T) {
 func TestConversationDokumenTanpaIsiTidakMemanggilModel(t *testing.T) {
 	p := &fakeConversationProvider{response: "tidak boleh dipakai"}
 	h := conversationHandler(t, p)
-	c := buatPercakapanUji(t, h)
-	n := requestUji(t, h, http.MethodPost, "/api/notebooks/default/notes", map[string]string{"title": "Kosong", "content": ""})
-	if n.Code != http.StatusCreated {
-		t.Fatalf("buat catatan: %d %s", n.Code, n.Body.String())
-	}
-	var note Note
-	if err := json.NewDecoder(n.Body).Decode(&note); err != nil {
-		t.Fatal(err)
-	}
+	note := buatCatatanUji(t, h, "Kosong", "")
+	c := buatPercakapanCakupan(t, h, cakupanSatuCatatan, note.ID)
 	r := requestUji(t, h, http.MethodPost, "/api/conversations/"+c.ID+"/messages",
-		map[string]any{"content": "Apa isinya?", "note_id": note.ID})
+		map[string]any{"content": "Apa isinya?"})
 	if r.Code != http.StatusCreated {
 		t.Fatalf("pesan: %d %s", r.Code, r.Body.String())
 	}
