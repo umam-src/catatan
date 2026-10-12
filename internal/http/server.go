@@ -59,6 +59,7 @@ func NewWithAIModel(d *db.DB, provider aiStatusProvider, model string) http.Hand
 	mux.HandleFunc("POST /api/notebooks/{id}/conversations", s.createConversation)
 	mux.HandleFunc("GET /api/conversations/{id}/messages", s.listConversationMessages)
 	mux.HandleFunc("POST /api/conversations/{id}/messages", s.createConversationMessage)
+	mux.HandleFunc("DELETE /api/conversations/{id}", s.deleteConversation)
 	mux.HandleFunc("GET /api/notebooks", s.listNotebooks)
 	mux.HandleFunc("POST /api/notebooks", s.createNotebook)
 	mux.HandleFunc("PUT /api/notebooks/{id}", s.updateNotebook)
@@ -273,6 +274,7 @@ func allowedMethods(path string) string {
 	case path == "/api/auth/setup" || path == "/api/auth/login" || path == "/api/auth/logout": return http.MethodPost
 	case path == "/api/auth/me": return http.MethodGet
 	case path == "/api/search" || path == "/api/ai/status": return http.MethodGet
+	case strings.HasPrefix(path, "/api/conversations/") && !strings.Contains(strings.TrimPrefix(path, "/api/conversations/"), "/"): return http.MethodDelete
 	case strings.HasPrefix(path, "/api/conversations/") && strings.HasSuffix(path, "/messages"): return http.MethodGet + ", " + http.MethodPost
 	case strings.HasPrefix(path, "/api/notebooks/") && strings.HasSuffix(path, "/conversations"): return http.MethodGet + ", " + http.MethodPost
 	case path == "/api/health": return http.MethodGet

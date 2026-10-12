@@ -132,10 +132,12 @@ Percakapan yang terkait dengan buku.
 | `id` | TEXT | PRIMARY KEY | ID percakapan. |
 | `notebook_id` | TEXT | NOT NULL, FK → `notebooks.id` | Buku pemilik percakapan. |
 | `title` | TEXT | NOT NULL, default `''` | Judul percakapan. |
+| `cakupan` | TEXT | NOT NULL, default `dokumen`, CHECK `semua_catatan`/`satu_catatan`/`dokumen` | Cakupan konteks percakapan (migrasi 008). |
+| `catatan_id` | TEXT | NULL | ID Catatan untuk cakupan `satu_catatan`. |
 | `created_at` | TEXT | NOT NULL | Waktu pembuatan. |
 | `updated_at` | TEXT | NOT NULL | Waktu perubahan. |
 
-Percakapan ikut terhapus ketika bukunya dihapus.
+Percakapan ikut terhapus ketika bukunya dihapus. Percakapan lama berstatus cakupan `dokumen`.
 
 ### `messages`
 

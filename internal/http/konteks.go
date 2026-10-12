@@ -11,17 +11,17 @@ import (
 
 // pilihPotongan mengisi Potongan pada Catatan dan Sumber terpilih dengan potongan
 // yang paling relevan terhadap pertanyaan, dibatasi jumlah dan anggaran byte.
-func (s *Server) pilihPotongan(r *http.Request, percakapanID, pertanyaan string, catatan *conversationNote, sumber []conversationSource) error {
-	if catatan == nil && len(sumber) == 0 {
+func (s *Server) pilihPotongan(r *http.Request, percakapanID, pertanyaan string, catatan []conversationNote, sumber []conversationSource) error {
+	if len(catatan) == 0 && len(sumber) == 0 {
 		return nil
 	}
 	var bukuID string
 	if err := s.db.QueryRowContext(r.Context(), `SELECT notebook_id FROM conversations WHERE id = ?`, percakapanID).Scan(&bukuID); err != nil {
 		return err
 	}
-	dokumenIDs := make([]string, 0, len(sumber)+1)
-	if catatan != nil {
-		dokumenIDs = append(dokumenIDs, "note:"+catatan.ID)
+	dokumenIDs := make([]string, 0, len(sumber)+len(catatan))
+	for _, n := range catatan {
+		dokumenIDs = append(dokumenIDs, "note:"+n.ID)
 	}
 	for _, src := range sumber {
 		dokumenIDs = append(dokumenIDs, "source:"+src.ID)
@@ -39,8 +39,8 @@ func (s *Server) pilihPotongan(r *http.Request, percakapanID, pertanyaan string,
 		sort.SliceStable(p, func(i, j int) bool { return p[i].Urutan < p[j].Urutan })
 		return p
 	}
-	if catatan != nil {
-		catatan.Potongan, catatan.DariPotongan = urut("note:"+catatan.ID), true
+	for i := range catatan {
+		catatan[i].Potongan, catatan[i].DariPotongan = urut("note:"+catatan[i].ID), true
 	}
 	for i := range sumber {
 		sumber[i].Potongan, sumber[i].DariPotongan = urut("source:"+sumber[i].ID), true

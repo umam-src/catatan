@@ -23,10 +23,10 @@ var (
 // susunKutipan membuat kutipan dari potongan yang cocok dengan pertanyaan dan
 // benar-benar dikirim ke model. Rentang baris yang bersambung digabung. Model
 // tidak menulis kutipan, sehingga format jawaban model tidak memengaruhi hasil.
-func susunKutipan(catatan *conversationNote, sumber []conversationSource) []Citation {
+func susunKutipan(catatan []conversationNote, sumber []conversationSource) []Citation {
 	hasil := []Citation{}
-	if catatan != nil {
-		hasil = append(hasil, kutipanDariPotongan("note", "N1", catatan.ID, catatan.Potongan)...)
+	for i, n := range catatan {
+		hasil = append(hasil, kutipanDariPotongan("note", "N"+strconv.Itoa(i+1), n.ID, n.Potongan)...)
 	}
 	for i, src := range sumber {
 		hasil = append(hasil, kutipanDariPotongan("source", "S"+strconv.Itoa(i+1), src.ID, src.Potongan)...)
@@ -55,14 +55,17 @@ func kutipanDariPotongan(jenis, ref, id string, potongan []db.HasilPotongan) []C
 	return hasil
 }
 
-// tanpaBahan benar bila konteks dipilih tetapi tidak ada satu pun potongan yang
-// dapat dikirim (misalnya dokumen kosong), sehingga model tidak perlu dipanggil.
-func tanpaBahan(catatan *conversationNote, sumber []conversationSource) bool {
-	if catatan == nil && len(sumber) == 0 {
+// tanpaBahan benar bila konteks wajib ada (cakupan Catatan, atau Sumber dipilih)
+// tetapi tidak ada satu pun potongan yang dapat dikirim, sehingga model tidak
+// perlu dipanggil.
+func tanpaBahan(wajib bool, catatan []conversationNote, sumber []conversationSource) bool {
+	if !wajib {
 		return false
 	}
-	if catatan != nil && len(catatan.Potongan) > 0 {
-		return false
+	for _, n := range catatan {
+		if len(n.Potongan) > 0 {
+			return false
+		}
 	}
 	for _, src := range sumber {
 		if len(src.Potongan) > 0 {

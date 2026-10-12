@@ -111,8 +111,8 @@ Antarmuka utama menyediakan pencarian catatan dan sumber dari buku yang sedang a
 
 ## Percakapan
 
-Ruang kerja menyediakan tombol **Chat** dari editor catatan. Chat menggunakan percakapan yang terikat pada buku dan dapat memakai beberapa sumber yang dipilih pengguna sebagai konteks.
+Ruang kerja menyediakan tombol **Chat** pada editor catatan (cakupan satu Catatan) dan tombol chat pada daftar catatan (cakupan semua Catatan). Setiap percakapan memiliki cakupan yang tersimpan: **Semua Catatan** (bagian paling relevan dari seluruh catatan buku), **Catatan ini** (hanya satu catatan), atau **Dokumen** (hanya dokumen `.txt` yang dicentang pada panel Sumber). Cakupan terlihat pada pengalih di atas percakapan, dan menggantinya memakai percakapan terbaru dengan cakupan itu atau membuat yang baru.
 
-Sumber tidak dikirim hanya karena berada di buku. Saat Chat dibuka, sumber harus dicentang pada panel Sumber. Jawaban yang memakai sumber menampilkan kutipan seperti `S1 · L1–L3`; kutipan dapat dibuka kembali ke sumber asal.
+Sumber tidak dikirim hanya karena berada di buku: pada cakupan Dokumen, dokumen harus dicentang pada panel Sumber (tombol kirim nonaktif bila tidak ada yang dicentang); pada cakupan lain panel Sumber tidak dipakai. **Percakapan baru** memulai riwayat kosong yang terpisah, dan **Hapus percakapan** (dengan konfirmasi) menghapus pesannya tanpa menghapus catatan atau dokumen. Jawaban menampilkan judul konteks dan kutipan baris yang dibuat aplikasi; kutipan dapat dibuka kembali ke asalnya.
 
 Jika penyedia model belum aktif atau tidak tersedia, tombol kirim dinonaktifkan dan fungsi catatan, sumber, serta pencarian tetap dapat digunakan.

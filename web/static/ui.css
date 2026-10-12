@@ -836,6 +836,16 @@ dialog.dialog::backdrop { background: var(--lapisan); backdrop-filter: blur(3px)
 .tombol-chat {
   margin-left: auto;
 }
+.panel-header-aksi { display: flex; align-items: center; gap: 4px; }
+.chat-cakupan-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 0 4px; }
+.chat-cakupan { display: inline-flex; border: 1px solid var(--garis); border-radius: 999px; padding: 2px; background: var(--permukaan-lembut); }
+.chat-cakupan button { border: 0; border-radius: 999px; padding: 5px 12px; background: transparent; color: var(--teks-2); cursor: pointer; font-size: .8125rem; }
+.chat-cakupan button:hover:not(:disabled) { color: var(--teks); }
+.chat-cakupan button.aktif { background: var(--permukaan); color: var(--teks); box-shadow: 0 0 0 1px var(--garis-kuat); }
+.chat-cakupan button:disabled { opacity: .5; cursor: not-allowed; }
+.chat-aksi { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-left: auto; }
+.chat-aksi select { max-width: 220px; border: 1px solid var(--garis-kuat); border-radius: 8px; padding: 6px 8px; background: var(--permukaan); color: var(--teks); font-size: .8125rem; }
+.chat-cakupan-info { flex-basis: 100%; margin: 0; color: var(--teks-3); font-size: .8125rem; }
 .editor:has(.chat-ruang) {
   padding: 20px clamp(12px, 3vw, 32px) 16px;
   overflow: hidden;

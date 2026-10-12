@@ -6,6 +6,9 @@
 
 - Chat mengambil konteks per potongan yang paling relevan (FTS5/bm25, maksimal 8 potongan) dari Catatan aktif dan Sumber terpilih, bukan seluruh isi; sumber besar tidak lagi ditolak dengan 413.
 - Kutipan jawaban chat dibuat aplikasi dari potongan yang cocok dan dikirim ke model, bukan ditulis model; jawaban tidak lagi ditolak (422) karena format kutipan, dan dokumen tanpa isi dijawab "tidak ditemukan" tanpa memanggil model.
+- Chat memiliki tiga cakupan yang tersimpan pada percakapan: semua Catatan, satu Catatan, dan dokumen terpilih. Pilihan yang tidak sesuai cakupan ditolak (400); semua Catatan memakai pengambilan potongan sehingga tidak membebani prompt.
+- Percakapan baru dan hapus percakapan (dengan konfirmasi) tersedia di UI; menghapus tidak menyentuh Catatan atau Sumber. Impor sumber di UI sementara hanya menerima `.txt`.
+- Migrasi 008 menambah kolom `cakupan` dan `catatan_id` pada percakapan; percakapan lama berstatus `dokumen`.
 - Migrasi 007 menambah tabel potongan, potongan_tertunda, dan indeks indeks_potongan.
 
 ## [0.3.16] - 2026-10-10
