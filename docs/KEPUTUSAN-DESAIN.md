@@ -53,3 +53,9 @@ Beban utama authorization bukan ukuran tabel ACL, melainkan jumlah relasi dan ev
 Jika inheritance digunakan, effective permission dapat di-cache dan cache dibatalkan ketika membership grup, ACL, atau hierarki sumber daya berubah.
 
 Desain ini dipilih agar authorization tetap ringan untuk SQLite, sesuai dengan prinsip offline-first, dan dapat dikembangkan tanpa mengganti identitas internal atau kepemilikan data.
+
+## Pengambilan konteks chat
+
+Pengambilan potongan memakai FTS5/bm25 tanpa embedding agar tetap ringan dan offline. Kualitasnya diukur oleh set evaluasi fiktif di `internal/db/evaluasi_pengambilan_test.go` (`go test ./internal/db -run Evaluasi -v`).
+
+Hasil terakhir: recall@1, @3, dan @5 = 12/12 untuk pertanyaan yang berbagi kata dengan catatan, dan rata-rata sekitar 0,5 ms per pengambilan. Pertanyaan yang memakai sinonim atau kata berbeda baru 2/4 pada recall@5. Embedding opsional hanya layak dipertimbangkan bila kasus seperti itu sering terjadi pada pemakaian nyata; sampai ada buktinya, BM25 dipertahankan. Uji recall menjaga batas minimum 90% pada recall@5 dan uji waktu menjaga rata-rata di bawah 50 ms.
